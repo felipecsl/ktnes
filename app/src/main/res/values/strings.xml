@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">6502 Android Emulator</string>
+    <string name="action_settings">Settings</string>
+</resources>

@@ -3,10 +3,11 @@ package android.emu6502
 import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.Opcodes
 import java.util.regex.Pattern
+import kotlin.text.Regex
 
 class Assembler(private var labels: Labels,
-                private var memory: Memory,
-                private var symbols: Symbols) {
+    private var memory: Memory,
+    private var symbols: Symbols) {
 
   private var defaultCodePC = 0
   private var codeLen = 0
@@ -131,60 +132,106 @@ class Assembler(private var labels: Labels,
   }
 
   private fun checkAbsolute(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    if (checkWordOperand("^([\\w\$]+)$")) {
+      return true
+    }
+
+    // it could be a label too..
+    return checkLabel(param, opcode, "^\\w+$".toRegex())
+  }
+
+  private fun checkWordOperand(param: String, opcode: Int, regex: String): Boolean {
+    val matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(param)
+    if (!matcher.find()) {
+      return false
+    }
+    return innerCheckWordOperand(matcher.group(1), opcode)
+  }
+
+  private fun innerCheckWordOperand(param: String, opcode: Int): Boolean {
+    var operand = tryParseWordOperand(param)
+    if (operand < 0) {
+      return false
+    }
+    pushByte(opcode)
+    pushWord(operand)
+    return true
+  }
+
+  private fun checkByteOperand(param: String, opcode: Int, regex: String): Boolean {
+    val matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(param)
+    if (!matcher.find()) {
+      return false
+    }
+    return innerCheckByteOperand(matcher.group(1), opcode)
+  }
+
+  private fun innerCheckByteOperand(param: String, opcode: Int): Boolean {
+    var operand = tryParseByteOperand(param)
+    if (operand < 0) {
+      return false
+    }
+    pushByte(opcode)
+    pushByte(operand)
+    return true
+  }
+
+  private fun checkLabel(param: String, opcode: Int, regex: Regex): Boolean {
+    if (param.matches(regex)) {
+      val finalParam = param.replace(",Y", "", true).replace(",X", "", true)
+      pushByte(opcode)
+      if (labels.find(finalParam)) {
+        val addr = (labels.getPC(finalParam))
+        if (addr < 0 || addr > 0xffff) {
+          return false
+        }
+        pushWord(addr)
+        return true
+      } else {
+        pushWord(0xffff) // filler, only used while indexing labels
+        return true
+      }
+    }
+    return false
   }
 
   private fun checkIndirectY(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),Y$")
   }
 
   private fun checkIndirectX(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),X$")
   }
 
   private fun checkIndirect(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkWordOperand(param, opcode, "^\\(([\\w\$]+)\\)$")
   }
 
   private fun checkAbsoluteY(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkWordOperand(param, opcode, "^([\\w\$]+),Y$") ||
+           checkLabel(param, opcode, "^\\w+,Y$".toRegex())
   }
 
   private fun checkAbsoluteX(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkWordOperand(param, opcode, "^([\\w\$]+),X$") ||
+           checkLabel(param, opcode, "^\\w+,X$".toRegex())
   }
 
   private fun checkZeroPageY(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkByteOperand(param, opcode, "^([\\w\$]+),Y")
   }
 
   private fun checkZeroPageX(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return checkByteOperand(param, opcode, "^([\\w\$]+),X")
   }
 
   private fun checkZeroPage(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    return innerCheckByteOperand(param, opcode)
   }
 
   private fun checkImmediate(param: String, opcode: Int): Boolean {
-    val pattern = Pattern.compile("^#([\\w\$]+)$")
-    val matcher = pattern.matcher(param)
-    if (matcher.find()) {
-      var operand = tryParseByteOperand(matcher.group(1))
-      if (operand >= 0) {
-        pushByte(opcode)
-        pushByte(operand)
-        return true
-      }
+    if (checkByteOperand(param, opcode, "^#([\\w\$]+)$")) {
+      return true
     }
 
     // Label lo/hi
@@ -216,7 +263,7 @@ class Assembler(private var labels: Labels,
   // Returns the (positive) value if successful, otherwise -1
   private fun tryParseByteOperand(param: String): Int {
     var value: Int = 0
-    var parameter = param;
+    var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
       var lookupVal = symbols.lookup(parameter) // Substitute symbol by actual value, then proceed
@@ -246,14 +293,55 @@ class Assembler(private var labels: Labels,
     return -1
   }
 
+  private fun tryParseWordOperand(param: String): Int {
+    var value: Int = 0
+    var parameter = param
+
+    if (parameter.matches("^\\w+$".toRegex())) {
+      var lookupVal = symbols.lookup(parameter) // Substitute symbol by actual value, then proceed
+      if (lookupVal != null) {
+        parameter = lookupVal
+      }
+    }
+
+    // Is it a hexadecimal operand?
+    var pattern = Pattern.compile("^\$([0-9a-f]{3,4})$")
+    var matcher = pattern.matcher(parameter)
+    if (matcher.find()) {
+      value = Integer.parseInt(matcher.group(1), 16)
+    } else {
+      // Is it a decimal operand?
+      pattern = Pattern.compile("^([0-9]{1,5})$")
+      matcher = pattern.matcher(parameter)
+      if (matcher.find()) {
+        value = Integer.parseInt(matcher.group(1), 10)
+      }
+    }
+
+    // Validate range
+    if (value >= 0 && value <= 0xffff) {
+      return value
+    }
+    return -1
+  }
+
   private fun pushByte(value: Int) {
-    memory.set(defaultCodePC, value.and(0xFF))
+    memory.set(defaultCodePC, value.and(0xff))
     defaultCodePC++
     codeLen++
   }
 
+  private fun pushWord(value: Int) {
+    pushByte(value.and(0xff))
+    pushByte(value.shr(8).and(0xff))
+  }
+
   private fun checkSingle(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    // Accumulator instructions are counted as single-byte opcodes
+    if (!param.equals("") && !param.equals("A")) { 
+      return false
+    }
+    pushByte(opcode)
+    return true
   }
 }

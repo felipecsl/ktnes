@@ -39,7 +39,7 @@
                         android:id="@+id/txtInstructions"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:text="LDA #$80\nSTA $01\nADC $01"
+                        android:text="LDA #$01\nSTA $0200\nLDA #$05\nSTA $0201\nLDA #$08\nSTA $0202"
                         android:fontFamily="monospace"
                         android:textSize="14sp"
                         android:gravity="top" />
@@ -145,7 +145,7 @@
     </LinearLayout>
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
+        android:id="@+id/fabRun"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"

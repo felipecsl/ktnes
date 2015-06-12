@@ -1,5 +1,6 @@
 package android.emu6502.app
 
+import android.emu6502.Emulator
 import android.emu6502.R
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
@@ -9,6 +10,7 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
 import butterknife.bindView
 
 public class MainActivity : AppCompatActivity() {
@@ -20,7 +22,9 @@ public class MainActivity : AppCompatActivity() {
   val txtSP: TextView by bindView(R.id.SP)
   val txtPC: TextView by bindView(R.id.PC)
   val txtFlags: TextView by bindView(R.id.PC)
-  val fab: FloatingActionButton by bindView(R.id.fab)
+  val txtInstructions: TextView by bindView(R.id.txtInstructions)
+  val fabRun: FloatingActionButton by bindView(R.id.fabRun)
+  val emulator = Emulator()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -30,6 +34,11 @@ public class MainActivity : AppCompatActivity() {
 
     var ab: ActionBar = getSupportActionBar()
     ab.setDisplayHomeAsUpEnabled(true)
+
+    fabRun.setOnClickListener {
+      emulator.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
+      Toast.makeText(fabRun.getContext(), "Code assembled", Toast.LENGTH_SHORT).show()
+    }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

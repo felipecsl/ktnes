@@ -3,7 +3,7 @@ package android.emu6502.instructions
 import java.util.HashMap
 
 open class BaseInstruction(private val instruction: Instruction,
-    private val instructionList: HashMap<Int, kotlin.reflect.KMemberFunction0<BaseInstruction, Unit>>) {
+    private val instructionList: HashMap<Int, InstructionTarget>) {
 
   init {
     val opcodes: IntArray = Opcodes.MAP[instruction] as IntArray
@@ -12,44 +12,44 @@ open class BaseInstruction(private val instruction: Instruction,
 
     opcodes.forEachIndexed { i, opcode ->
       if (opcode != 0xff) {
-        instructionList.put(opcodes[i], methods[i])
+        instructionList.put(opcodes[i], InstructionTarget(this, methods[i]))
       }
     }
   }
 
-  fun immediate() {
+  open fun immediate() {
   }
 
-  fun zeroPage() {
+  open fun zeroPage() {
   }
 
-  fun zeroPageX() {
+  open fun zeroPageX() {
   }
 
-  fun zeroPageY() {
+  open fun zeroPageY() {
   }
 
-  fun absolute() {
+  open fun absolute() {
   }
 
-  fun absoluteX() {
+  open fun absoluteX() {
   }
 
-  fun absoluteY() {
+  open fun absoluteY() {
   }
 
-  fun indirect() {
+  open fun indirect() {
   }
 
-  fun indirectX() {
+  open fun indirectX() {
   }
 
-  fun indirectY() {
+  open fun indirectY() {
   }
 
-  fun single() {
+  open fun single() {
   }
 
-  fun branch() {
+  open fun branch() {
   }
 }

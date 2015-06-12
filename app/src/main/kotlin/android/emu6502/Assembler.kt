@@ -14,7 +14,7 @@ class Assembler(private var labels: Labels,
   private var codeAssembledOK = false
   private var BOOTSTRAP_ADDRESS = 0x600
 
-  fun assembleCode(lines: Array<String>): Boolean {
+  fun assembleCode(lines: List<String>): Boolean {
     lines.forEach { line ->
       if (!assembleLine(line)) {
         return false
@@ -132,7 +132,7 @@ class Assembler(private var labels: Labels,
   }
 
   private fun checkAbsolute(param: String, opcode: Int): Boolean {
-    if (checkWordOperand("^([\\w\$]+)$")) {
+    if (checkWordOperand(param, opcode, "^([\\w\$]+)$")) {
       return true
     }
 
@@ -196,40 +196,67 @@ class Assembler(private var labels: Labels,
   }
 
   private fun checkIndirectY(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),Y$")
   }
 
   private fun checkIndirectX(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),X$")
   }
 
   private fun checkIndirect(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkWordOperand(param, opcode, "^\\(([\\w\$]+)\\)$")
   }
 
   private fun checkAbsoluteY(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkWordOperand(param, opcode, "^([\\w\$]+),Y$") ||
            checkLabel(param, opcode, "^\\w+,Y$".toRegex())
   }
 
   private fun checkAbsoluteX(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkWordOperand(param, opcode, "^([\\w\$]+),X$") ||
            checkLabel(param, opcode, "^\\w+,X$".toRegex())
   }
 
   private fun checkZeroPageY(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkByteOperand(param, opcode, "^([\\w\$]+),Y")
   }
 
   private fun checkZeroPageX(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return checkByteOperand(param, opcode, "^([\\w\$]+),X")
   }
 
   private fun checkZeroPage(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     return innerCheckByteOperand(param, opcode)
   }
 
   private fun checkImmediate(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
     if (checkByteOperand(param, opcode, "^#([\\w\$]+)$")) {
       return true
     }

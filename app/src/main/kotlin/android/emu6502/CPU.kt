@@ -85,32 +85,34 @@ class CPU(private val memory: Memory) {
   )
 
   fun execute() {
-    setRandomByte()
-    executeNextInstruction()
+    isRunning = true
+    while (true) {
+      setRandomByte()
+      executeNextInstruction()
 
-    if (PC == 0 || !isRunning) {
-      stop()
-      Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString())
+      if (PC == 0 || !isRunning) {
+        break
+      }
     }
-  }
-
-  private fun stop() {
     isRunning = false
+    Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString() + ", A=$" + A.toHexString() +
+               ", X=$" + X.toHexString() + ", Y=$" + Y.toHexString())
   }
 
   private fun executeNextInstruction() {
-    val instruction = Integer.valueOf(popByte().toInt().toString(), 16)
+    val instruction = popByte()
     val target = instructionList.get(instruction)
     if (target != null) {
       val function = target.method
       target.operation.function()
     } else {
       Log.e(TAG, "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
+      isRunning = false
     }
   }
 
    fun popByte(): Int {
-    return memory.get((PC++).and(0xff));
+    return memory.get(PC++).and(0xff);
   }
 
   private fun setRandomByte() {

@@ -37,7 +37,10 @@ public class MainActivity : AppCompatActivity() {
 
     fabRun.setOnClickListener {
       emulator.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
-      Toast.makeText(fabRun.getContext(), "Code assembled", Toast.LENGTH_SHORT).show()
+      Toast.makeText(fabRun.getContext(),
+          "Code assembled successfully, " + emulator.assembler.codeLen + " bytes.",
+          Toast.LENGTH_SHORT).show()
+      emulator.cpu.execute()
     }
   }
 

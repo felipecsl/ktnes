@@ -90,7 +90,7 @@ class CPU(private val memory: Memory) {
 
     if (PC == 0 || !isRunning) {
       stop()
-      Log.i(TAG, "Program end at PC=$" + (PC - 1))
+      Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString())
     }
   }
 
@@ -105,7 +105,7 @@ class CPU(private val memory: Memory) {
       val function = target.method
       target.operation.function()
     } else {
-      Log.e(TAG, "Address $" + PC + " - unknown opcode")
+      Log.e(TAG, "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
     }
   }
 
@@ -136,5 +136,9 @@ class CPU(private val memory: Memory) {
 
   fun popWord(): Int {
     return popByte() + popByte().shl(8)
+  }
+
+  fun Int.toHexString(): String {
+    return Integer.toHexString(this)
   }
 }

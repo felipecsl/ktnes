@@ -5,22 +5,22 @@ import android.emu6502.instructions.Opcodes
 import java.util.regex.Pattern
 import kotlin.text.Regex
 
-class Assembler(private var labels: Labels,
-    private var memory: Memory,
+class Assembler(private var labels: Labels, private var memory: Memory,
     private var symbols: Symbols) {
 
-  private var defaultCodePC = 0
-  private var codeLen = 0
-  private var codeAssembledOK = false
-  private var BOOTSTRAP_ADDRESS = 0x600
+  var codeLen = 0
+  val BOOTSTRAP_ADDRESS = 0x600
+  var defaultCodePC = BOOTSTRAP_ADDRESS
 
-  fun assembleCode(lines: List<String>): Boolean {
-    lines.forEach { line ->
+  fun assembleCode(lines: List<String>) {
+    lines.forEachIndexed { i, line ->
       if (!assembleLine(line)) {
-        return false
+        val str = line.replace("<", "&lt;").replace(">", "&gt;")
+        throw RuntimeException("**Syntax error line " + (i + 1) + ": " + str + "**")
       }
     }
-    return true
+    // set a null byte at the end of the code
+    memory.set(defaultCodePC, 0x00)
   }
 
   private fun assembleLine(line: String): Boolean {
@@ -48,11 +48,11 @@ class Assembler(private var labels: Labels,
 
     command = command.toUpperCase()
 
-    if (input.matches("^\\*\\s*=\\s*\$?[0-9a-f]*$".toRegex())) {
+    if (input.matches("^\\*\\s*=\\s*\\$?[0-9a-f]*$".toRegex())) {
       // equ spotted
       param = input.replace("^\\s*\\*\\s*=\\s*".toRegex(), "")
       if (param[0].equals("$")) {
-        param = param.replace("^\$".toRegex(), "")
+        param = param.replace("^\\$".toRegex(), "")
         addr = Integer.parseInt(param, 16)
       } else {
         addr = Integer.parseInt(param, 10)
@@ -132,7 +132,7 @@ class Assembler(private var labels: Labels,
   }
 
   private fun checkAbsolute(param: String, opcode: Int): Boolean {
-    if (checkWordOperand(param, opcode, "^([\\w\$]+)$")) {
+    if (checkWordOperand(param, opcode, "^([\\w\\$]+)$")) {
       return true
     }
 
@@ -199,28 +199,28 @@ class Assembler(private var labels: Labels,
     if (opcode == 0xff) {
       return false
     }
-    return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),Y$")
+    return checkByteOperand(param, opcode, "^\\(([\\w\\$]+)\\),Y$")
   }
 
   private fun checkIndirectX(param: String, opcode: Int): Boolean {
     if (opcode == 0xff) {
       return false
     }
-    return checkByteOperand(param, opcode, "^\\(([\\w\$]+)\\),X$")
+    return checkByteOperand(param, opcode, "^\\(([\\w\\$]+)\\),X$")
   }
 
   private fun checkIndirect(param: String, opcode: Int): Boolean {
     if (opcode == 0xff) {
       return false
     }
-    return checkWordOperand(param, opcode, "^\\(([\\w\$]+)\\)$")
+    return checkWordOperand(param, opcode, "^\\(([\\w\\$]+)\\)$")
   }
 
   private fun checkAbsoluteY(param: String, opcode: Int): Boolean {
     if (opcode == 0xff) {
       return false
     }
-    return checkWordOperand(param, opcode, "^([\\w\$]+),Y$") ||
+    return checkWordOperand(param, opcode, "^([\\w\\$]+),Y$") ||
            checkLabel(param, opcode, "^\\w+,Y$".toRegex())
   }
 
@@ -228,7 +228,7 @@ class Assembler(private var labels: Labels,
     if (opcode == 0xff) {
       return false
     }
-    return checkWordOperand(param, opcode, "^([\\w\$]+),X$") ||
+    return checkWordOperand(param, opcode, "^([\\w\\$]+),X$") ||
            checkLabel(param, opcode, "^\\w+,X$".toRegex())
   }
 
@@ -236,14 +236,14 @@ class Assembler(private var labels: Labels,
     if (opcode == 0xff) {
       return false
     }
-    return checkByteOperand(param, opcode, "^([\\w\$]+),Y")
+    return checkByteOperand(param, opcode, "^([\\w\\$]+),Y")
   }
 
   private fun checkZeroPageX(param: String, opcode: Int): Boolean {
     if (opcode == 0xff) {
       return false
     }
-    return checkByteOperand(param, opcode, "^([\\w\$]+),X")
+    return checkByteOperand(param, opcode, "^([\\w\\$]+),X")
   }
 
   private fun checkZeroPage(param: String, opcode: Int): Boolean {
@@ -257,7 +257,7 @@ class Assembler(private var labels: Labels,
     if (opcode == 0xff) {
       return false
     }
-    if (checkByteOperand(param, opcode, "^#([\\w\$]+)$")) {
+    if (checkByteOperand(param, opcode, "^#([\\w\\$]+)$")) {
       return true
     }
 
@@ -300,13 +300,13 @@ class Assembler(private var labels: Labels,
     }
 
     // Is it a hexadecimal operand?
-    var pattern = Pattern.compile("^\$([0-9a-f]{1,2})$")
+    var pattern = Pattern.compile("^\\$([0-9a-f]{1,2})$", Pattern.CASE_INSENSITIVE)
     var matcher = pattern.matcher(parameter)
     if (matcher.find()) {
       value = Integer.parseInt(matcher.group(1), 16)
     } else {
       // Is it a decimal operand?
-      pattern = Pattern.compile("^([0-9]{1,3})$")
+      pattern = Pattern.compile("^([0-9]{1,3})$", Pattern.CASE_INSENSITIVE)
       matcher = pattern.matcher(parameter)
       if (matcher.find()) {
         value = Integer.parseInt(matcher.group(1), 10)
@@ -332,13 +332,13 @@ class Assembler(private var labels: Labels,
     }
 
     // Is it a hexadecimal operand?
-    var pattern = Pattern.compile("^\$([0-9a-f]{3,4})$")
+    var pattern = Pattern.compile("^\\$([0-9a-f]{3,4})$", Pattern.CASE_INSENSITIVE)
     var matcher = pattern.matcher(parameter)
     if (matcher.find()) {
       value = Integer.parseInt(matcher.group(1), 16)
     } else {
       // Is it a decimal operand?
-      pattern = Pattern.compile("^([0-9]{1,5})$")
+      pattern = Pattern.compile("^([0-9]{1,5})$", Pattern.CASE_INSENSITIVE)
       matcher = pattern.matcher(parameter)
       if (matcher.find()) {
         value = Integer.parseInt(matcher.group(1), 10)

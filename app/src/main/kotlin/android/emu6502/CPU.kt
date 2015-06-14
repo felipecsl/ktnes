@@ -139,8 +139,4 @@ class CPU(private val memory: Memory) {
   fun popWord(): Int {
     return popByte() + popByte().shl(8)
   }
-
-  fun Int.toHexString(): String {
-    return Integer.toHexString(this)
-  }
 }

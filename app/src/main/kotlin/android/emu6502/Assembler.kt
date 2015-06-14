@@ -15,8 +15,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
   fun assembleCode(lines: List<String>) {
     lines.forEachIndexed { i, line ->
       if (!assembleLine(line)) {
-        val str = line.replace("<", "&lt;").replace(">", "&gt;")
-        throw RuntimeException("**Syntax error line " + (i + 1) + ": " + str + "**")
+        throw RuntimeException("**Syntax error line " + (i + 1) + ": " + line + "**")
       }
     }
     // set a null byte at the end of the code
@@ -119,6 +118,10 @@ class Assembler(private var labels: Labels, private var memory: Memory,
       }
     }
     return false
+  }
+
+  fun hexdump(): String {
+    return memory.format(0x600, codeLen)
   }
 
   private fun DCB(param: String): Boolean {
@@ -289,7 +292,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
   // Try to parse the given parameter as a byte operand.
   // Returns the (positive) value if successful, otherwise -1
   private fun tryParseByteOperand(param: String): Int {
-    var value: Int = 0
+    var value: Int = -1
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
@@ -321,7 +324,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
   }
 
   private fun tryParseWordOperand(param: String): Int {
-    var value: Int = 0
+    var value: Int = -1
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {

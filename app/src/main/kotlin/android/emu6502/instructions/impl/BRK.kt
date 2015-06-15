@@ -4,9 +4,9 @@ import android.emu6502.CPU
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
-/** ADd with Carry */
-class ADC(private val cpu: CPU) : BaseInstruction(Instruction.ADC, cpu.instructionList) {
-  override fun immediate() {
-    cpu.testADC(cpu.popByte())
+/** BRreaK */
+final class BRK(private val cpu: CPU) : BaseInstruction(Instruction.INX, cpu.instructionList) {
+  override fun single() {
+    cpu.stop()
   }
 }

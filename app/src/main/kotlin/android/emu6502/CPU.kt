@@ -35,6 +35,8 @@ class CPU(private val memory: Memory) {
       Pair(Instruction.LDY, LDY(this)),
       Pair(Instruction.STA, STA(memory, this)),
       Pair(Instruction.STX, STX(this)),
+      Pair(Instruction.TAX, TAX(this)),
+      Pair(Instruction.INX, INX(this)),
       Pair(Instruction.ORA, ORA(this))
 //      Pair(Instruction.BPL, BPL(this)),
 //      Pair(Instruction.BMI, BMI(this)),
@@ -62,10 +64,8 @@ class CPU(private val memory: Memory) {
 //      Pair(Instruction.JSR, JSR(this)),
 //      Pair(Instruction.LSR, LSR(this)),
 //      Pair(Instruction.NOP, NOP(this)),
-//      Pair(Instruction.TAX, TAX(this)),
 //      Pair(Instruction.TXA, TXA(this)),
 //      Pair(Instruction.DEX, DEX(this)),
-//      Pair(Instruction.INX, INX(this)),
 //      Pair(Instruction.TAY, TAY(this)),
 //      Pair(Instruction.TYA, TYA(this)),
 //      Pair(Instruction.DEY, DEY(this)),
@@ -94,7 +94,7 @@ class CPU(private val memory: Memory) {
         break
       }
     }
-    isRunning = false
+    stop()
     Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString() + ", A=$" + A.toHexString() +
                ", X=$" + X.toHexString() + ", Y=$" + Y.toHexString())
   }
@@ -107,12 +107,16 @@ class CPU(private val memory: Memory) {
       target.operation.function()
     } else {
       Log.e(TAG, "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
-      isRunning = false
+      stop()
     }
   }
 
+  fun stop() {
+    isRunning = false
+  }
+
    fun popByte(): Int {
-    return memory.get(PC++).and(0xff);
+    return memory.get(PC++).and(0xff)
   }
 
   private fun setRandomByte() {
@@ -123,20 +127,107 @@ class CPU(private val memory: Memory) {
     setSZFlagsForValue(A)
   }
 
+  fun setSZflagsForRegX() {
+    setSZFlagsForValue(X)
+  }
+
   private fun setSZFlagsForValue(value: Int) {
     if (value != 0) {
-      P = P.and(0xfd);
+      P = P.and(0xfd)
     } else {
-      P = P.or(0x02);
+      P = P.or(0x02)
     }
     if (value.and(0x80) != 0) {
-      P = P.or(0x80);
+      P = P.or(0x80)
     } else {
-      P = P.and(0x7f);
+      P = P.and(0x7f)
     }
   }
 
   fun popWord(): Int {
     return popByte() + popByte().shl(8)
+  }
+
+  fun testADC(value: Int) {
+    var tmp: Int
+    if (A.xor(value).and(0x80) != 0) {
+      CLV()
+    } else {
+      setOverflow()
+    }
+
+    if (decimalMode().isSet()) {
+      tmp = A.and(0xf) + value.and(0xf) + carry()
+      if (tmp >= 10) {
+        tmp = 0x10.or((tmp + 6).and(0xf))
+      }
+      tmp += A.and(0xf0) + value.and(0xf0)
+      if (tmp >= 160) {
+        SEC()
+        if (overflow().isSet() && tmp >= 0x180) {
+          CLV()
+        }
+        tmp += 0x60
+      } else {
+        CLC()
+        if (overflow().isSet() && tmp < 0x80) {
+          CLV()
+        }
+      }
+    } else {
+      tmp = A + value + carry()
+      if (tmp >= 0x100) {
+        SEC()
+        if (overflow().isSet() && tmp >= 0x180) {
+          CLV()
+        }
+      } else {
+        CLC()
+        if (overflow().isSet() && tmp < 0x80) {
+          CLV()
+        }
+      }
+    }
+    A = tmp.and(0xff)
+    setSZFlagsForRegA()
+  }
+
+  fun overflow(): Int {
+    return P.and(0x40)
+  }
+
+  fun decimalMode(): Int {
+    return P.and(8);
+  }
+
+  fun carry(): Int {
+    return P.and(1);
+  }
+
+  fun negative(): Int {
+    return P.and(0x80);
+  }
+
+  fun zero(): Int {
+    return P.and(0x02);
+  }
+
+  /** CLear Carry */
+  fun CLC() {
+    P = P.and(0xfe)
+  }
+
+  /** SEt Carry */
+  fun SEC() {
+    P = P.or(1)
+  }
+
+  /** CLear oVerflow */
+  fun CLV() {
+    P = P.and(0xbf)
+  }
+
+  fun setOverflow() {
+    P = P.or(0x40)
   }
 }

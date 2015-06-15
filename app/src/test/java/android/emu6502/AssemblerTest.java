@@ -82,7 +82,7 @@ public class AssemblerTest {
     assertThat(assembler.hexdump(), equalTo("0600: A9 01 85 F0 A9 CC 85 F1 6C F0 00"));
   }
 
-  @Test public void testIndexedIndirect() {
+  @Test public void testIndirectX() {
     List<String> lines = ImmutableList.of(
         "LDX #$01",
         "LDA #$05",
@@ -96,5 +96,35 @@ public class AssemblerTest {
     assembler.assembleCode(lines);
     assertThat(assembler.hexdump(),
         equalTo("0600: A2 01 A9 05 85 01 A9 06 85 02 A0 0A 8C 05 06 A1 \n0610: 00"));
+  }
+
+  @Test public void testIndirectY() {
+    List<String> lines = ImmutableList.of(
+        "LDY #$01",
+        "LDA #$03",
+        "STA $01",
+        "LDA #$07",
+        "STA $02",
+        "LDX #$0a",
+        "STX $0704",
+        "LDA ($01),Y");
+
+    assembler.assembleCode(lines);
+    assertThat(assembler.hexdump(),
+        equalTo("0600: A0 01 A9 03 85 01 A9 07 85 02 A2 0A 8E 04 07 B1 \n0610: 01"));
+  }
+
+  @Test public void testJump() {
+    List<String> lines = ImmutableList.of(
+        "LDA #$03",
+        "JMP there",
+        "BRK",
+        "BRK",
+        "BRK",
+        "there:",
+        "STA $0200");
+
+    assembler.assembleCode(lines);
+    assertThat(assembler.hexdump(), equalTo("0600: A9 03 4C 08 06 00 00 00 8D 00 02"));
   }
 }

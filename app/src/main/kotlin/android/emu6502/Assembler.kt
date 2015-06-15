@@ -234,7 +234,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       val finalParam = param.replace(",Y", "", true).replace(",X", "", true)
       pushByte(opcode)
       val addr = labels.get(finalParam)
-      if (addr != null) {
+      if (addr != -1) {
         if (addr < 0 || addr > 0xffff) {
           return false
         }
@@ -259,7 +259,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     if (opcode == 0xff) {
       return false
     }
-    return checkByteOperand(param, opcode, "^\\(([\\w\\$]+)\\),X$")
+    return checkByteOperand(param, opcode, "^\\(([\\w\\$]+),X\\)$")
   }
 
   private fun checkIndirect(param: String, opcode: Int): Boolean {
@@ -320,7 +320,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       var hilo = param.replace("^#([<>]).*$".toRegex(), "$1")
       pushByte(opcode)
       val addr = labels.get(label)
-      if (addr != null) {
+      if (addr != -1) {
         when (hilo) {
           ">" -> {
             pushByte(addr.shr(8).and(0xFF))

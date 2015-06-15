@@ -2,18 +2,28 @@ package android.emu6502
 
 import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.Opcodes
+import android.emu6502.instructions.Symbols
+import java.util.HashMap
 import java.util.regex.Pattern
 import kotlin.text.Regex
 
-class Assembler(private var labels: Labels, private var memory: Memory,
-    private var symbols: Symbols) {
+class Assembler(private var memory: Memory, private val symbols: Symbols) {
 
   var codeLen = 0
   val BOOTSTRAP_ADDRESS = 0x600
   var defaultCodePC = BOOTSTRAP_ADDRESS
+  private var labels = Labels(this, symbols)
 
   fun assembleCode(lines: List<String>) {
-    lines.forEachIndexed { i, line ->
+    val preprocessedLines = preprocess(lines)
+
+    labels.indexLines(preprocessedLines)
+
+    // Reset PC and code length since labels screwed it
+    defaultCodePC = BOOTSTRAP_ADDRESS
+    codeLen = 0
+
+    preprocessedLines.forEachIndexed { i, line ->
       if (!assembleLine(line)) {
         throw RuntimeException("**Syntax error line " + (i + 1) + ": " + line + "**")
       }
@@ -22,7 +32,24 @@ class Assembler(private var labels: Labels, private var memory: Memory,
     memory.set(defaultCodePC, 0x00)
   }
 
-  private fun assembleLine(line: String): Boolean {
+  private fun preprocess(lines: List<String>): List<String> {
+    val pattern = Pattern.compile("^define\\s+(\\w+)\\s+(\\S+)", Pattern.CASE_INSENSITIVE)
+
+    var sanitizedLines = lines.map { sanitize(it) }
+
+    sanitizedLines
+        .map { pattern.matcher(it) }
+        .filter { it.find() }
+        .forEach { symbols.put(it.group(1), sanitize(it.group(2))) }
+
+    return sanitizedLines.filterNot { pattern.matcher(it).find() }
+  }
+
+  private fun sanitize(line: String): String {
+    return line.replace("^(.*?);.*".toRegex(), "$1").trim()
+  }
+
+  fun assembleLine(line: String): Boolean {
     var input = line
     var command: String
     var param: String
@@ -56,7 +83,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
       } else {
         addr = Integer.parseInt(param, 10)
       }
-      if ((addr < 0) || (addr > 0xffff)) {
+      if (addr < 0 || addr > 0xffff) {
         throw IllegalStateException("Unable to relocate code outside 64k memory")
       }
       defaultCodePC = addr
@@ -73,7 +100,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
 
     param = param.replace("[ ]".toRegex(), "")
 
-    if (command === "DCB") {
+    if (command == "DCB") {
       return DCB(param)
     }
 
@@ -129,12 +156,35 @@ class Assembler(private var labels: Labels, private var memory: Memory,
         "not implemented") //To change body of created functions use File | Settings | File Templates.
   }
 
+  /** Common branch function for all branches (BCC, BCS, BEQ, BNE..) */
   private fun checkBranch(param: String, opcode: Int): Boolean {
-    throw UnsupportedOperationException(
-        "not implemented") //To change body of created functions use File | Settings | File Templates.
+    if (opcode == 0xff) {
+      return false
+    }
+
+    var addr = -1
+    if (param.matches("\\w+".toRegex())) {
+      addr = labels.get(param)
+    }
+    if (addr == -1) {
+      pushWord(0x00)
+      return false
+    }
+    pushByte(opcode)
+    if (addr < (defaultCodePC - 0x600)) {
+      // Backwards?
+      pushByte((0xff - ((defaultCodePC - 0x600) - addr)).and(0xff))
+      return true
+    }
+    pushByte((addr - (defaultCodePC - 0x600) - 1).and(0xff))
+    return true
   }
 
   private fun checkAbsolute(param: String, opcode: Int): Boolean {
+    if (opcode == 0xff) {
+      return false
+    }
+
     if (checkWordOperand(param, opcode, "^([\\w\\$]+)$")) {
       return true
     }
@@ -183,8 +233,8 @@ class Assembler(private var labels: Labels, private var memory: Memory,
     if (param.matches(regex)) {
       val finalParam = param.replace(",Y", "", true).replace(",X", "", true)
       pushByte(opcode)
-      if (labels.find(finalParam)) {
-        val addr = (labels.getPC(finalParam))
+      val addr = labels.get(finalParam)
+      if (addr != null) {
         if (addr < 0 || addr > 0xffff) {
           return false
         }
@@ -269,8 +319,8 @@ class Assembler(private var labels: Labels, private var memory: Memory,
       var label = param.replace("^#[<>](\\w+)$".toRegex(), "$1")
       var hilo = param.replace("^#([<>]).*$".toRegex(), "$1")
       pushByte(opcode)
-      if (labels.find(label)) {
-        var addr = labels.getPC(label)
+      val addr = labels.get(label)
+      if (addr != null) {
         when (hilo) {
           ">" -> {
             pushByte(addr.shr(8).and(0xFF))
@@ -296,7 +346,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
-      var lookupVal = symbols.lookup(parameter) // Substitute symbol by actual value, then proceed
+      var lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
       if (lookupVal != null) {
         parameter = lookupVal
       }
@@ -328,7 +378,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
-      var lookupVal = symbols.lookup(parameter) // Substitute symbol by actual value, then proceed
+      var lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
       if (lookupVal != null) {
         parameter = lookupVal
       }
@@ -368,7 +418,7 @@ class Assembler(private var labels: Labels, private var memory: Memory,
 
   private fun checkSingle(param: String, opcode: Int): Boolean {
     // Accumulator instructions are counted as single-byte opcodes
-    if (!param.equals("") && !param.equals("A")) { 
+    if (!param.equals("") && !param.equals("A")) {
       return false
     }
     pushByte(opcode)

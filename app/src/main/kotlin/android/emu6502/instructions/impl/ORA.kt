@@ -5,6 +5,5 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** bitwise OR with Accumulator */
-class ORA(cpu: CPU)
-    : BaseInstruction(Instruction.ORA, cpu.instructionList) {
+class ORA(cpu: CPU) : BaseInstruction(Instruction.ORA, cpu.instructionList) {
 }

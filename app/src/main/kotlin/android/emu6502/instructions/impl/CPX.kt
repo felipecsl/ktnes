@@ -4,10 +4,10 @@ import android.emu6502.CPU
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
-/** LoaD X register */
-class LDX(private val cpu: CPU) : BaseInstruction(Instruction.LDX, cpu.instructionList) {
+/** ComPare X register */
+class CPX(private val cpu: CPU) : BaseInstruction(Instruction.CPX, cpu.instructionList) {
   override fun immediate() {
-    cpu.X = cpu.popByte()
-    cpu.setSZflagsForRegX()
+    val value = cpu.popByte()
+    cpu.doCompare(cpu.X, value)
   }
 }

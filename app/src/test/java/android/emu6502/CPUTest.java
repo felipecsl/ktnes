@@ -38,6 +38,7 @@ public class CPUTest {
     assertThat(cpu.getY(), equalTo(0x00));
     assertThat(cpu.getSP(), equalTo(0xFF));
     assertThat(cpu.getPC(), equalTo(0x0610));
+    assertThat(cpu.flags(), equalTo("00110000"));
   }
 
   @Test public void testWithComments() {
@@ -54,6 +55,7 @@ public class CPUTest {
     assertThat(cpu.getY(), equalTo(0x00));
     assertThat(cpu.getSP(), equalTo(0xFF));
     assertThat(cpu.getPC(), equalTo(0x0607));
+    assertThat(cpu.flags(), equalTo("10110001"));
   }
 
   @Test public void testBranchAndLabel() {
@@ -67,10 +69,12 @@ public class CPUTest {
         "STX $0201",
         "BRK");
     assembler.assembleCode(lines);
+    cpu.execute();
     assertThat(cpu.getA(), equalTo(0x00));
     assertThat(cpu.getX(), equalTo(0x03));
     assertThat(cpu.getY(), equalTo(0x00));
     assertThat(cpu.getSP(), equalTo(0xFF));
     assertThat(cpu.getPC(), equalTo(0x060e));
+    assertThat(cpu.flags(), equalTo("00110011"));
   }
 }

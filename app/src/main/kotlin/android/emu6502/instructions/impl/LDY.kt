@@ -5,6 +5,5 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** LoaD Y register */
-class LDY(cpu: CPU)
-: BaseInstruction(Instruction.LDY, cpu.instructionList) {
+class LDY(cpu: CPU) : BaseInstruction(Instruction.LDY, cpu.instructionList) {
 }

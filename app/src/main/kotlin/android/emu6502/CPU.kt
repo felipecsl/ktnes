@@ -8,7 +8,7 @@ import android.util.Log
 import java.util.HashMap
 import kotlin.reflect.KMemberFunction0
 
-class CPU(private val memory: Memory) {
+class CPU(val memory: Memory) {
   // Accumulator
   var A: Int = 0
   // Registers
@@ -19,7 +19,7 @@ class CPU(private val memory: Memory) {
   // Stack pointer
   var SP: Int = 0xFF
   // Processor flags
-  var P: Int = 0
+  var P: Int = 0x30
   private var isRunning = false
   private var debug = false
   private var monitoring = false
@@ -37,18 +37,19 @@ class CPU(private val memory: Memory) {
       Pair(Instruction.STX, STX(this)),
       Pair(Instruction.TAX, TAX(this)),
       Pair(Instruction.INX, INX(this)),
-      Pair(Instruction.ORA, ORA(this))
+      Pair(Instruction.DEX, DEX(this)),
+      Pair(Instruction.ORA, ORA(this)),
+      Pair(Instruction.CPX, CPX(this)),
+      Pair(Instruction.BRK, BRK(this)),
+      Pair(Instruction.BNE, BNE(this))
 //      Pair(Instruction.BPL, BPL(this)),
 //      Pair(Instruction.BMI, BMI(this)),
 //      Pair(Instruction.BVC, BVC(this)),
 //      Pair(Instruction.BVS, BVS(this)),
 //      Pair(Instruction.BCC, BCC(this)),
 //      Pair(Instruction.BCS, BCS(this)),
-//      Pair(Instruction.BNE, BNE(this)),
 //      Pair(Instruction.BEQ, BEQ(this)),
-//      Pair(Instruction.BRK, BRK(this)),
 //      Pair(Instruction.CMP, CMP(this)),
-//      Pair(Instruction.CPX, CPX(this)),
 //      Pair(Instruction.CPY, CPY(this)),
 //      Pair(Instruction.DEC, DEC(this)),
 //      Pair(Instruction.EOR, EOR(this)),
@@ -65,7 +66,6 @@ class CPU(private val memory: Memory) {
 //      Pair(Instruction.LSR, LSR(this)),
 //      Pair(Instruction.NOP, NOP(this)),
 //      Pair(Instruction.TXA, TXA(this)),
-//      Pair(Instruction.DEX, DEX(this)),
 //      Pair(Instruction.TAY, TAY(this)),
 //      Pair(Instruction.TYA, TYA(this)),
 //      Pair(Instruction.DEY, DEY(this)),
@@ -124,14 +124,14 @@ class CPU(private val memory: Memory) {
   }
 
   fun setSZFlagsForRegA() {
-    setSZFlagsForValue(A)
+    setSVFlagsForValue(A)
   }
 
   fun setSZflagsForRegX() {
-    setSZFlagsForValue(X)
+    setSVFlagsForValue(X)
   }
 
-  private fun setSZFlagsForValue(value: Int) {
+  private fun setSVFlagsForValue(value: Int) {
     if (value != 0) {
       P = P.and(0xfd)
     } else {
@@ -156,34 +156,34 @@ class CPU(private val memory: Memory) {
       setOverflow()
     }
 
-    if (decimalMode().isSet()) {
-      tmp = A.and(0xf) + value.and(0xf) + carry()
+    if (decimalMode()) {
+      tmp = A.and(0xf) + value.and(0xf) + P.and(1)
       if (tmp >= 10) {
         tmp = 0x10.or((tmp + 6).and(0xf))
       }
       tmp += A.and(0xf0) + value.and(0xf0)
       if (tmp >= 160) {
         SEC()
-        if (overflow().isSet() && tmp >= 0x180) {
+        if (overflow() && tmp >= 0x180) {
           CLV()
         }
         tmp += 0x60
       } else {
         CLC()
-        if (overflow().isSet() && tmp < 0x80) {
+        if (overflow() && tmp < 0x80) {
           CLV()
         }
       }
     } else {
-      tmp = A + value + carry()
+      tmp = A + value + P.and(1)
       if (tmp >= 0x100) {
         SEC()
-        if (overflow().isSet() && tmp >= 0x180) {
+        if (overflow() && tmp >= 0x180) {
           CLV()
         }
       } else {
         CLC()
-        if (overflow().isSet() && tmp < 0x80) {
+        if (overflow() && tmp < 0x80) {
           CLV()
         }
       }
@@ -192,42 +192,85 @@ class CPU(private val memory: Memory) {
     setSZFlagsForRegA()
   }
 
-  fun overflow(): Int {
-    return P.and(0x40)
+  private fun overflow(): Boolean {
+    return P.and(0x40) != 0
   }
 
-  fun decimalMode(): Int {
-    return P.and(8);
+  private fun decimalMode(): Boolean {
+    return P.and(8) != 0
   }
 
-  fun carry(): Int {
-    return P.and(1);
+  private fun carry(): Boolean {
+    return P.and(1) != 0
   }
 
-  fun negative(): Int {
-    return P.and(0x80);
+  private fun negative(): Boolean {
+    return P.and(0x80) != 0
   }
 
-  fun zero(): Int {
-    return P.and(0x02);
+  fun zero(): Boolean {
+    return P.and(0x02) != 0
+  }
+
+  fun jumpBranch(offset: Int) {
+    if (offset > 0x7f) {
+      PC -= (0x100 - offset)
+    } else {
+      PC += offset
+    }
+  }
+
+  fun doCompare(reg: Int, value: Int) {
+    if (reg >= value) {
+      SEC()
+    } else {
+      CLC()
+    }
+    setSVFlagsForValue(reg - value)
   }
 
   /** CLear Carry */
-  fun CLC() {
+  private fun CLC() {
     P = P.and(0xfe)
   }
 
   /** SEt Carry */
-  fun SEC() {
+  private fun SEC() {
     P = P.or(1)
   }
 
   /** CLear oVerflow */
-  fun CLV() {
+  private fun CLV() {
     P = P.and(0xbf)
   }
 
-  fun setOverflow() {
+  private fun setOverflow() {
     P = P.or(0x40)
+  }
+
+  /**
+   * http://nesdev.com/6502.txt
+   * Returns the processor flags in the format SV-BDIZC
+   * Sign - this is set if the result of an operation is negative, cleared if positive.
+   * Overflow - when an arithmetic operation produces a result too large to be represented in a byte
+   * Unused - Supposed to be logical 1 at all times.
+   * Break - this is set when a software interrupt (BRK instruction) is executed.
+   * Decimal Mode - When set, and an Add with Carry or Subtract with Carry instruction is executed,
+   *  the source values are treated as valid BCD (Binary Coded Decimal, eg. 0x00-0x99 = 0-99) numbers.
+   *  The result generated is also a BCD number.
+   * Interrupt - If it is set, interrupts are disabled. If it is cleared, interrupts are enabled.
+   * Zero - this is set to 1 when any arithmetic or logical operation produces a zero result, and is
+   *  set to 0 if the result is non-zero.
+   * Carry - this holds the carry out of the most significant bit in any arithmetic operation.
+   *  In subtraction operations however, this flag is cleared - set to 0 - if a borrow is required,
+   *  set to 1 - if no borrow is required. The carry flag is also used in shift and rotate logical
+   *  operations.
+   * */
+  fun flags(): String {
+    val flags = StringBuilder()
+    for (i in 7 downTo 0) {
+      flags.append(P.shr(i).and(1))
+    }
+    return flags.toString()
   }
 }

@@ -44,6 +44,12 @@
                         android:textSize="14sp"
                         android:gravity="top" />
 
+                    <android.emu6502.Display
+                        android:id="@+id/display"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:visibility="gone"/>
+
                 </android.support.v7.widget.CardView>
 
                 <LinearLayout

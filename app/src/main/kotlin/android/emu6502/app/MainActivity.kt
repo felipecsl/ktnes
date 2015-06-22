@@ -1,5 +1,6 @@
 package android.emu6502.app
 
+import android.emu6502.Display
 import android.emu6502.Emulator
 import android.emu6502.R
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import butterknife.bindView
@@ -22,9 +24,9 @@ public class MainActivity : AppCompatActivity() {
   val txtSP: TextView by bindView(R.id.SP)
   val txtPC: TextView by bindView(R.id.PC)
   val txtFlags: TextView by bindView(R.id.PC)
+  val display: Display by bindView(R.id.display)
   val txtInstructions: TextView by bindView(R.id.txtInstructions)
   val fabRun: FloatingActionButton by bindView(R.id.fabRun)
-  val emulator = Emulator()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -36,6 +38,8 @@ public class MainActivity : AppCompatActivity() {
     ab.setDisplayHomeAsUpEnabled(true)
 
     fabRun.setOnClickListener {
+      display.setVisibility(View.VISIBLE)
+      val emulator = Emulator(display)
       emulator.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
       Toast.makeText(fabRun.getContext(),
           "Code assembled successfully, " + emulator.assembler.codeLen + " bytes.",

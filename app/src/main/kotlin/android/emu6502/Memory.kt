@@ -15,8 +15,8 @@ class Memory(private val display: Display) {
 
   fun storeByte(addr: Int, value: Int) {
     set(addr, value.and(0xff))
-    if ((addr >= 0x200) && (addr <= 0x5ff)) {
-      display.updatePixel(addr)
+    if (addr >= 0x200 && addr <= 0x5ff) {
+      display.updatePixel(addr, mem[addr].and(0x0f))
     }
   }
 

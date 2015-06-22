@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class CPUTest {
 
@@ -18,7 +19,8 @@ public class CPUTest {
   private Assembler assembler;
 
   @Before public void setUp() {
-    Memory memory = new Memory(new Display());
+
+    Memory memory = new Memory(mock(Display.class));
     assembler = new Assembler(memory, new Symbols());
     cpu = new CPU(memory);
   }

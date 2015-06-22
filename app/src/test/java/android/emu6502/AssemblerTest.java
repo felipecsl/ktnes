@@ -11,13 +11,14 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class AssemblerTest {
 
   private Assembler assembler;
 
   @Before public void setUp() {
-    assembler = new Assembler(new Memory(new Display()), new Symbols());
+    assembler = new Assembler(new Memory(mock(Display.class)), new Symbols());
   }
 
   @Test public void testSimple() {

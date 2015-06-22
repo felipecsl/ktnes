@@ -9,6 +9,7 @@ import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class LabelsTest {
 
@@ -17,7 +18,7 @@ public class LabelsTest {
 
   @Before public void setUp() {
     Symbols symbols = new Symbols();
-    assembler = new Assembler(new Memory(new Display()), symbols);
+    assembler = new Assembler(new Memory(mock(Display.class)), symbols);
     labels = new Labels(assembler, symbols);
   }
 

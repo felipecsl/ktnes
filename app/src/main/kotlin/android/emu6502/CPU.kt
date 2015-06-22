@@ -41,7 +41,10 @@ class CPU(val memory: Memory) {
       Pair(Instruction.ORA, ORA(this)),
       Pair(Instruction.CPX, CPX(this)),
       Pair(Instruction.BRK, BRK(this)),
-      Pair(Instruction.BNE, BNE(this))
+      Pair(Instruction.BNE, BNE(this)),
+      Pair(Instruction.JMP, JMP(this)),
+      Pair(Instruction.JSR, JSR(this)),
+      Pair(Instruction.RTS, RTS(this))
 //      Pair(Instruction.BPL, BPL(this)),
 //      Pair(Instruction.BMI, BMI(this)),
 //      Pair(Instruction.BVC, BVC(this)),
@@ -61,8 +64,6 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.CLD, CLD(this)),
 //      Pair(Instruction.SED, SED(this)),
 //      Pair(Instruction.INC, INC(this)),
-//      Pair(Instruction.JMP, JMP(this)),
-//      Pair(Instruction.JSR, JSR(this)),
 //      Pair(Instruction.LSR, LSR(this)),
 //      Pair(Instruction.NOP, NOP(this)),
 //      Pair(Instruction.TXA, TXA(this)),
@@ -73,7 +74,6 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.ROR, ROR(this)),
 //      Pair(Instruction.ROL, ROL(this)),
 //      Pair(Instruction.RTI, RTI(this)),
-//      Pair(Instruction.RTS, RTS(this)),
 //      Pair(Instruction.SBC, SBC(this)),
 //      Pair(Instruction.TXS, TXS(this)),
 //      Pair(Instruction.TSX, TSX(this)),
@@ -246,6 +246,24 @@ class CPU(val memory: Memory) {
 
   private fun setOverflow() {
     P = P.or(0x40)
+  }
+
+  fun stackPush(value: Int) {
+    memory.set(SP.and(0xff) + 0x100, value.and(0xff))
+    SP--
+    if (SP < 0) {
+      SP = SP.and(0xff)
+      Log.i(TAG, "6502 Stack filled! Wrapping...")
+    }
+  }
+
+  fun stackPop(): Int {
+    SP++;
+    if (SP >= 0x100) {
+      SP = SP.and(0xff)
+      Log.i(TAG, "6502 Stack emptied! Wrapping...")
+    }
+    return memory.get(SP + 0x100)
   }
 
   /**

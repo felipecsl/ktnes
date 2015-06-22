@@ -18,38 +18,62 @@ open class BaseInstruction(private val instruction: Instruction,
   }
 
   open fun immediate() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with immediate addressing")
   }
 
   open fun zeroPage() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with zeroPage addressing")
   }
 
   open fun zeroPageX() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with zeroPageX addressing")
   }
 
   open fun zeroPageY() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with zeroPageY addressing")
   }
 
   open fun absolute() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with absolute addressing")
   }
 
   open fun absoluteX() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with absoluteX addressing")
   }
 
   open fun absoluteY() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with absoluteY addressing")
   }
 
   open fun indirect() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with indirect addressing")
   }
 
   open fun indirectX() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with indirectX addressing")
   }
 
   open fun indirectY() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with indirectY addressing")
   }
 
   open fun single() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with single addressing")
   }
 
   open fun branch() {
+    throw IllegalStateException("Instruction " + javaClass.getSimpleName() + " not implemented" +
+        " with branch addressing")
   }
 }

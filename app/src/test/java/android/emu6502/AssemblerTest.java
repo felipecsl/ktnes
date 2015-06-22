@@ -1,8 +1,8 @@
 package android.emu6502;
 
-import com.google.common.collect.ImmutableList;
-
 import android.emu6502.instructions.Symbols;
+
+import com.google.common.collect.ImmutableList;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -126,5 +126,15 @@ public class AssemblerTest {
 
     assembler.assembleCode(lines);
     assertThat(assembler.hexdump(), equalTo("0600: A9 03 4C 08 06 00 00 00 8D 00 02"));
+  }
+
+  @Test public void testSymbols() {
+    List<String> lines = ImmutableList.of(
+        "define  sysRandom  $fe ; an adress",
+        "define  a_dozen    $0c ; a constant",
+        "LDA sysRandom  ; equivalent to \"LDA $fe\"",
+        "LDX #a_dozen   ; equivalent to \"LDX #$0c\"");
+    assembler.assembleCode(lines);
+    assertThat(assembler.hexdump(), equalTo("0600: A5 FE A2 0C"));
   }
 }

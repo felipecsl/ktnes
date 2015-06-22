@@ -126,4 +126,18 @@ public class CPUTest {
     assertThat(cpu.getPC(), equalTo(0x0613));
     assertThat(cpu.flags(), equalTo("00110011"));
   }
+
+  @Test public void testSymbols() {
+    List<String> lines = ImmutableList.of(
+        "define a_dozen $0c ; a constant",
+        "LDX #a_dozen       ; equivalent to \"LDX #$0c\"");
+    assembler.assembleCode(lines);
+    cpu.execute();
+    assertThat(cpu.getA(), equalTo(0x00));
+    assertThat(cpu.getX(), equalTo(0x0C));
+    assertThat(cpu.getY(), equalTo(0x00));
+    assertThat(cpu.getSP(), equalTo(0xFF));
+    assertThat(cpu.getPC(), equalTo(0x0603));
+    assertThat(cpu.flags(), equalTo("00110000"));
+  }
 }

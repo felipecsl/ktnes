@@ -44,7 +44,9 @@ class CPU(val memory: Memory) {
       Pair(Instruction.BNE, BNE(this)),
       Pair(Instruction.JMP, JMP(this)),
       Pair(Instruction.JSR, JSR(this)),
-      Pair(Instruction.RTS, RTS(this))
+      Pair(Instruction.RTS, RTS(this)),
+      Pair(Instruction.SEI, SEI(this)),
+      Pair(Instruction.DEY, DEY(this))
 //      Pair(Instruction.BPL, BPL(this)),
 //      Pair(Instruction.BMI, BMI(this)),
 //      Pair(Instruction.BVC, BVC(this)),
@@ -59,7 +61,6 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.CLC, CLC(this)),
 //      Pair(Instruction.SEC, SEC(this)),
 //      Pair(Instruction.CLI, CLI(this)),
-//      Pair(Instruction.SEI, SEI(this)),
 //      Pair(Instruction.CLV, CLV(this)),
 //      Pair(Instruction.CLD, CLD(this)),
 //      Pair(Instruction.SED, SED(this)),
@@ -69,7 +70,6 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.TXA, TXA(this)),
 //      Pair(Instruction.TAY, TAY(this)),
 //      Pair(Instruction.TYA, TYA(this)),
-//      Pair(Instruction.DEY, DEY(this)),
 //      Pair(Instruction.INY, INY(this)),
 //      Pair(Instruction.ROR, ROR(this)),
 //      Pair(Instruction.ROL, ROL(this)),
@@ -106,8 +106,8 @@ class CPU(val memory: Memory) {
       val function = target.method
       target.operation.function()
     } else {
-      Log.e(TAG, "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
-      stop()
+      throw Exception(
+          "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
     }
   }
 
@@ -129,6 +129,10 @@ class CPU(val memory: Memory) {
 
   fun setSZflagsForRegX() {
     setSVFlagsForValue(X)
+  }
+
+  fun setSZflagsForRegY() {
+    setSVFlagsForValue(Y)
   }
 
   private fun setSVFlagsForValue(value: Int) {

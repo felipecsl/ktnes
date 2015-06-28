@@ -10,4 +10,9 @@ class LDA(private val cpu: CPU) : BaseInstruction(Instruction.LDA, cpu.instructi
     cpu.A = cpu.popByte()
     cpu.setSZFlagsForRegA()
   }
+
+  override fun zeroPage() {
+    cpu.A = cpu.memory.get(cpu.popByte())
+    cpu.setSZFlagsForRegA()
+  }
 }

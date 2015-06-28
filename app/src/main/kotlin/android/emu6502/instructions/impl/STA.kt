@@ -10,7 +10,11 @@ class STA(private val memory: Memory, private val cpu: CPU)
     : BaseInstruction(Instruction.STA, cpu.instructionList) {
 
   override fun absolute() {
-    memory.storeByte(cpu.popWord(), cpu.A);
+    memory.storeByte(cpu.popWord(), cpu.A)
+  }
+
+  override fun zeroPage() {
+    memory.storeByte(cpu.popByte(), cpu.A)
   }
 }
 

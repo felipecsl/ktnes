@@ -2,7 +2,7 @@ package android.emu6502.instructions
 
 import java.util.HashMap
 
-open class BaseInstruction(private val instruction: Instruction,
+open class BaseInstruction(val instruction: Instruction,
     private val instructionList: HashMap<Int, InstructionTarget>) {
 
   init {

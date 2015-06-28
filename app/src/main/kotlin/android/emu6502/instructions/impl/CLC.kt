@@ -4,6 +4,10 @@ import android.emu6502.CPU
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
-/** Arithmetic Shift Left */
-class ASL(private val cpu: CPU) : BaseInstruction(Instruction.ASL, cpu.instructionList) {
+/** CLear Carry */
+final class CLC(private val cpu: CPU) : BaseInstruction(Instruction.CLC, cpu.instructionList) {
+  override fun single() {
+    cpu.CLC()
+  }
 }
+

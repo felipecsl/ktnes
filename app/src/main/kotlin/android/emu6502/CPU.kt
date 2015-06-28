@@ -3,10 +3,10 @@ package android.emu6502
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.InstructionTarget
+import android.emu6502.instructions.Opcodes
 import android.emu6502.instructions.impl.*
 import android.util.Log
 import java.util.HashMap
-import kotlin.reflect.KMemberFunction0
 
 class CPU(val memory: Memory) {
   // Accumulator
@@ -46,7 +46,8 @@ class CPU(val memory: Memory) {
       Pair(Instruction.JSR, JSR(this)),
       Pair(Instruction.RTS, RTS(this)),
       Pair(Instruction.SEI, SEI(this)),
-      Pair(Instruction.DEY, DEY(this))
+      Pair(Instruction.DEY, DEY(this)),
+      Pair(Instruction.CLC, CLC(this))
 //      Pair(Instruction.BPL, BPL(this)),
 //      Pair(Instruction.BMI, BMI(this)),
 //      Pair(Instruction.BVC, BVC(this)),
@@ -58,7 +59,6 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.CPY, CPY(this)),
 //      Pair(Instruction.DEC, DEC(this)),
 //      Pair(Instruction.EOR, EOR(this)),
-//      Pair(Instruction.CLC, CLC(this)),
 //      Pair(Instruction.SEC, SEC(this)),
 //      Pair(Instruction.CLI, CLI(this)),
 //      Pair(Instruction.CLV, CLV(this)),
@@ -106,8 +106,12 @@ class CPU(val memory: Memory) {
       val function = target.method
       target.operation.function()
     } else {
+      val candidate = Opcodes.MAP.entrySet()
+          .first { it.value.any { opcode -> opcode == instruction } }
+
       throw Exception(
-          "Address $" + PC.toHexString() + " - unknown opcode " + instruction.toHexString())
+          "Address $${PC.toHexString()} - unknown opcode 0x${instruction.toHexString()} " +
+              "(instruction ${candidate.getKey().name()})")
     }
   }
 
@@ -234,7 +238,7 @@ class CPU(val memory: Memory) {
   }
 
   /** CLear Carry */
-  private fun CLC() {
+  fun CLC() {
     P = P.and(0xfe)
   }
 

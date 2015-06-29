@@ -100,8 +100,8 @@ class CPU(val memory: Memory) {
   }
 
   private fun innerRun() {
-    (0..98).forEach { execute() }
-    handler.postDelayed({ innerRun() }, 15)
+    (0..97).forEach { execute() }
+    handler.postDelayed({ innerRun() }, 10)
   }
 
   private fun execute() {

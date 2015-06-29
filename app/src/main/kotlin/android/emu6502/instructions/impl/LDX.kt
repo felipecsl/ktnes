@@ -10,4 +10,9 @@ class LDX(private val cpu: CPU) : BaseInstruction(Instruction.LDX, cpu.instructi
     cpu.X = cpu.popByte()
     cpu.setSZflagsForRegX()
   }
+
+  override fun zeroPage() {
+    cpu.X = cpu.memory.get(cpu.popByte())
+    cpu.setSZflagsForRegX()
+  }
 }

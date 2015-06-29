@@ -16,5 +16,20 @@ class STA(private val memory: Memory, private val cpu: CPU)
   override fun zeroPage() {
     memory.storeByte(cpu.popByte(), cpu.A)
   }
+
+  override fun zeroPageX() {
+    cpu.memory.storeByte((cpu.popByte() + cpu.X).and(0xff), cpu.A)
+  }
+
+  override fun indirectY() {
+    val addr = memory.getWord(cpu.popByte()) + cpu.Y
+    memory.storeByte(addr, cpu.A)
+  }
+
+  override fun indirectX() {
+    var zp = (cpu.popByte() + cpu.X).and(0xff)
+    var addr = memory.getWord(zp)
+    memory.storeByte(addr, cpu.A)
+  }
 }
 

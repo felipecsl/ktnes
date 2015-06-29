@@ -371,7 +371,13 @@ public class CPUTest {
         "  bne spinloop",
         "  rts",
         "gameOver:", "\n");
-      assembler.assembleCode(lines);
-      cpu.execute();
+    assembler.assembleCode(lines);
+    cpu.execute();
+    assertThat(cpu.getA(), equalTo(0x1f));
+    assertThat(cpu.getX(), equalTo(0xff));
+    assertThat(cpu.getY(), equalTo(0x00));
+    assertThat(cpu.getSP(), equalTo(0xfb));
+    assertThat(cpu.getPC(), equalTo(0x0736));
+    assertThat(cpu.flags(), equalTo("00110011"));
   }
 }

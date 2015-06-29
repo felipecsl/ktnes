@@ -35,7 +35,7 @@ open class Display : View {
     val x = (addr - 0x200) % 32
     val y = Math.floor(((addr - 0x200) / 32).toDouble())
     drawingCache.add(Pixel(Point(x.toInt(), y.toInt()), Color.parseColor(color)))
-    invalidate()
+    postInvalidate()
   }
 
   override fun onDraw(canvas: Canvas) {

@@ -5,14 +5,16 @@ import android.emu6502.Emulator
 import android.emu6502.R
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.support.v7.app.ActionBar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import butterknife.bindView
 
 public class MainActivity : AppCompatActivity() {
@@ -27,6 +29,13 @@ public class MainActivity : AppCompatActivity() {
   val display: Display by bindView(R.id.display)
   val txtInstructions: TextView by bindView(R.id.txtInstructions)
   val fabRun: FloatingActionButton by bindView(R.id.fabRun)
+  val layoutContent: LinearLayout by bindView(R.id.layout_content)
+  val btnLeft: Button by bindView(R.id.arrowLeft)
+  val btnRight: Button by bindView(R.id.arrowRight)
+  val btnUp: Button by bindView(R.id.arrowUp)
+  val btnDown: Button by bindView(R.id.arrowDown)
+
+  private var emulator: Emulator? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -39,13 +48,25 @@ public class MainActivity : AppCompatActivity() {
 
     fabRun.setOnClickListener {
       display.setVisibility(View.VISIBLE)
-      val emulator = Emulator(display)
-      emulator.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
-      Toast.makeText(fabRun.getContext(),
-          "Code assembled successfully, " + emulator.assembler.codeLen + " bytes.",
-          Toast.LENGTH_SHORT).show()
-      emulator.cpu.execute()
+      emulator = Emulator(display)
+      val emu: Emulator = emulator as Emulator
+      emu.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
+      Snackbar.make(layoutContent,
+          "Code assembled successfully, ${emu.assembler.codeLen} bytes.",
+          Snackbar.LENGTH_SHORT).show()
+      emu.cpu.run()
     }
+
+    val onClickButton = { code: Int ->
+      if (emulator != null) {
+        val emu = emulator as Emulator
+        emu.cpu.memory.storeKeypress(code)
+      }
+    }
+    btnLeft.setOnClickListener  { onClickButton(0x61) }
+    btnRight.setOnClickListener { onClickButton(0x64) }
+    btnUp.setOnClickListener    { onClickButton(0x77) }
+    btnDown.setOnClickListener  { onClickButton(0x73) }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

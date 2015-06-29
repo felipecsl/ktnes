@@ -5,10 +5,20 @@ import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.InstructionTarget
 import android.emu6502.instructions.Opcodes
 import android.emu6502.instructions.impl.*
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import java.util.HashMap
 
 class CPU(val memory: Memory) {
+  private val handlerThread = HandlerThread("Screencast Thread")
+  private val handler: Handler
+
+  init {
+    handlerThread.start()
+    handler = Handler(handlerThread.getLooper())
+  }
+
   // Accumulator
   var A: Int = 0
   // Registers
@@ -47,34 +57,34 @@ class CPU(val memory: Memory) {
       Pair(Instruction.RTS, RTS(this)),
       Pair(Instruction.SEI, SEI(this)),
       Pair(Instruction.DEY, DEY(this)),
-      Pair(Instruction.CLC, CLC(this))
-//      Pair(Instruction.BPL, BPL(this)),
+      Pair(Instruction.CLC, CLC(this)),
+      Pair(Instruction.CMP, CMP(this)),
+      Pair(Instruction.BEQ, BEQ(this)),
+      Pair(Instruction.TXA, TXA(this)),
+      Pair(Instruction.BPL, BPL(this)),
+      Pair(Instruction.LSR, LSR(this)),
+      Pair(Instruction.BCS, BCS(this)),
+      Pair(Instruction.INC, INC(this)),
+      Pair(Instruction.NOP, NOP(this)),
+      Pair(Instruction.SEC, SEC(this)),
+      Pair(Instruction.SBC, SBC(this)),
+      Pair(Instruction.BCC, BCC(this)),
+      Pair(Instruction.DEC, DEC(this))
 //      Pair(Instruction.BMI, BMI(this)),
 //      Pair(Instruction.BVC, BVC(this)),
 //      Pair(Instruction.BVS, BVS(this)),
-//      Pair(Instruction.BCC, BCC(this)),
-//      Pair(Instruction.BCS, BCS(this)),
-//      Pair(Instruction.BEQ, BEQ(this)),
-//      Pair(Instruction.CMP, CMP(this)),
 //      Pair(Instruction.CPY, CPY(this)),
-//      Pair(Instruction.DEC, DEC(this)),
 //      Pair(Instruction.EOR, EOR(this)),
-//      Pair(Instruction.SEC, SEC(this)),
 //      Pair(Instruction.CLI, CLI(this)),
 //      Pair(Instruction.CLV, CLV(this)),
 //      Pair(Instruction.CLD, CLD(this)),
 //      Pair(Instruction.SED, SED(this)),
-//      Pair(Instruction.INC, INC(this)),
-//      Pair(Instruction.LSR, LSR(this)),
-//      Pair(Instruction.NOP, NOP(this)),
-//      Pair(Instruction.TXA, TXA(this)),
 //      Pair(Instruction.TAY, TAY(this)),
 //      Pair(Instruction.TYA, TYA(this)),
 //      Pair(Instruction.INY, INY(this)),
 //      Pair(Instruction.ROR, ROR(this)),
 //      Pair(Instruction.ROL, ROL(this)),
 //      Pair(Instruction.RTI, RTI(this)),
-//      Pair(Instruction.SBC, SBC(this)),
 //      Pair(Instruction.TXS, TXS(this)),
 //      Pair(Instruction.TSX, TSX(this)),
 //      Pair(Instruction.PHA, PHA(this)),
@@ -84,19 +94,29 @@ class CPU(val memory: Memory) {
 //      Pair(Instruction.STY, STY(this))
   )
 
-  fun execute() {
+  fun run() {
     isRunning = true
-    while (true) {
-      setRandomByte()
-      executeNextInstruction()
+    innerRun()
+  }
 
-      if (PC == 0 || !isRunning) {
-        break
-      }
+  private fun innerRun() {
+    (0..98).forEach { execute() }
+    handler.postDelayed({ innerRun() }, 15)
+  }
+
+  private fun execute() {
+    if (!isRunning) {
+      return
     }
-    stop()
-    Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString() + ", A=$" + A.toHexString() +
-               ", X=$" + X.toHexString() + ", Y=$" + Y.toHexString())
+
+    setRandomByte()
+    executeNextInstruction()
+
+    if (PC == 0 || !isRunning) {
+      stop()
+      Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString() + ", A=$" + A.toHexString() +
+          ", X=$" + X.toHexString() + ", Y=$" + Y.toHexString())
+    }
   }
 
   private fun executeNextInstruction() {
@@ -117,6 +137,7 @@ class CPU(val memory: Memory) {
 
   fun stop() {
     isRunning = false
+    handler.removeCallbacks(null)
   }
 
    fun popByte(): Int {
@@ -139,7 +160,7 @@ class CPU(val memory: Memory) {
     setSVFlagsForValue(Y)
   }
 
-  private fun setSVFlagsForValue(value: Int) {
+  fun setSVFlagsForValue(value: Int) {
     if (value != 0) {
       P = P.and(0xfd)
     } else {
@@ -200,24 +221,28 @@ class CPU(val memory: Memory) {
     setSZFlagsForRegA()
   }
 
-  private fun overflow(): Boolean {
+  fun overflow(): Boolean {
     return P.and(0x40) != 0
   }
 
-  private fun decimalMode(): Boolean {
+  fun decimalMode(): Boolean {
     return P.and(8) != 0
   }
 
-  private fun carry(): Boolean {
+  fun carry(): Boolean {
     return P.and(1) != 0
   }
 
-  private fun negative(): Boolean {
+  fun negative(): Boolean {
     return P.and(0x80) != 0
   }
 
   fun zero(): Boolean {
     return P.and(0x02) != 0
+  }
+
+  fun setCarryFlagFromBit0(value: Int) {
+    P = P.and(0xfe).or(value.and(1))
   }
 
   fun jumpBranch(offset: Int) {
@@ -243,16 +268,16 @@ class CPU(val memory: Memory) {
   }
 
   /** SEt Carry */
-  private fun SEC() {
+  fun SEC() {
     P = P.or(1)
   }
 
   /** CLear oVerflow */
-  private fun CLV() {
+  fun CLV() {
     P = P.and(0xbf)
   }
 
-  private fun setOverflow() {
+  fun setOverflow() {
     P = P.or(0x40)
   }
 

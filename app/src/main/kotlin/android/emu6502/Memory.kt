@@ -9,6 +9,10 @@ class Memory(private val display: Display) {
     return mem[addr]
   }
 
+  fun getWord(addr: Int): Int {
+    return get(addr) + get(addr + 1).shl(8)
+  }
+
   fun set(addr: Int, value: Int) {
     mem[addr] = value
   }
@@ -18,6 +22,10 @@ class Memory(private val display: Display) {
     if (addr >= 0x200 && addr <= 0x5ff) {
       display.updatePixel(addr, mem[addr].and(0x0f))
     }
+  }
+  // Store keycode in ZP $ff
+  fun storeKeypress(keyCode: Int) {
+    storeByte(0xff, keyCode)
   }
 
   fun format(start: Int, length: Int): String {

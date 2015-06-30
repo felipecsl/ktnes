@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** STore X register */
-class STX(private val cpu: CPU) : BaseInstruction(Instruction.STX, cpu.instructionList) {
+class STX(private val cpu: CPU) : BaseInstruction(Instruction.STX, cpu) {
   override fun zeroPage() {
     cpu.memory.storeByte(cpu.popByte(), cpu.X)
   }

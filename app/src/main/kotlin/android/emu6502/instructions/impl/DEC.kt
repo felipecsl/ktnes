@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** DECrement memory */
-class DEC(private val cpu: CPU) : BaseInstruction(Instruction.DEC, cpu.instructionList) {
+class DEC(private val cpu: CPU) : BaseInstruction(Instruction.DEC, cpu) {
   override fun zeroPage() {
     DEC(cpu.popByte())
   }

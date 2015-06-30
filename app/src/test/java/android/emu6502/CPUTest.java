@@ -34,7 +34,7 @@ public class CPUTest {
         "LDA #$08",
         "STA $0202");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x08));
     assertThat(cpu.getX(), equalTo(0x00));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -51,7 +51,7 @@ public class CPUTest {
         "ADC #$c4  ;Add the hex value $c4 to the A register",
         "BRK       ;Break - we're done");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x84));
     assertThat(cpu.getX(), equalTo(0xC1));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -72,7 +72,7 @@ public class CPUTest {
         "STX $0201",
         "BRK");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x00));
     assertThat(cpu.getX(), equalTo(0x03));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -92,7 +92,7 @@ public class CPUTest {
         "there:",
         "STA $0200");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x03));
     assertThat(cpu.getX(), equalTo(0x00));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -120,7 +120,7 @@ public class CPUTest {
         "end:",
         "BRK");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x00));
     assertThat(cpu.getX(), equalTo(0x05));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -134,7 +134,7 @@ public class CPUTest {
         "define a_dozen $0c ; a constant",
         "LDX #a_dozen       ; equivalent to \"LDX #$0c\"");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x00));
     assertThat(cpu.getX(), equalTo(0x0C));
     assertThat(cpu.getY(), equalTo(0x00));
@@ -372,7 +372,7 @@ public class CPUTest {
         "  rts",
         "gameOver:", "\n");
     assembler.assembleCode(lines);
-    cpu.run();
+    cpu.testRun();
     assertThat(cpu.getA(), equalTo(0x1f));
     assertThat(cpu.getX(), equalTo(0xff));
     assertThat(cpu.getY(), equalTo(0x00));

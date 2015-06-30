@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** test BITs */
-class BIT(private val cpu: CPU) : BaseInstruction(Instruction.BIT, cpu.instructionList) {
+class BIT(private val cpu: CPU) : BaseInstruction(Instruction.BIT, cpu) {
   override fun zeroPage() {
     val value = cpu.memory.get(cpu.popByte())
     BIT(value)

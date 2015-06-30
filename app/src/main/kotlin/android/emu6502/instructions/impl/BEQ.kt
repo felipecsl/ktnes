@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Branch on EQual */
-class BEQ(private val cpu: CPU) : BaseInstruction(Instruction.BEQ, cpu.instructionList) {
+class BEQ(private val cpu: CPU) : BaseInstruction(Instruction.BEQ, cpu) {
   override fun branch() {
     val offset = cpu.popByte()
     if (cpu.zero()) {

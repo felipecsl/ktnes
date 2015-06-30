@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** INcrement X */
-class INX(private val cpu: CPU) : BaseInstruction(Instruction.INX, cpu.instructionList) {
+class INX(private val cpu: CPU) : BaseInstruction(Instruction.INX, cpu) {
   override fun single() {
     cpu.X = (cpu.X + 1).and(0xff)
     cpu.setSZflagsForRegX()

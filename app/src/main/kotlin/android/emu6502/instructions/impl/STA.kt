@@ -7,7 +7,7 @@ import android.emu6502.instructions.Instruction
 
 /** STore Accumulator */
 class STA(private val memory: Memory, private val cpu: CPU)
-    : BaseInstruction(Instruction.STA, cpu.instructionList) {
+    : BaseInstruction(Instruction.STA, cpu) {
 
   override fun absolute() {
     memory.storeByte(cpu.popWord(), cpu.A)

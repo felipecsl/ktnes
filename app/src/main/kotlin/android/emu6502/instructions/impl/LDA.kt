@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** LoaD Accumulator */
-class LDA(private val cpu: CPU) : BaseInstruction(Instruction.LDA, cpu.instructionList) {
+class LDA(private val cpu: CPU) : BaseInstruction(Instruction.LDA, cpu) {
   override fun immediate() {
     cpu.A = cpu.popByte()
     cpu.setSZFlagsForRegA()

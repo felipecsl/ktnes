@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** SuBtract with Carry */
-class SBC(private val cpu: CPU) : BaseInstruction(Instruction.SBC, cpu.instructionList) {
+class SBC(private val cpu: CPU) : BaseInstruction(Instruction.SBC, cpu) {
   override fun immediate() {
     testSBC(cpu.popByte())
   }

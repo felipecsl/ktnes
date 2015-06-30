@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Logical Shift Right */
-final class LSR(private val cpu: CPU) : BaseInstruction(Instruction.LSR, cpu.instructionList) {
+final class LSR(private val cpu: CPU) : BaseInstruction(Instruction.LSR, cpu) {
   override fun single() {
     cpu.setCarryFlagFromBit0(cpu.A)
     cpu.A = cpu.A.shr(1)

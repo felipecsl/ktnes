@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** LoaD X register */
-class LDX(private val cpu: CPU) : BaseInstruction(Instruction.LDX, cpu.instructionList) {
+class LDX(private val cpu: CPU) : BaseInstruction(Instruction.LDX, cpu) {
   override fun immediate() {
     cpu.X = cpu.popByte()
     cpu.setSZflagsForRegX()

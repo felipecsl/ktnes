@@ -1,9 +1,8 @@
 package android.emu6502.instructions
 
-import java.util.HashMap
+import android.emu6502.CPU
 
-open class BaseInstruction(val instruction: Instruction,
-    private val instructionList: HashMap<Int, InstructionTarget>) {
+open class BaseInstruction(val instruction: Instruction, private val cpu: CPU) {
 
   init {
     val opcodes: IntArray = Opcodes.MAP[instruction] as IntArray
@@ -12,7 +11,7 @@ open class BaseInstruction(val instruction: Instruction,
 
     opcodes.forEachIndexed { i, opcode ->
       if (opcode != 0xff) {
-        instructionList.put(opcodes[i], InstructionTarget(this, methods[i]))
+        cpu.addInstruction(opcodes[i], InstructionTarget(this, methods[i]))
       }
     }
   }

@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** DEcrement Y */
-class DEY(private val cpu: CPU) : BaseInstruction(Instruction.DEY, cpu.instructionList) {
+class DEY(private val cpu: CPU) : BaseInstruction(Instruction.DEY, cpu) {
   override fun single() {
     cpu.Y = (cpu.Y - 1).and(0xff)
     cpu.setSZflagsForRegY()

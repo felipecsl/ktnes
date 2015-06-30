@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Jump to SubRoutine */
-class JSR(private val cpu: CPU) : BaseInstruction(Instruction.JSR, cpu.instructionList) {
+class JSR(private val cpu: CPU) : BaseInstruction(Instruction.JSR, cpu) {
   override fun absolute() {
     val addr = cpu.popWord()
     val currAddr = cpu.PC - 1

@@ -14,7 +14,7 @@ import java.util.concurrent.CountDownLatch
 class CPU(val memory: Memory) : Display.Callbacks {
   private val bgHandlerThread = HandlerThread("Screencast Thread")
   private val bgHandler: Handler
-  private var lock: CountDownLatch? = null
+  private var executionLock: CountDownLatch? = null
 
   init {
     bgHandlerThread.start()
@@ -36,7 +36,7 @@ class CPU(val memory: Memory) : Display.Callbacks {
   private var debug = false
   private var monitoring = false
   private var TAG = "CPU"
-  val instructionList: HashMap<Int, InstructionTarget> = HashMap()
+  private val instructionList: HashMap<Int, InstructionTarget> = HashMap()
   private val operationList: HashMap<Instruction, BaseInstruction> = hashMapOf(
       Pair(Instruction.ADC, ADC(this)),
       Pair(Instruction.AND, AND(this)),
@@ -72,29 +72,43 @@ class CPU(val memory: Memory) : Display.Callbacks {
       Pair(Instruction.SBC, SBC(this)),
       Pair(Instruction.BCC, BCC(this)),
       Pair(Instruction.DEC, DEC(this))
-//      Pair(Instruction.BMI, BMI(this)),
-//      Pair(Instruction.BVC, BVC(this)),
-//      Pair(Instruction.BVS, BVS(this)),
-//      Pair(Instruction.CPY, CPY(this)),
-//      Pair(Instruction.EOR, EOR(this)),
-//      Pair(Instruction.CLI, CLI(this)),
-//      Pair(Instruction.CLV, CLV(this)),
-//      Pair(Instruction.CLD, CLD(this)),
-//      Pair(Instruction.SED, SED(this)),
-//      Pair(Instruction.TAY, TAY(this)),
-//      Pair(Instruction.TYA, TYA(this)),
-//      Pair(Instruction.INY, INY(this)),
-//      Pair(Instruction.ROR, ROR(this)),
-//      Pair(Instruction.ROL, ROL(this)),
-//      Pair(Instruction.RTI, RTI(this)),
-//      Pair(Instruction.TXS, TXS(this)),
-//      Pair(Instruction.TSX, TSX(this)),
-//      Pair(Instruction.PHA, PHA(this)),
-//      Pair(Instruction.PLA, PLA(this)),
-//      Pair(Instruction.PHP, PHP(this)),
-//      Pair(Instruction.PLP, PLP(this)),
-//      Pair(Instruction.STY, STY(this))
+      //Pair(Instruction.BMI, BMI(this)),
+      //Pair(Instruction.BVC, BVC(this)),
+      //Pair(Instruction.BVS, BVS(this)),
+      //Pair(Instruction.CPY, CPY(this)),
+      //Pair(Instruction.EOR, EOR(this)),
+      //Pair(Instruction.CLI, CLI(this)),
+      //Pair(Instruction.CLV, CLV(this)),
+      //Pair(Instruction.CLD, CLD(this)),
+      //Pair(Instruction.SED, SED(this)),
+      //Pair(Instruction.TAY, TAY(this)),
+      //Pair(Instruction.TYA, TYA(this)),
+      //Pair(Instruction.INY, INY(this)),
+      //Pair(Instruction.ROR, ROR(this)),
+      //Pair(Instruction.ROL, ROL(this)),
+      //Pair(Instruction.RTI, RTI(this)),
+      //Pair(Instruction.TXS, TXS(this)),
+      //Pair(Instruction.TSX, TSX(this)),
+      //Pair(Instruction.PHA, PHA(this)),
+      //Pair(Instruction.PLA, PLA(this)),
+      //Pair(Instruction.PHP, PHP(this)),
+      //Pair(Instruction.PLP, PLP(this)),
+      //Pair(Instruction.STY, STY(this))
   )
+
+  // for testing only
+  fun testRun() {
+    isRunning = true
+    while (true) {
+      setRandomByte()
+      executeNextInstruction()
+
+      if (PC == 0 || !isRunning) {
+        break
+      }
+    }
+    stop()
+  }
 
   fun run() {
     isRunning = true
@@ -155,7 +169,11 @@ class CPU(val memory: Memory) : Display.Callbacks {
     P = 0x30
   }
 
-   fun popByte(): Int {
+  fun addInstruction(opcode: Int, target: InstructionTarget) {
+    instructionList.put(opcode, target)
+  }
+
+  fun popByte(): Int {
     return memory.get(PC++).and(0xff)
   }
 
@@ -297,11 +315,11 @@ class CPU(val memory: Memory) : Display.Callbacks {
   }
 
   override fun onUpdate() {
-    lock = CountDownLatch(1)
-    lock?.await()
+    executionLock = CountDownLatch(1)
+    executionLock?.await()
   }
 
   override fun onDraw() {
-    lock?.countDown()
+    executionLock?.countDown()
   }
 }

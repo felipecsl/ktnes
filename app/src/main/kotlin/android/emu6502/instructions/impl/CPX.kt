@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** ComPare X register */
-class CPX(private val cpu: CPU) : BaseInstruction(Instruction.CPX, cpu.instructionList) {
+class CPX(private val cpu: CPU) : BaseInstruction(Instruction.CPX, cpu) {
   override fun immediate() {
     val value = cpu.popByte()
     cpu.doCompare(cpu.X, value)

@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** bitwise AND with accumulator */
-class AND(private val cpu: CPU) : BaseInstruction(Instruction.AND, cpu.instructionList) {
+class AND(private val cpu: CPU) : BaseInstruction(Instruction.AND, cpu) {
   override fun immediate() {
     cpu.A = cpu.A.and(cpu.popByte())
     cpu.setSZFlagsForRegA()

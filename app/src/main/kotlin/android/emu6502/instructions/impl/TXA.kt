@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Transfer X to A */
-class TXA(private val cpu: CPU) : BaseInstruction(Instruction.TXA, cpu.instructionList) {
+class TXA(private val cpu: CPU) : BaseInstruction(Instruction.TXA, cpu) {
   override fun single() {
     cpu.A = cpu.X.and(0xff)
     cpu.setSZFlagsForRegA()

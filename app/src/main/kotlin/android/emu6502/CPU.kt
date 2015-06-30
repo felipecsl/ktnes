@@ -192,50 +192,6 @@ class CPU(val memory: Memory) : Display.Callbacks {
     return popByte() + popByte().shl(8)
   }
 
-  fun testADC(value: Int) {
-    var tmp: Int
-    if (A.xor(value).and(0x80) != 0) {
-      CLV()
-    } else {
-      setOverflow()
-    }
-
-    if (decimalMode()) {
-      tmp = A.and(0xf) + value.and(0xf) + P.and(1)
-      if (tmp >= 10) {
-        tmp = 0x10.or((tmp + 6).and(0xf))
-      }
-      tmp += A.and(0xf0) + value.and(0xf0)
-      if (tmp >= 160) {
-        SEC()
-        if (overflow() && tmp >= 0x180) {
-          CLV()
-        }
-        tmp += 0x60
-      } else {
-        CLC()
-        if (overflow() && tmp < 0x80) {
-          CLV()
-        }
-      }
-    } else {
-      tmp = A + value + P.and(1)
-      if (tmp >= 0x100) {
-        SEC()
-        if (overflow() && tmp >= 0x180) {
-          CLV()
-        }
-      } else {
-        CLC()
-        if (overflow() && tmp < 0x80) {
-          CLV()
-        }
-      }
-    }
-    A = tmp.and(0xff)
-    setSZFlagsForRegA()
-  }
-
   fun overflow(): Boolean {
     return P.and(0x40) != 0
   }

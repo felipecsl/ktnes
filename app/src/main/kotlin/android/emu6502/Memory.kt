@@ -1,6 +1,6 @@
 package android.emu6502
 
-import java.util.*
+import java.util.concurrent.CountDownLatch
 
 class Memory(private val display: Display) {
   private val mem = IntArray(65536)

@@ -4,6 +4,7 @@ import android.emu6502.Display
 import android.emu6502.Emulator
 import android.emu6502.R
 import android.os.Bundle
+import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.v7.app.ActionBar
@@ -13,7 +14,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
-import android.widget.LinearLayout
+import android.widget.FrameLayout
 import android.widget.TextView
 import butterknife.bindView
 
@@ -26,14 +27,16 @@ public class MainActivity : AppCompatActivity() {
   val txtSP: TextView by bindView(R.id.SP)
   val txtPC: TextView by bindView(R.id.PC)
   val txtFlags: TextView by bindView(R.id.PC)
+  val displayWrapper: FrameLayout by bindView(R.id.display_wrapper)
   val display: Display by bindView(R.id.display)
   val txtInstructions: TextView by bindView(R.id.txtInstructions)
   val fabRun: FloatingActionButton by bindView(R.id.fabRun)
-  val layoutContent: LinearLayout by bindView(R.id.layout_content)
+  val layoutContent: CoordinatorLayout by bindView(R.id.layout_content)
   val btnLeft: Button by bindView(R.id.arrowLeft)
   val btnRight: Button by bindView(R.id.arrowRight)
   val btnUp: Button by bindView(R.id.arrowUp)
   val btnDown: Button by bindView(R.id.arrowDown)
+  val btnReset: Button by bindView(R.id.btnReset)
 
   private var emulator: Emulator? = null
 
@@ -47,7 +50,7 @@ public class MainActivity : AppCompatActivity() {
     ab.setDisplayHomeAsUpEnabled(true)
 
     fabRun.setOnClickListener {
-      display.setVisibility(View.VISIBLE)
+      displayWrapper.setVisibility(View.VISIBLE)
       emulator = Emulator(display)
       val emu: Emulator = emulator as Emulator
       emu.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
@@ -55,6 +58,11 @@ public class MainActivity : AppCompatActivity() {
           "Code assembled successfully, ${emu.assembler.codeLen} bytes.",
           Snackbar.LENGTH_SHORT).show()
       emu.cpu.run()
+    }
+
+    btnReset.setOnClickListener {
+      val emu: Emulator = emulator as Emulator
+      emu.reset()
     }
 
     val onClickButton = { code: Int ->

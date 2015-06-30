@@ -9,14 +9,16 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import java.util.HashMap
+import java.util.concurrent.CountDownLatch
 
-class CPU(val memory: Memory) {
-  private val handlerThread = HandlerThread("Screencast Thread")
-  private val handler: Handler
+class CPU(val memory: Memory) : Display.Callbacks {
+  private val bgHandlerThread = HandlerThread("Screencast Thread")
+  private val bgHandler: Handler
+  private var lock: CountDownLatch? = null
 
   init {
-    handlerThread.start()
-    handler = Handler(handlerThread.getLooper())
+    bgHandlerThread.start()
+    bgHandler = Handler(bgHandlerThread.getLooper())
   }
 
   // Accumulator
@@ -96,12 +98,12 @@ class CPU(val memory: Memory) {
 
   fun run() {
     isRunning = true
-    innerRun()
+    bgHandler.post { innerRun() }
   }
 
   private fun innerRun() {
     (0..97).forEach { execute() }
-    handler.postDelayed({ innerRun() }, 10)
+    bgHandler.postDelayed({ innerRun() }, 10)
   }
 
   private fun execute() {
@@ -137,7 +139,20 @@ class CPU(val memory: Memory) {
 
   fun stop() {
     isRunning = false
-    handler.removeCallbacks(null)
+    bgHandler.removeCallbacks(null)
+  }
+
+  fun reset() {
+    var i = 0
+    while (i < 0x600) {
+      memory.set(i++, 0x00)
+    }
+    A = 0
+    Y = 0
+    X = 0
+    PC = 0x600
+    SP = 0xff
+    P = 0x30
   }
 
    fun popByte(): Int {
@@ -323,5 +338,14 @@ class CPU(val memory: Memory) {
       flags.append(P.shr(i).and(1))
     }
     return flags.toString()
+  }
+
+  override fun onUpdate() {
+    lock = CountDownLatch(1)
+    lock?.await()
+  }
+
+  override fun onDraw() {
+    lock?.countDown()
   }
 }

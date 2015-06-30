@@ -49,18 +49,19 @@ open class Display : View {
   }
 
   override fun onDraw(canvas: Canvas) {
-    val pixelSize = getWidth() / numX
+    val pixelSizeX = getWidth() / numX
+    val pixelSizeY = getHeight() / numX
 
     matrix.forEachIndexed { i, _ ->
       matrix[i].forEachIndexed { j, _ ->
         val color = matrix[i][j]
-        val right = (i * pixelSize).toFloat()
-        val top = (j * pixelSize).toFloat()
+        val right = (i * pixelSizeX).toFloat()
+        val top = (j * pixelSizeY).toFloat()
         if (color != 0) {
           paint.setColor(color)
-          canvas.drawRect(right, top, right + pixelSize, right + pixelSize, paint)
+          canvas.drawRect(right, top, right + pixelSizeX, top + pixelSizeY, paint)
         } else {
-          canvas.drawRect(right, top, right + pixelSize, right + pixelSize, bgPaint)
+          canvas.drawRect(right, top, right + pixelSizeX, top + pixelSizeY, bgPaint)
         }
       }
     }

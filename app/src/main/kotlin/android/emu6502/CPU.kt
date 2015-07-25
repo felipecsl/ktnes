@@ -21,79 +21,47 @@ class CPU(val memory: Memory) : Display.Callbacks {
     bgHandler = Handler(bgHandlerThread.getLooper())
   }
 
-  // Accumulator
-  var A: Int = 0
-  // Registers
-  var X: Int = 0
-  var Y: Int = 0
-  // Program counter
-  var PC: Int = 0x600
-  // Stack pointer
-  var SP: Int = 0xFF
-  // Processor flags
-  var P: Int = 0x30
+  var A: Int = 0      // Accumulator
+  var X: Int = 0      // Register X
+  var Y: Int = 0      // Register Y
+  var PC: Int = 0x600 // Program counter
+  var SP: Int = 0xFF  // Stack pointer
+  var P: Int = 0x30   // Processor flags
+
   private var isRunning = false
   private var debug = false
   private var monitoring = false
   private var TAG = "CPU"
   private val instructionList: HashMap<Int, InstructionTarget> = HashMap()
   private val operationList: HashMap<Instruction, BaseInstruction> = hashMapOf(
-      Pair(Instruction.ADC, ADC(this)),
-      Pair(Instruction.AND, AND(this)),
-      Pair(Instruction.ASL, ASL(this)),
-      Pair(Instruction.BIT, BIT(this)),
-      Pair(Instruction.LDA, LDA(this)),
-      Pair(Instruction.LDX, LDX(this)),
-      Pair(Instruction.LDY, LDY(this)),
-      Pair(Instruction.STA, STA(memory, this)),
-      Pair(Instruction.STX, STX(this)),
-      Pair(Instruction.TAX, TAX(this)),
-      Pair(Instruction.INX, INX(this)),
-      Pair(Instruction.DEX, DEX(this)),
-      Pair(Instruction.ORA, ORA(this)),
-      Pair(Instruction.CPX, CPX(this)),
-      Pair(Instruction.BRK, BRK(this)),
-      Pair(Instruction.BNE, BNE(this)),
-      Pair(Instruction.JMP, JMP(this)),
-      Pair(Instruction.JSR, JSR(this)),
-      Pair(Instruction.RTS, RTS(this)),
-      Pair(Instruction.SEI, SEI(this)),
-      Pair(Instruction.DEY, DEY(this)),
-      Pair(Instruction.CLC, CLC(this)),
-      Pair(Instruction.CMP, CMP(this)),
-      Pair(Instruction.BEQ, BEQ(this)),
-      Pair(Instruction.TXA, TXA(this)),
-      Pair(Instruction.BPL, BPL(this)),
-      Pair(Instruction.LSR, LSR(this)),
-      Pair(Instruction.BCS, BCS(this)),
-      Pair(Instruction.INC, INC(this)),
-      Pair(Instruction.NOP, NOP(this)),
-      Pair(Instruction.SEC, SEC(this)),
-      Pair(Instruction.SBC, SBC(this)),
-      Pair(Instruction.BCC, BCC(this)),
-      Pair(Instruction.DEC, DEC(this))
-      //Pair(Instruction.BMI, BMI(this)),
-      //Pair(Instruction.BVC, BVC(this)),
-      //Pair(Instruction.BVS, BVS(this)),
-      //Pair(Instruction.CPY, CPY(this)),
-      //Pair(Instruction.EOR, EOR(this)),
-      //Pair(Instruction.CLI, CLI(this)),
-      //Pair(Instruction.CLV, CLV(this)),
-      //Pair(Instruction.CLD, CLD(this)),
-      //Pair(Instruction.SED, SED(this)),
-      //Pair(Instruction.TAY, TAY(this)),
-      //Pair(Instruction.TYA, TYA(this)),
-      //Pair(Instruction.INY, INY(this)),
-      //Pair(Instruction.ROR, ROR(this)),
-      //Pair(Instruction.ROL, ROL(this)),
-      //Pair(Instruction.RTI, RTI(this)),
-      //Pair(Instruction.TXS, TXS(this)),
-      //Pair(Instruction.TSX, TSX(this)),
-      //Pair(Instruction.PHA, PHA(this)),
-      //Pair(Instruction.PLA, PLA(this)),
-      //Pair(Instruction.PHP, PHP(this)),
-      //Pair(Instruction.PLP, PLP(this)),
-      //Pair(Instruction.STY, STY(this))
+      Pair(Instruction.ADC, ADC(this)), Pair(Instruction.AND, AND(this)),
+      Pair(Instruction.ASL, ASL(this)), Pair(Instruction.BIT, BIT(this)),
+      Pair(Instruction.LDA, LDA(this)), Pair(Instruction.LDX, LDX(this)),
+      Pair(Instruction.LDY, LDY(this)), Pair(Instruction.STA, STA(memory, this)),
+      Pair(Instruction.STX, STX(this)), Pair(Instruction.TAX, TAX(this)),
+      Pair(Instruction.INX, INX(this)), Pair(Instruction.DEX, DEX(this)),
+      Pair(Instruction.ORA, ORA(this)), Pair(Instruction.CPX, CPX(this)),
+      Pair(Instruction.BRK, BRK(this)), Pair(Instruction.BNE, BNE(this)),
+      Pair(Instruction.JMP, JMP(this)), Pair(Instruction.JSR, JSR(this)),
+      Pair(Instruction.RTS, RTS(this)), Pair(Instruction.SEI, SEI(this)),
+      Pair(Instruction.DEY, DEY(this)), Pair(Instruction.CLC, CLC(this)),
+      Pair(Instruction.CMP, CMP(this)), Pair(Instruction.BEQ, BEQ(this)),
+      Pair(Instruction.TXA, TXA(this)), Pair(Instruction.BPL, BPL(this)),
+      Pair(Instruction.LSR, LSR(this)), Pair(Instruction.BCS, BCS(this)),
+      Pair(Instruction.INC, INC(this)), Pair(Instruction.NOP, NOP(this)),
+      Pair(Instruction.SEC, SEC(this)), Pair(Instruction.SBC, SBC(this)),
+      Pair(Instruction.BCC, BCC(this)), Pair(Instruction.DEC, DEC(this))
+      //Pair(Instruction.BMI, BMI(this)), Pair(Instruction.BVC, BVC(this)),
+      //Pair(Instruction.BVS, BVS(this)), Pair(Instruction.CPY, CPY(this)),
+      //Pair(Instruction.EOR, EOR(this)), Pair(Instruction.CLI, CLI(this)),
+      //Pair(Instruction.CLV, CLV(this)), Pair(Instruction.CLD, CLD(this)),
+      //Pair(Instruction.SED, SED(this)), Pair(Instruction.TAY, TAY(this)),
+      //Pair(Instruction.TYA, TYA(this)), Pair(Instruction.INY, INY(this)),
+      //Pair(Instruction.ROR, ROR(this)), Pair(Instruction.ROL, ROL(this)),
+      //Pair(Instruction.RTI, RTI(this)), Pair(Instruction.TXS, TXS(this)),
+      //Pair(Instruction.TSX, TSX(this)), Pair(Instruction.PHA, PHA(this)),
+      //Pair(Instruction.PLA, PLA(this)), Pair(Instruction.PHP, PHP(this)),
+      //Pair(Instruction.PLP, PLP(this)), Pair(Instruction.STY, STY(this))
   )
 
   // for testing only

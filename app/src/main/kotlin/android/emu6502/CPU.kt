@@ -70,7 +70,6 @@ class CPU(val memory: Memory) : Display.Callbacks {
     while (true) {
       setRandomByte()
       executeNextInstruction()
-
       if (PC == 0 || !isRunning) {
         break
       }
@@ -111,7 +110,6 @@ class CPU(val memory: Memory) : Display.Callbacks {
     } else {
       val candidate = Opcodes.MAP.entries
           .first { it.value.any { opcode -> opcode == instruction } }
-
       throw Exception(
           "Address $${PC.toHexString()} - unknown opcode 0x${instruction.toHexString()} " +
               "(instruction ${candidate.key.name})")

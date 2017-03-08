@@ -1,10 +1,9 @@
 package android.emu6502;
 
-import android.emu6502.instructions.Symbols;
-
 import com.google.common.collect.ImmutableList;
 
-import org.junit.Before;
+import android.emu6502.instructions.Symbols;
+
 import org.junit.Test;
 
 import java.util.List;
@@ -15,12 +14,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class AssemblerTest {
-
-  private Assembler assembler;
-
-  @Before public void setUp() {
-    assembler = new Assembler(new Memory(mock(Display.class)), new Symbols());
-  }
+  private final Assembler assembler = new Assembler(new Memory(mock(Display.class)), new Symbols());
 
   @Test public void testSimple() {
     List<String> lines = ImmutableList.of(

@@ -1,10 +1,9 @@
 package android.emu6502;
 
-import android.emu6502.instructions.Symbols;
-
 import com.google.common.collect.ImmutableList;
 
-import org.junit.Before;
+import android.emu6502.instructions.Symbols;
+
 import org.junit.Test;
 
 import java.util.List;
@@ -14,16 +13,9 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class CPUTest {
-
-  private CPU cpu;
-  private Assembler assembler;
-
-  @Before public void setUp() {
-
-    Memory memory = new Memory(mock(Display.class));
-    assembler = new Assembler(memory, new Symbols());
-    cpu = new CPU(memory);
-  }
+  private final Memory memory = new Memory(mock(Display.class));
+  private final Assembler assembler = new Assembler(memory, new Symbols());
+  private final CPU cpu = new CPU(memory);
 
   @Test public void testSimple() {
     List<String> lines = ImmutableList.of(

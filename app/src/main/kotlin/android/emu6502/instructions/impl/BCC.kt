@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Branch on Carry Clear */
-final class BCC(private val cpu: CPU) : BaseInstruction(Instruction.BCC, cpu) {
+class BCC(private val cpu: CPU) : BaseInstruction(Instruction.BCC, cpu) {
   override fun branch() {
     val offset = cpu.popByte()
     if (!cpu.carry()) {

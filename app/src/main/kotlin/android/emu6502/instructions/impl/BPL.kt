@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Branch on PLus */
-final class BPL(private val cpu: CPU) : BaseInstruction(Instruction.BPL, cpu) {
+class BPL(private val cpu: CPU) : BaseInstruction(Instruction.BPL, cpu) {
   override fun branch() {
     val offset = cpu.popByte()
     if (!cpu.negative()) {

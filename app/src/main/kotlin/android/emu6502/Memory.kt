@@ -1,7 +1,5 @@
 package android.emu6502
 
-import java.util.concurrent.CountDownLatch
-
 class Memory(private val display: Display) {
   private val mem = IntArray(65536)
 
@@ -19,7 +17,7 @@ class Memory(private val display: Display) {
 
   fun storeByte(addr: Int, value: Int) {
     set(addr, value.and(0xff))
-    if (addr >= 0x200 && addr <= 0x5ff) {
+    if (addr in 0x200..0x5ff) {
       display.updatePixel(addr, mem[addr].and(0x0f))
     }
   }

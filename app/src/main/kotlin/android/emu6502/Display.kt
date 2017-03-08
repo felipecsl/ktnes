@@ -4,17 +4,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Point
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
-import java.util
-import java.util.*
 
-open class Display : View {
+open class Display(context: Context, attrs: AttributeSet) : View(context, attrs) {
   private val numX = 32
   private val numY = 32
-
   private val matrix = Array(32, { IntArray(32) })
 
   private val palette = arrayOf(
@@ -23,16 +18,9 @@ open class Display : View {
       "#dd8855", "#664400", "#ff7777", "#333333",
       "#777777", "#aaff66", "#0088ff", "#bbbbbb")
 
-  private val paint: Paint
-  private val bgPaint: Paint
-  private val TAG = "Display"
+  private val paint: Paint = Paint()
+  private val bgPaint: Paint = Paint()
   private var listener: Callbacks? = null
-
-  constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-    paint = Paint()
-    bgPaint = Paint()
-    bgPaint.setColor(Color.BLACK);
-  }
 
   fun setOnDisplayCallback(callback: Callbacks) {
     listener = callback;
@@ -58,7 +46,7 @@ open class Display : View {
         val right = (i * pixelSizeX).toFloat()
         val top = (j * pixelSizeY).toFloat()
         if (color != 0) {
-          paint.setColor(color)
+          paint.color = color
           canvas.drawRect(right, top, right + pixelSizeX, top + pixelSizeY, paint)
         } else {
           canvas.drawRect(right, top, right + pixelSizeX, top + pixelSizeY, bgPaint)
@@ -80,5 +68,9 @@ open class Display : View {
       }
     }
     postInvalidate()
+  }
+
+  init {
+    bgPaint.color = Color.BLACK
   }
 }

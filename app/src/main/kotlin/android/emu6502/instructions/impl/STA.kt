@@ -27,8 +27,8 @@ class STA(private val memory: Memory, private val cpu: CPU)
   }
 
   override fun indirectX() {
-    var zp = (cpu.popByte() + cpu.X).and(0xff)
-    var addr = memory.getWord(zp)
+    val zp = (cpu.popByte() + cpu.X).and(0xff)
+    val addr = memory.getWord(zp)
     memory.storeByte(addr, cpu.A)
   }
 }

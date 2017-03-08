@@ -18,8 +18,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import butterknife.bindView
 
-public class MainActivity : AppCompatActivity() {
-
+class MainActivity : AppCompatActivity() {
   val toolbar: Toolbar by bindView(R.id.toolbar)
   val txtA: TextView by bindView(R.id.A)
   val txtX: TextView by bindView(R.id.X)
@@ -43,17 +42,15 @@ public class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
-
     setSupportActionBar(toolbar)
-
-    var ab: ActionBar = getSupportActionBar()
+    val ab: ActionBar = supportActionBar!!
     ab.setDisplayHomeAsUpEnabled(true)
 
     fabRun.setOnClickListener {
-      displayWrapper.setVisibility(View.VISIBLE)
+      displayWrapper.visibility = View.VISIBLE
       emulator = Emulator(display)
       val emu: Emulator = emulator as Emulator
-      emu.assembler.assembleCode(txtInstructions.getText().toString().splitBy("\n"))
+      emu.assembler.assembleCode(txtInstructions.text.toString().split("\n"))
       Snackbar.make(layoutContent,
           "Code assembled successfully, ${emu.assembler.codeLen} bytes.",
           Snackbar.LENGTH_SHORT).show()
@@ -79,7 +76,7 @@ public class MainActivity : AppCompatActivity() {
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {
     // Inflate the menu; this adds items to the action bar if it is present.
-    getMenuInflater().inflate(R.menu.menu_main, menu)
+    menuInflater.inflate(R.menu.menu_main, menu)
     return true
   }
 
@@ -87,13 +84,11 @@ public class MainActivity : AppCompatActivity() {
     // Handle action bar item clicks here. The action bar will
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
-    val id = item!!.getItemId()
-
-    //noinspection SimplifiableIfStatement
+    val id = item!!.itemId
     if (id == R.id.action_settings) {
       return true
+    } else {
+      return super.onOptionsItemSelected(item)
     }
-
-    return super.onOptionsItemSelected(item)
   }
 }

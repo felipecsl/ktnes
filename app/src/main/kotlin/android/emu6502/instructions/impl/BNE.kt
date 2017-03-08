@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Branch on Not Equal */
-final class BNE(private val cpu: CPU) : BaseInstruction(Instruction.BNE, cpu) {
+class BNE(private val cpu: CPU) : BaseInstruction(Instruction.BNE, cpu) {
   override fun branch() {
     val offset = cpu.popByte()
     if (!cpu.zero()) {

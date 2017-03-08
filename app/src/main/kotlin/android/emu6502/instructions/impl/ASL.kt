@@ -5,5 +5,4 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** Arithmetic Shift Left */
-class ASL(private val cpu: CPU) : BaseInstruction(Instruction.ASL, cpu) {
-}
+class ASL(private val cpu: CPU) : BaseInstruction(Instruction.ASL, cpu)

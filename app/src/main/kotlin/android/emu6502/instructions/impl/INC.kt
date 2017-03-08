@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** INCrement memory */
-final class INC(private val cpu: CPU) : BaseInstruction(Instruction.INC, cpu) {
+class INC(private val cpu: CPU) : BaseInstruction(Instruction.INC, cpu) {
   override fun zeroPage() {
     inc(cpu.popByte())
   }

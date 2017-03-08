@@ -2,45 +2,37 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "21.1.2"
+  compileSdkVersion 25
+  buildToolsVersion "25.0.2"
 
-    defaultConfig {
-        applicationId "android.emu6502"
-        minSdkVersion 16
-        targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-    testOptions {
-        unitTests.returnDefaultValues = true
-    }
+  defaultConfig {
+    applicationId "android.emu6502"
+    minSdkVersion 16
+    targetSdkVersion 25
+    versionCode 1
+    versionName "1.0"
+  }
+  sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+  }
+  testOptions {
+    unitTests.returnDefaultValues = true
+  }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:design:22.2.1'
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:cardview-v7:22.2.1'
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:0.12.1218'
-    compile "org.jetbrains.kotlin:kotlin-android-sdk-annotations:0.12.1218"
-    compile "org.jetbrains.kotlin:kotlin-reflect:0.12.1218"
-    compile 'com.jakewharton:kotterknife:0.1.0-SNAPSHOT'
-    compile 'com.facebook.stetho:stetho:1.1.1'
-    compile 'com.google.guava:guava:18.0'
+  compile 'com.android.support:design:25.2.0'
+  compile 'com.android.support:appcompat-v7:25.2.0'
+  compile 'com.android.support:cardview-v7:25.2.0'
+  compile 'org.jetbrains.kotlin:kotlin-stdlib:1.1.0'
+  compile "org.jetbrains.kotlin:kotlin-reflect:1.1.0"
+  compile 'com.jakewharton:kotterknife:0.1.0-SNAPSHOT'
+  compile 'com.facebook.stetho:stetho:1.3.1'
+  compile 'com.google.guava:guava:20.0'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'org.hamcrest:hamcrest-integration:1.3'
-    testCompile 'org.hamcrest:hamcrest-core:1.3'
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
+  testCompile 'junit:junit:4.12'
+  testCompile 'org.mockito:mockito-core:1.10.19'
+  testCompile 'org.hamcrest:hamcrest-integration:1.3'
+  testCompile 'org.hamcrest:hamcrest-core:1.3'
+  testCompile 'org.hamcrest:hamcrest-library:1.3'
 }

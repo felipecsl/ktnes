@@ -3,12 +3,9 @@ package android.emu6502
 import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.Opcodes
 import android.emu6502.instructions.Symbols
-import java.util.HashMap
 import java.util.regex.Pattern
-import kotlin.text.Regex
 
 class Assembler(private var memory: Memory, private val symbols: Symbols) {
-
   var codeLen = 0
   val BOOTSTRAP_ADDRESS = 0x600
   var defaultCodePC = BOOTSTRAP_ADDRESS
@@ -35,7 +32,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
   private fun preprocess(lines: List<String>): List<String> {
     val pattern = Pattern.compile("^define\\s+(\\w+)\\s+(\\S+)", Pattern.CASE_INSENSITIVE)
 
-    var sanitizedLines = lines.map { sanitize(it) }
+    val sanitizedLines = lines.map { sanitize(it) }
 
     sanitizedLines
         .map { pattern.matcher(it) }
@@ -53,7 +50,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     var input = line
     var command: String
     var param: String
-    var addr: Int
+    val addr: Int
 
     // Find command or label
     if (input.matches("^\\w+:".toRegex())) {
@@ -68,7 +65,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     }
 
     // Nothing to do for blank lines
-    if (command.equals("")) {
+    if (command == "") {
       return true
     }
 
@@ -77,7 +74,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     if (input.matches("^\\*\\s*=\\s*\\$?[0-9a-f]*$".toRegex())) {
       // equ spotted
       param = input.replace("^\\s*\\*\\s*=\\s*".toRegex(), "")
-      if (param[0].equals("$")) {
+      if (param[0] == '$') {
         param = param.replace("^\\$".toRegex(), "")
         addr = Integer.parseInt(param, 16)
       } else {
@@ -202,7 +199,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
   }
 
   private fun innerCheckWordOperand(param: String, opcode: Int): Boolean {
-    var operand = tryParseWordOperand(param)
+    val operand = tryParseWordOperand(param)
     if (operand < 0) {
       return false
     }
@@ -220,7 +217,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
   }
 
   private fun innerCheckByteOperand(param: String, opcode: Int): Boolean {
-    var operand = tryParseByteOperand(param)
+    val operand = tryParseByteOperand(param)
     if (operand < 0) {
       return false
     }
@@ -233,7 +230,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     if (param.matches(regex)) {
       val finalParam = param.replace(",Y", "", true).replace(",X", "", true)
       pushByte(opcode)
-      val addr = labels.get(finalParam)
+      val addr = labels[finalParam]
       if (addr != -1) {
         if (addr < 0 || addr > 0xffff) {
           return false
@@ -316,8 +313,8 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
 
     // Label lo/hi
     if (param.matches("^#[<>]\\w+$".toRegex())) {
-      var label = param.replace("^#[<>](\\w+)$".toRegex(), "$1")
-      var hilo = param.replace("^#([<>]).*$".toRegex(), "$1")
+      val label = param.replace("^#[<>](\\w+)$".toRegex(), "$1")
+      val hilo = param.replace("^#([<>]).*$".toRegex(), "$1")
       pushByte(opcode)
       val addr = labels.get(label)
       if (addr != -1) {
@@ -346,7 +343,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
-      var lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
+      val lookupVal = symbols[parameter] // Substitute symbol by actual value, then proceed
       if (lookupVal != null) {
         parameter = lookupVal
       }
@@ -367,7 +364,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     }
 
     // Validate range
-    if (value >= 0 && value <= 0xff) {
+    if (value in 0..0xff) {
       return value
     }
     return -1
@@ -378,7 +375,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
-      var lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
+      val lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
       if (lookupVal != null) {
         parameter = lookupVal
       }
@@ -399,7 +396,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     }
 
     // Validate range
-    if (value >= 0 && value <= 0xffff) {
+    if (value in 0..0xffff) {
       return value
     }
     return -1
@@ -418,7 +415,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
 
   private fun checkSingle(param: String, opcode: Int): Boolean {
     // Accumulator instructions are counted as single-byte opcodes
-    if (!param.equals("") && !param.equals("A")) {
+    if (param != "" && param != "A") {
       return false
     }
     pushByte(opcode)

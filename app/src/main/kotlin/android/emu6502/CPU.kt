@@ -8,7 +8,7 @@ import android.emu6502.instructions.impl.*
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import java.util.HashMap
+import java.util.*
 import java.util.concurrent.CountDownLatch
 
 class CPU(val memory: Memory) : Display.Callbacks {
@@ -18,7 +18,7 @@ class CPU(val memory: Memory) : Display.Callbacks {
 
   init {
     bgHandlerThread.start()
-    bgHandler = Handler(bgHandlerThread.getLooper())
+    bgHandler = Handler(bgHandlerThread.looper)
   }
 
   var A: Int = 0      // Accumulator
@@ -105,17 +105,16 @@ class CPU(val memory: Memory) : Display.Callbacks {
 
   private fun executeNextInstruction() {
     val instruction = popByte()
-    val target = instructionList.get(instruction)
+    val target = instructionList[instruction]
     if (target != null) {
-      val function = target.method
-      target.operation.function()
+      target.method.invoke()
     } else {
-      val candidate = Opcodes.MAP.entrySet()
+      val candidate = Opcodes.MAP.entries
           .first { it.value.any { opcode -> opcode == instruction } }
 
       throw Exception(
           "Address $${PC.toHexString()} - unknown opcode 0x${instruction.toHexString()} " +
-              "(instruction ${candidate.getKey().name()})")
+              "(instruction ${candidate.key.name})")
     }
   }
 
@@ -248,7 +247,7 @@ class CPU(val memory: Memory) : Display.Callbacks {
   }
 
   fun stackPop(): Int {
-    SP++;
+    SP++
     if (SP >= 0x100) {
       SP = SP.and(0xff)
       Log.i(TAG, "6502 Stack emptied! Wrapping...")

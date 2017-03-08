@@ -5,7 +5,7 @@ import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
 /** CoMPare accumulator */
-final class CMP(private val cpu: CPU) : BaseInstruction(Instruction.CMP, cpu) {
+class CMP(private val cpu: CPU) : BaseInstruction(Instruction.CMP, cpu) {
   override fun immediate() {
     cpu.doCompare(cpu.A, cpu.popByte())
   }

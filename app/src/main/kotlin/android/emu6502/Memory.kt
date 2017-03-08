@@ -30,7 +30,6 @@ class Memory(private val display: Display) {
     var i = 0
     var n: Int
     val dump = StringBuilder()
-
     while (i < length) {
       if (i.and(15) == 0) {
         if (i > 0) {

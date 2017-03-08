@@ -31,9 +31,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
 
   private fun preprocess(lines: List<String>): List<String> {
     val pattern = Pattern.compile("^define\\s+(\\w+)\\s+(\\S+)", Pattern.CASE_INSENSITIVE)
-
     val sanitizedLines = lines.map { sanitize(it) }
-
     sanitizedLines
         .map { pattern.matcher(it) }
         .filter { it.find() }
@@ -316,7 +314,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       val label = param.replace("^#[<>](\\w+)$".toRegex(), "$1")
       val hilo = param.replace("^#([<>]).*$".toRegex(), "$1")
       pushByte(opcode)
-      val addr = labels.get(label)
+      val addr = labels[label]
       if (addr != -1) {
         when (hilo) {
           ">" -> {
@@ -375,7 +373,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     var parameter = param
 
     if (parameter.matches("^\\w+$".toRegex())) {
-      val lookupVal = symbols.get(parameter) // Substitute symbol by actual value, then proceed
+      val lookupVal = symbols[parameter] // Substitute symbol by actual value, then proceed
       if (lookupVal != null) {
         parameter = lookupVal
       }

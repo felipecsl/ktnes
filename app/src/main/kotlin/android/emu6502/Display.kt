@@ -23,7 +23,7 @@ open class Display(context: Context, attrs: AttributeSet) : View(context, attrs)
   private var listener: Callbacks? = null
 
   fun setOnDisplayCallback(callback: Callbacks) {
-    listener = callback;
+    listener = callback
   }
 
   open fun updatePixel(addr: Int, value: Int) {
@@ -37,8 +37,8 @@ open class Display(context: Context, attrs: AttributeSet) : View(context, attrs)
   }
 
   override fun onDraw(canvas: Canvas) {
-    val pixelSizeX = getWidth() / numX
-    val pixelSizeY = getHeight() / numX
+    val pixelSizeX = width / numX
+    val pixelSizeY = height / numX
 
     matrix.forEachIndexed { i, _ ->
       matrix[i].forEachIndexed { j, _ ->

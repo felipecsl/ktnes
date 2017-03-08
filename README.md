@@ -8,7 +8,7 @@ solution was implemented. As of now, it is able to assemble and run simple progr
 the [snake6502](https://gist.github.com/wkjagt/9043907) implementation by Willem van der Jagt, which
 was also used in the Easy 6502 "ebook".
 
-## Screenshot
+## Demo
 
 ![](https://raw.githubusercontent.com/felipecsl/6502Android/master/demo.gif)
 

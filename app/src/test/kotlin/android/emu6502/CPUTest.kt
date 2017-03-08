@@ -1,59 +1,54 @@
-package android.emu6502;
+package android.emu6502
 
-import com.google.common.collect.ImmutableList;
+import android.emu6502.instructions.Symbols
+import com.google.common.collect.ImmutableList
+import org.hamcrest.CoreMatchers.equalTo
+import org.junit.Assert.assertThat
+import org.junit.Test
+import org.mockito.Mockito.mock
 
-import android.emu6502.instructions.Symbols;
+class CPUTest {
+  private val memory = Memory(mock(Display::class.java))
+  private val assembler = Assembler(memory, Symbols())
+  private val cpu = CPU(memory)
 
-import org.junit.Test;
-
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-
-public class CPUTest {
-  private final Memory memory = new Memory(mock(Display.class));
-  private final Assembler assembler = new Assembler(memory, new Symbols());
-  private final CPU cpu = new CPU(memory);
-
-  @Test public void testSimple() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testSimple() {
+    val lines = ImmutableList.of(
         "LDA #$01",
         "STA $0200",
         "LDA #$05",
         "STA $0201",
         "LDA #$08",
-        "STA $0202");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x08));
-    assertThat(cpu.getX(), equalTo(0x00));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFF));
-    assertThat(cpu.getPC(), equalTo(0x0610));
-    assertThat(cpu.flags(), equalTo("00110000"));
+        "STA $0202")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x08))
+    assertThat(cpu.X, equalTo(0x00))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFF))
+    assertThat(cpu.PC, equalTo(0x0610))
+    assertThat(cpu.flags(), equalTo("00110000"))
   }
 
-  @Test public void testWithComments() {
-    List<String> lines = ImmutableList.of(
-        "LDA #$c0  ;Load the hex value $c0 into the A register",
+  @Test fun testWithComments() {
+    val lines = ImmutableList.of(
+        "LDA #\$c0  ;Load the hex value \$c0 into the A register",
         "TAX       ;Transfer the value in the A register to X",
         "INX       ;Increment the value in the X register",
-        "ADC #$c4  ;Add the hex value $c4 to the A register",
-        "BRK       ;Break - we're done");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x84));
-    assertThat(cpu.getX(), equalTo(0xC1));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFF));
-    assertThat(cpu.getPC(), equalTo(0x0607));
-    assertThat(cpu.flags(), equalTo("10110001"));
+        "ADC #\$c4  ;Add the hex value \$c4 to the A register",
+        "BRK       ;Break - we're done")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x84))
+    assertThat(cpu.X, equalTo(0xC1))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFF))
+    assertThat(cpu.PC, equalTo(0x0607))
+    assertThat(cpu.flags(), equalTo("10110001"))
   }
 
-  @Test public void testBranchAndLabel() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testBranchAndLabel() {
+    val lines = ImmutableList.of(
         "LDX #$08",
 
         "decrement:",
@@ -62,19 +57,19 @@ public class CPUTest {
         "CPX #$03",
         "BNE decrement",
         "STX $0201",
-        "BRK");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x00));
-    assertThat(cpu.getX(), equalTo(0x03));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFF));
-    assertThat(cpu.getPC(), equalTo(0x060e));
-    assertThat(cpu.flags(), equalTo("00110011"));
+        "BRK")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x00))
+    assertThat(cpu.X, equalTo(0x03))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFF))
+    assertThat(cpu.PC, equalTo(0x060e))
+    assertThat(cpu.flags(), equalTo("00110011"))
   }
 
-  @Test public void testJump() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testJump() {
+    val lines = ImmutableList.of(
         "LDA #$03",
         "JMP there",
         "BRK",
@@ -82,19 +77,19 @@ public class CPUTest {
         "BRK",
 
         "there:",
-        "STA $0200");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x03));
-    assertThat(cpu.getX(), equalTo(0x00));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFF));
-    assertThat(cpu.getPC(), equalTo(0x060c));
-    assertThat(cpu.flags(), equalTo("00110000"));
+        "STA $0200")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x03))
+    assertThat(cpu.X, equalTo(0x00))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFF))
+    assertThat(cpu.PC, equalTo(0x060c))
+    assertThat(cpu.flags(), equalTo("00110000"))
   }
 
-  @Test public void testJumpToSubroutines() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testJumpToSubroutines() {
+    val lines = ImmutableList.of(
         "JSR init",
         "JSR loop",
         "JSR end",
@@ -110,33 +105,33 @@ public class CPUTest {
         "RTS",
 
         "end:",
-        "BRK");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x00));
-    assertThat(cpu.getX(), equalTo(0x05));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFD));
-    assertThat(cpu.getPC(), equalTo(0x0613));
-    assertThat(cpu.flags(), equalTo("00110011"));
+        "BRK")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x00))
+    assertThat(cpu.X, equalTo(0x05))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFD))
+    assertThat(cpu.PC, equalTo(0x0613))
+    assertThat(cpu.flags(), equalTo("00110011"))
   }
 
-  @Test public void testSymbols() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testSymbols() {
+    val lines = ImmutableList.of(
         "define a_dozen $0c ; a constant",
-        "LDX #a_dozen       ; equivalent to \"LDX #$0c\"");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x00));
-    assertThat(cpu.getX(), equalTo(0x0C));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xFF));
-    assertThat(cpu.getPC(), equalTo(0x0603));
-    assertThat(cpu.flags(), equalTo("00110000"));
+        "LDX #a_dozen       ; equivalent to \"LDX #$0c\"")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x00))
+    assertThat(cpu.X, equalTo(0x0C))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xFF))
+    assertThat(cpu.PC, equalTo(0x0603))
+    assertThat(cpu.flags(), equalTo("00110000"))
   }
 
-  @Test public void testSnake() {
-    List<String> lines = ImmutableList.of(
+  @Test fun testSnake() {
+    val lines = ImmutableList.of(
         "define appleL         $00 ; screen location of apple, low byte",
         "define appleH         $01 ; screen location of apple, high byte",
         "define snakeHeadL     $10 ; screen location of snake head, low byte",
@@ -155,8 +150,8 @@ public class CPUTest {
         "define ASCII_s      $73",
         "define ASCII_d      $64",
         "; System variables",
-        "define sysRandom    $fe",
-        "define sysLastKey   $ff",
+        "define sysRandom    \$fe",
+        "define sysLastKey   \$ff",
         "  jsr init",
         "  jsr loop",
         "init:",
@@ -362,14 +357,14 @@ public class CPUTest {
         "  dex",
         "  bne spinloop",
         "  rts",
-        "gameOver:", "\n");
-    assembler.assembleCode(lines);
-    cpu.testRun();
-    assertThat(cpu.getA(), equalTo(0x1f));
-    assertThat(cpu.getX(), equalTo(0xff));
-    assertThat(cpu.getY(), equalTo(0x00));
-    assertThat(cpu.getSP(), equalTo(0xfb));
-    assertThat(cpu.getPC(), equalTo(0x0736));
-    assertThat(cpu.flags(), equalTo("00110011"));
+        "gameOver:", "\n")
+    assembler.assembleCode(lines)
+    cpu.testRun()
+    assertThat(cpu.A, equalTo(0x1f))
+    assertThat(cpu.X, equalTo(0xff))
+    assertThat(cpu.Y, equalTo(0x00))
+    assertThat(cpu.SP, equalTo(0xfb))
+    assertThat(cpu.PC, equalTo(0x0736))
+    assertThat(cpu.flags(), equalTo("00110011"))
   }
 }

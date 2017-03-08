@@ -10,7 +10,7 @@ was also used in the Easy 6502 "ebook".
 
 ## Screenshot
 
-![](https://raw.githubusercontent.com/felipecsl/6502Android/master/screenshot.png)
+![](https://raw.githubusercontent.com/felipecsl/6502Android/master/demo.gif)
 
 ## Status
 

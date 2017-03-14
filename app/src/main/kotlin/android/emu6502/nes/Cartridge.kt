@@ -4,14 +4,14 @@ import java.util.*
 
 data class Cartridge(
     // @formatter:off
-    val pgr: ByteArray, // PRG-ROM banks
-    val chr: ByteArray, // CHR-ROM banks
-    val mapper: Byte,   // mapper type
-    val mirror: Byte,   // mirroring mode
-    val battery: Byte   // battery present
+    val pgr: IntArray,                        // PRG-ROM banks
+    val chr: IntArray,                        // CHR-ROM banks
+    val sram: IntArray = IntArray(0x2000),    // Save RAM
+    val mapper: Byte,                         // mapper type
+    var mirror: Int,                          // mirroring mode
+    val battery: Byte                         // battery present
     // @formatter:on
 ) {
-  private val sram: ByteArray = ByteArray(0x2000) // Save RAM
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

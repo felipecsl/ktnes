@@ -3,17 +3,17 @@ package android.emu6502.nes
 class PPU(
     // @formatter:off
 
-    val cycle:                  Int,            // 0-340
-    val scanLine:               Int,            // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
-    val frame:                  Int,            // frame counter
+    val cycle:                  Int = 0,            // 0-340
+    val scanLine:               Int = 0,            // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
+    val frame:                  Int = 0,            // frame counter
 
     // PPU registers
-    val v:                      Int,            // current vram address (15 bit)
-    val t:                      Int,            // temporary vram address (15 bit)
-    val x:                      Byte,           // fine x scroll (3 bit)
-    val w:                      Byte,           // write toggle (1 bit)
-    val f:                      Byte,           // even/odd frame flag (1 bit)
-    val register:               Byte,
+    val v:                      Int = 0,            // current vram address (15 bit)
+    val t:                      Int = 0,            // temporary vram address (15 bit)
+    val x:                      Byte = 0,           // fine x scroll (3 bit)
+    val w:                      Byte = 0,           // write toggle (1 bit)
+    val f:                      Byte = 0,           // even/odd frame flag (1 bit)
+    val register:               Byte = 0,
 
     // $2000 PPUCTRL
     val flagNameTable:          Boolean = false, // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
@@ -31,7 +31,7 @@ class PPU(
     val flagShowSprites:        Boolean = false, // 0: hide; 1: show
     val flagRedTint:            Boolean = false, // 0: normal; 1: emphasized
     val flagGreenTint:          Boolean = false, // 0: normal; 1: emphasized
-    val flagBlueTint:           Boolean = false // 0: normal; 1: emphasized
+    val flagBlueTint:           Boolean = false, // 0: normal; 1: emphasized
 
     // $2002 PPUSTATUS
     val flagSpriteZeroHit:      Boolean = false,

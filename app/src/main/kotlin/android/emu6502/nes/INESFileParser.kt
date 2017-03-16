@@ -42,7 +42,8 @@ internal class INESFileParser {
         // read chr-rom bank(s)
         val chr = ByteArray(inesFileHeader.numCHR.toInt() * 8192)
         stream.read(chr)
-        return Cartridge(pgr, chr, mapper.toByte(), mirror.toByte(), battery)
+        return Cartridge(pgr.map(Byte::toInt).toIntArray(), chr.map(Byte::toInt).toIntArray(),
+            mapper.toByte(), mirror, battery)
       }
     }
   }

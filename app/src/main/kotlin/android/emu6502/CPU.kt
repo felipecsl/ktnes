@@ -287,4 +287,8 @@ class CPU(val memory: Memory) : Display.Callbacks {
   override fun onDraw() {
     executionLock?.countDown()
   }
+
+  fun triggerIRQ() {
+    throw NotImplementedError()
+  }
 }

@@ -28,4 +28,11 @@ class INESFileParserTest {
         INESFileParser.INES_FILE_MAGIC, 0x10, 0x10, 0x40, 0x0, 0x0, INESFileParser.PADDING))
     assertThat(header.isValid()).isTrue()
   }
+
+  @Test fun testMapper() {
+    val testRom = javaClass.classLoader.getResource("roms/testrom.nes").toURI()
+    val cartridge = INESFileParser.parseCartridge(File(testRom))
+    // super mario bros 3 is Mapper 4 (MMC3)
+    assertThat(cartridge.mapper).isEqualTo(4)
+  }
 }

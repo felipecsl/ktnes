@@ -27,13 +27,13 @@ internal class INESFileParser {
         val inesFileHeader = parseFileHeader(stream)
         // mapper type
         val control1 = inesFileHeader.control1.toInt()
-        val mapper1 = control1.shr(4)
-        val mapper2 = inesFileHeader.control2.toInt().shr(4)
-        val mapper = if (mapper1 != 0) mapper1 else mapper2
+        val mapper1 = control1 shr 4
+        val mapper2 = inesFileHeader.control2.toInt() shr 4
+        val mapper = mapper1 or (mapper2 shl 4)
         // mirroring type
-        val mirror1 = control1.and(1)
-        val mirror2 = control1.shr(3).and(1)
-        val mirror = if (mirror1 != 0) mirror1 else mirror2.shl(1)
+        val mirror1 = control1 and 1
+        val mirror2 = (control1 shr 3) and 1
+        val mirror = mirror1 or (mirror2 shl 1)
         // battery-backed RAM
         val battery = control1.shr(1).and(1).toByte()
         // read prg-rom bank(s)
@@ -42,7 +42,8 @@ internal class INESFileParser {
         // read chr-rom bank(s)
         val chr = ByteArray(inesFileHeader.numCHR.toInt() * 8192)
         stream.read(chr)
-        return Cartridge(pgr, chr, mapper.toByte(), mirror.toByte(), battery)
+        return Cartridge(pgr.map(Byte::toInt).toIntArray(), chr.map(Byte::toInt).toIntArray(),
+            mapper.toByte(), mirror, battery)
       }
     }
   }

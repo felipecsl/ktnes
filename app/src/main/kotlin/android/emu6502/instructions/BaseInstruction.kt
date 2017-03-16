@@ -4,7 +4,7 @@ import android.emu6502.CPU
 
 open class BaseInstruction(val instruction: Instruction, private val cpu: CPU) {
   init {
-    val opcodes: IntArray = Opcodes.MAP[instruction] as IntArray
+    val opcodes = Opcodes.MAP[instruction]
     val methods = arrayOf(
         this::immediate,
         this::zeroPage,
@@ -19,9 +19,9 @@ open class BaseInstruction(val instruction: Instruction, private val cpu: CPU) {
         this::single,
         this::branch)
 
-    opcodes.forEachIndexed { i, opcode ->
-      if (opcode != 0xff) {
-        cpu.addInstruction(opcodes[i], InstructionTarget(this, methods[i]))
+    opcodes!!.forEachIndexed { i, opcode ->
+      if (opcode.opcode != 0xff) {
+        cpu.addInstruction(opcodes[i].opcode, InstructionTarget(this, methods[i]))
       }
     }
   }

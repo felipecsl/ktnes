@@ -15,6 +15,10 @@ class Console(
     val mapper: Mapper,
     val ram: ByteArray = ByteArray(2048)
 ) {
+  fun step() {
+
+  }
+
   companion object {
     fun newConsole(cartridge: Cartridge, display: Display): Console {
       val ppu = PPU()

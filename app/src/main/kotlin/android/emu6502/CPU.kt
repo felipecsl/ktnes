@@ -109,7 +109,7 @@ class CPU(val memory: Memory) : Display.Callbacks {
       target.method.invoke()
     } else {
       val candidate = Opcodes.MAP.entries
-          .first { it.value.any { opcode -> opcode == instruction } }
+          .first { it.value.any { it.opcode == instruction } }
       throw Exception(
           "Address $${PC.toHexString()} - unknown opcode 0x${instruction.toHexString()} " +
               "(instruction ${candidate.key.name})")

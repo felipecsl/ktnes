@@ -99,43 +99,43 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       return DCB(param)
     }
 
-    val opcode = Opcodes.MAP.get(Instruction.valueOf(command))
+    val opcode = Opcodes.MAP[Instruction.valueOf(command)]
 
     if (opcode != null) {
-      if (checkImmediate(param, opcode[0])) {
+      if (checkImmediate(param, opcode[0].opcode)) {
         return true
       }
-      if (checkZeroPage(param, opcode[1])) {
+      if (checkZeroPage(param, opcode[1].opcode)) {
         return true
       }
-      if (checkZeroPageX(param, opcode[2])) {
+      if (checkZeroPageX(param, opcode[2].opcode)) {
         return true
       }
-      if (checkZeroPageY(param, opcode[3])) {
+      if (checkZeroPageY(param, opcode[3].opcode)) {
         return true
       }
-      if (checkAbsolute(param, opcode[4])) {
+      if (checkAbsolute(param, opcode[4].opcode)) {
         return true
       }
-      if (checkAbsoluteX(param, opcode[5])) {
+      if (checkAbsoluteX(param, opcode[5].opcode)) {
         return true
       }
-      if (checkAbsoluteY(param, opcode[6])) {
+      if (checkAbsoluteY(param, opcode[6].opcode)) {
         return true
       }
-      if (checkIndirect(param, opcode[7])) {
+      if (checkIndirect(param, opcode[7].opcode)) {
         return true
       }
-      if (checkIndirectX(param, opcode[8])) {
+      if (checkIndirectX(param, opcode[8].opcode)) {
         return true
       }
-      if (checkIndirectY(param, opcode[9])) {
+      if (checkIndirectY(param, opcode[9].opcode)) {
         return true
       }
-      if (checkSingle(param, opcode[10])) {
+      if (checkSingle(param, opcode[10].opcode)) {
         return true
       }
-      if (checkBranch(param, opcode[11])) {
+      if (checkBranch(param, opcode[11].opcode)) {
         return true
       }
     }

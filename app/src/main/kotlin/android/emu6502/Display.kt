@@ -10,7 +10,7 @@ import android.view.View
 open class Display(context: Context, attrs: AttributeSet) : View(context, attrs) {
   private val numX = 32
   private val numY = 32
-  private val matrix = Array(32, { IntArray(32) })
+  private val matrix = Array(numX, { IntArray(numY) })
 
   private val palette = arrayOf(
       "#000000", "#ffffff", "#880000", "#aaffee",
@@ -22,14 +22,18 @@ open class Display(context: Context, attrs: AttributeSet) : View(context, attrs)
   private val bgPaint: Paint = Paint()
   private var listener: Callbacks? = null
 
+  init {
+    bgPaint.color = Color.BLACK
+  }
+
   fun setOnDisplayCallback(callback: Callbacks) {
     listener = callback
   }
 
   open fun updatePixel(addr: Int, value: Int) {
     val offsetAddr = addr - 0x200
-    val x = offsetAddr % 32
-    val y = Math.floor((offsetAddr / 32).toDouble()).toInt()
+    val x = offsetAddr % numX
+    val y = Math.floor((offsetAddr / numY).toDouble()).toInt()
     val color = palette[value]
     matrix[x][y] = Color.parseColor(color)
     postInvalidate()
@@ -68,9 +72,5 @@ open class Display(context: Context, attrs: AttributeSet) : View(context, attrs)
       }
     }
     postInvalidate()
-  }
-
-  init {
-    bgPaint.color = Color.BLACK
   }
 }

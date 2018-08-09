@@ -13,41 +13,35 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
 
 class MainActivity : AppCompatActivity() {
-  private var emulator: Emulator? = null
+  private lateinit var emulator: Emulator
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     setSupportActionBar(toolbar)
-    val ab: ActionBar = supportActionBar!!
-    ab.setDisplayHomeAsUpEnabled(true)
-
+    val actionBar: ActionBar = supportActionBar!!
+    actionBar.setDisplayHomeAsUpEnabled(true)
     fabRun.setOnClickListener {
       display_wrapper.visibility = View.VISIBLE
       emulator = Emulator(display)
-      val emu: Emulator = emulator as Emulator
-      emu.assembler.assembleCode(txtInstructions.text.toString().split("\n"))
+      emulator.assembler.assembleCode(txtInstructions.text.toString().split("\n"))
       Snackbar.make(layout_content,
-          "Code assembled successfully, ${emu.assembler.codeLen} bytes.",
+          "Code assembled successfully, ${emulator.assembler.codeLen} bytes.",
           Snackbar.LENGTH_SHORT).show()
-      emu.cpu.run()
+      emulator.cpu.run()
     }
 
     btnReset.setOnClickListener {
-      val emu: Emulator = emulator as Emulator
-      emu.reset()
+      emulator.reset()
     }
 
     val onClickButton = { code: Int ->
-      if (emulator != null) {
-        val emu = emulator as Emulator
-        emu.cpu.memory.storeKeypress(code)
-      }
+      emulator.cpu.memory.storeKeypress(code)
     }
-    arrowLeft.setOnClickListener  { onClickButton(0x61) }
+    arrowLeft.setOnClickListener { onClickButton(0x61) }
     arrowRight.setOnClickListener { onClickButton(0x64) }
-    arrowUp.setOnClickListener    { onClickButton(0x77) }
-    arrowDown.setOnClickListener  { onClickButton(0x73) }
+    arrowUp.setOnClickListener { onClickButton(0x77) }
+    arrowDown.setOnClickListener { onClickButton(0x73) }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

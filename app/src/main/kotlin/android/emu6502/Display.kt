@@ -10,7 +10,7 @@ import android.view.View
 open class Display(context: Context, attrs: AttributeSet) : View(context, attrs) {
   private val numX = 32
   private val numY = 32
-  private val matrix = Array(numX, { IntArray(numY) })
+  private val matrix = Array(numX) { IntArray(numY) }
 
   private val palette = arrayOf(
       "#000000", "#ffffff", "#880000", "#aaffee",

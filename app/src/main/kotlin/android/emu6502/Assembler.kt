@@ -7,7 +7,6 @@ import java.util.regex.Pattern
 
 class Assembler(private var memory: Memory, private val symbols: Symbols) {
   var codeLen = 0
-  val BOOTSTRAP_ADDRESS = 0x600
   var defaultCodePC = BOOTSTRAP_ADDRESS
   private var labels = Labels(this, symbols)
 
@@ -35,7 +34,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     sanitizedLines
         .map { pattern.matcher(it) }
         .filter { it.find() }
-        .forEach { symbols.put(it.group(1), sanitize(it.group(2))) }
+        .forEach { symbols[it.group(1)] = sanitize(it.group(2)) }
 
     return sanitizedLines.filterNot { pattern.matcher(it).find() }
   }
@@ -85,10 +84,10 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       return true
     }
 
-    if (input.matches("^\\w+\\s+.*?$".toRegex())) {
-      param = input.replace("^\\w+\\s+(.*?)".toRegex(), "$1")
+    param = if (input.matches("^\\w+\\s+.*?$".toRegex())) {
+      input.replace("^\\w+\\s+(.*?)".toRegex(), "$1")
     } else if (input.matches("^\\w+$".toRegex())) {
-      param = ""
+      ""
     } else {
       return false
     }
@@ -418,5 +417,9 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     }
     pushByte(opcode)
     return true
+  }
+
+  companion object {
+    const val BOOTSTRAP_ADDRESS = 0x600
   }
 }

@@ -31,9 +31,7 @@ class MainActivity : AppCompatActivity() {
       emulator.cpu.run()
     }
 
-    btnReset.setOnClickListener {
-      emulator.reset()
-    }
+    btnReset.setOnClickListener { emulator.reset() }
 
     val onClickButton = { code: Int ->
       emulator.cpu.memory.storeKeypress(code)

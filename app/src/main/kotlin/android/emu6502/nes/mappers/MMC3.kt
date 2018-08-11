@@ -22,34 +22,39 @@ class MMC3(
   private var irqEnable: Boolean = false
 
   override fun read(address: Int): Int {
-    if (address < 0x2000) {
-      val bank = address / 0x0400
-      val offset = address % 0x0400
-      return cartridge.chr[chrOffsets[bank] + offset]
+    return when {
+      address < 0x2000 -> {
+        val bank = address / 0x0400
+        val offset = address % 0x0400
+        cartridge.chr[chrOffsets[bank] + offset]
+      }
+      address >= 0x8000 -> {
+        val addr = address - 0x8000
+        val bank = addr / 0x2000
+        val offset = addr % 0x2000
+        cartridge.pgr[prgOffsets[bank] + offset]
+      }
+      address >= 0x6000 -> {
+        return cartridge.sram[address - 0x6000]
+      }
+      else -> throw RuntimeException("unhandled mapper4 read at address: ${address.toHexString()}")
     }
-    if (address >= 0x8000) {
-      val addr = address - 0x8000
-      val bank = addr / 0x2000
-      val offset = addr % 0x2000
-      return cartridge.pgr[prgOffsets[bank] + offset]
-    }
-    if (address >= 0x6000) {
-      return cartridge.sram[address - 0x6000]
-    }
-    throw RuntimeException("unhandled mapper4 read at address: ${address.toHexString()}")
   }
 
   override fun write(address: Int, value: Int) {
-    if (address < 0x2000) {
-      val bank = address / 0x0400
-      val offset = address % 0x0400
-      cartridge.chr[chrOffsets[bank] + offset] = value
-    } else if (address >= 0x8000) {
-      writeRegister(address, value)
-    } else if (address >= 0x6000) {
-      cartridge.sram[address - 0x6000] = value
-    } else {
-      throw RuntimeException("unhandled mapper4 write at address ${address.toHexString()}")
+    when {
+      address < 0x2000 -> {
+        val bank = address / 0x0400
+        val offset = address % 0x0400
+        cartridge.chr[chrOffsets[bank] + offset] = value
+      }
+      address >= 0x8000 -> {
+        writeRegister(address, value)
+      }
+      address >= 0x6000 -> {
+        cartridge.sram[address - 0x6000] = value
+      }
+      else -> throw RuntimeException("unhandled mapper4 write at address ${address.toHexString()}")
     }
   }
 

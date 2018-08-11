@@ -8,7 +8,6 @@ import java.util.*
 // Sample header:
 // 4e  45  53  1a  10  10  40  00  00  00  00  00  00  00  00  00
 data class INESFileHeader(
-    // @formatter:off
     val magic: ByteArray,   // Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
     val numPRG: Byte,       // Size of PRG ROM in 16 KB units
     val numCHR: Byte,       // Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
@@ -16,7 +15,6 @@ data class INESFileHeader(
     val control2: Byte,     // Flags 7
     val numRAM: Byte,       // Size of PRG RAM in 8 KB units
     val padding: ByteArray // 7 bytes, unused
-    // @formatter:on
 ) {
   fun isValid() =
       Arrays.equals(magic, INES_FILE_MAGIC) && Arrays.equals(padding, PADDING)

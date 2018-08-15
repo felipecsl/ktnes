@@ -3,7 +3,8 @@ package android.emu6502.instructions
 // http://www.obelisk.me.uk/6502/reference.html
 class Opcodes {
   companion object {
-    private fun im(opcode: Int, size: Int, cycles: Int) = InstructionMode(opcode, size, cycles)
+    private fun im(opcode: Int, size: Int, cycles: Int) =
+        InstructionMode(opcode, size, cycles)
 
     val MAP: Map<Instruction, Array<InstructionMode>> = hashMapOf(
         Instruction.ADC to arrayOf(im(0x69, 2, 2), im(0x65, 2, 3), im(0x75, 2, 4), im(0xff, 0, 0),

@@ -1,6 +1,7 @@
 package android.emu6502.instructions.impl
 
 import android.emu6502.CPU
+import android.emu6502.and
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
 
@@ -8,6 +9,6 @@ import android.emu6502.instructions.Instruction
 class TAX(private val cpu: CPU) : BaseInstruction(Instruction.TAX, cpu) {
   override fun single() {
     cpu.X = cpu.A.and(0xFF)
-    cpu.setSZflagsForRegX()
+    cpu.setSZFlagsForRegX()
   }
 }

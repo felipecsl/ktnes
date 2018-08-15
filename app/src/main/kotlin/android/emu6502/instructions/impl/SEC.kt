@@ -7,7 +7,7 @@ import android.emu6502.instructions.Instruction
 /** SEt Carry */
 class SEC(private val cpu: CPU) : BaseInstruction(Instruction.SEC, cpu) {
   override fun single() {
-    cpu.carry()
+    cpu.setCarry()
   }
 }
 

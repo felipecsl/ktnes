@@ -8,6 +8,6 @@ import android.emu6502.instructions.Instruction
 class INX(private val cpu: CPU) : BaseInstruction(Instruction.INX, cpu) {
   override fun single() {
     cpu.X = (cpu.X + 1).and(0xff)
-    cpu.setSZflagsForRegX()
+    cpu.setSZFlagsForRegX()
   }
 }

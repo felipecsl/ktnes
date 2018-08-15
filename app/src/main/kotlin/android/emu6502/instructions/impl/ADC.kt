@@ -1,8 +1,11 @@
 package android.emu6502.instructions.impl
 
 import android.emu6502.CPU
+import android.emu6502.and
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
+import kotlin.experimental.and
+import kotlin.experimental.xor
 
 /** ADd with Carry */
 class ADC(private val cpu: CPU) : BaseInstruction(Instruction.ADC, cpu) {
@@ -13,7 +16,7 @@ class ADC(private val cpu: CPU) : BaseInstruction(Instruction.ADC, cpu) {
   private fun testADC(value: Int) {
     var tmp: Int
     if (cpu.A.xor(value).and(0x80) != 0) {
-      cpu.CLV()
+      cpu.clearOverflow()
     } else {
       cpu.setOverflow()
     }
@@ -25,28 +28,28 @@ class ADC(private val cpu: CPU) : BaseInstruction(Instruction.ADC, cpu) {
       }
       tmp += cpu.A.and(0xf0) + value.and(0xf0)
       if (tmp >= 160) {
-        cpu.SEC()
+        cpu.setCarry()
         if (cpu.overflow() && tmp >= 0x180) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
         tmp += 0x60
       } else {
-        cpu.CLC()
+        cpu.clearCarry()
         if (cpu.overflow() && tmp < 0x80) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       }
     } else {
       tmp = cpu.A + value + cpu.P.and(1)
       if (tmp >= 0x100) {
-        cpu.SEC()
+        cpu.setCarry()
         if (cpu.overflow() && tmp >= 0x180) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       } else {
-        cpu.CLC()
+        cpu.clearCarry()
         if (cpu.overflow() && tmp < 0x80) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       }
     }

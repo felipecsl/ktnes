@@ -1,8 +1,10 @@
 package android.emu6502.instructions.impl
 
 import android.emu6502.CPU
+import android.emu6502.and
 import android.emu6502.instructions.BaseInstruction
 import android.emu6502.instructions.Instruction
+import kotlin.experimental.xor
 
 /** SuBtract with Carry */
 class SBC(private val cpu: CPU) : BaseInstruction(Instruction.SBC, cpu) {
@@ -14,7 +16,7 @@ class SBC(private val cpu: CPU) : BaseInstruction(Instruction.SBC, cpu) {
     if (cpu.A.xor(value).and(0x80) != 0) {
       cpu.setOverflow()
     } else {
-      cpu.CLV()
+      cpu.clearOverflow()
     }
 
     var w: Int
@@ -29,29 +31,29 @@ class SBC(private val cpu: CPU) : BaseInstruction(Instruction.SBC, cpu) {
       }
       w += 0xf0 + cpu.A.and(0xf0) - value.and(0xf0)
       if (w < 0x100) {
-        cpu.CLC()
+        cpu.clearCarry()
         if (cpu.overflow() && w < 0x80) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
         w -= 0x60
       } else {
-        cpu.SEC()
+        cpu.setCarry()
         if (cpu.overflow() && w >= 0x180) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       }
       w += tmp
     } else {
       w = 0xff + cpu.A - value + cpu.P.and(1)
       if (w < 0x100) {
-        cpu.CLC()
+        cpu.clearCarry()
         if (cpu.overflow() && w < 0x80) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       } else {
-        cpu.SEC()
+        cpu.setCarry()
         if (cpu.overflow() && w >= 0x180) {
-          cpu.CLV()
+          cpu.clearOverflow()
         }
       }
     }

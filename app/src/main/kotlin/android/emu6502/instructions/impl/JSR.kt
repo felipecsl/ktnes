@@ -8,9 +8,7 @@ import android.emu6502.instructions.Instruction
 class JSR(private val cpu: CPU) : BaseInstruction(Instruction.JSR, cpu) {
   override fun absolute() {
     val addr = cpu.popWord()
-    val currAddr = cpu.PC - 1
-    cpu.stackPush(currAddr.shr(8).and(0xff))
-    cpu.stackPush(currAddr.and(0xff))
+    cpu.stackPush16(cpu.PC - 1)
     cpu.PC = addr
   }
 }

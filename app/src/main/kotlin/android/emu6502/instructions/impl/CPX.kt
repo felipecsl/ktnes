@@ -12,7 +12,7 @@ class CPX(private val cpu: CPU) : BaseInstruction(Instruction.CPX, cpu) {
   }
 
   override fun zeroPage() {
-    val value = cpu.memory.get(cpu.popByte())
+    val value = cpu.read(cpu.popByte())
     cpu.doCompare(cpu.X, value)
   }
 }

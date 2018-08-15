@@ -21,6 +21,13 @@ class MMC3(
   private var counter: Int = 0
   private var irqEnable: Boolean = false
 
+  init {
+    prgOffsets[0] = prgBankOffset(0)
+    prgOffsets[1] = prgBankOffset(1)
+    prgOffsets[2] = prgBankOffset(-2)
+    prgOffsets[3] = prgBankOffset(-1)
+  }
+
   override fun read(address: Int): Int {
     return when {
       address < 0x2000 -> {
@@ -32,7 +39,7 @@ class MMC3(
         val addr = address - 0x8000
         val bank = addr / 0x2000
         val offset = addr % 0x2000
-        cartridge.pgr[prgOffsets[bank] + offset]
+        cartridge.prg[prgOffsets[bank] + offset]
       }
       address >= 0x6000 -> {
         return cartridge.sram[address - 0x6000]
@@ -141,10 +148,10 @@ class MMC3(
     if (idx >= 0x80) {
       idx -= 0x100
     }
-    idx %= cartridge.chr.size / 0x2000
+    idx %= cartridge.prg.size / 0x2000
     var offset = idx * 0x2000
     if (offset < 0) {
-      offset += cartridge.chr.size
+      offset += cartridge.prg.size
     }
     return offset
   }
@@ -187,7 +194,7 @@ class MMC3(
     if (ppu.scanLine in 240..260) {
       return
     }
-    if (!ppu.flagShowBackground && !ppu.flagShowSprites) {
+    if (ppu.flagShowBackground == 0 && ppu.flagShowSprites == 0) {
       return
     }
     handleScanLine()

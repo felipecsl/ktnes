@@ -84,12 +84,10 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       return true
     }
 
-    param = if (input.matches("^\\w+\\s+.*?$".toRegex())) {
-      input.replace("^\\w+\\s+(.*?)".toRegex(), "$1")
-    } else if (input.matches("^\\w+$".toRegex())) {
-      ""
-    } else {
-      return false
+    param = when {
+      input.matches("^\\w+\\s+.*?$".toRegex()) -> input.replace("^\\w+\\s+(.*?)".toRegex(), "$1")
+      input.matches("^\\w+$".toRegex()) -> ""
+      else -> return false
     }
 
     param = param.replace("[ ]".toRegex(), "")
@@ -101,40 +99,40 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
     val opcode = Opcodes.MAP[Instruction.valueOf(command)]
 
     if (opcode != null) {
-      if (checkImmediate(param, opcode[0].opcode)) {
+      if (checkImmediate(param, opcode[0].opcode.toInt())) {
         return true
       }
-      if (checkZeroPage(param, opcode[1].opcode)) {
+      if (checkZeroPage(param, opcode[1].opcode.toInt())) {
         return true
       }
-      if (checkZeroPageX(param, opcode[2].opcode)) {
+      if (checkZeroPageX(param, opcode[2].opcode.toInt())) {
         return true
       }
-      if (checkZeroPageY(param, opcode[3].opcode)) {
+      if (checkZeroPageY(param, opcode[3].opcode.toInt())) {
         return true
       }
-      if (checkAbsolute(param, opcode[4].opcode)) {
+      if (checkAbsolute(param, opcode[4].opcode.toInt())) {
         return true
       }
-      if (checkAbsoluteX(param, opcode[5].opcode)) {
+      if (checkAbsoluteX(param, opcode[5].opcode.toInt())) {
         return true
       }
-      if (checkAbsoluteY(param, opcode[6].opcode)) {
+      if (checkAbsoluteY(param, opcode[6].opcode.toInt())) {
         return true
       }
-      if (checkIndirect(param, opcode[7].opcode)) {
+      if (checkIndirect(param, opcode[7].opcode.toInt())) {
         return true
       }
-      if (checkIndirectX(param, opcode[8].opcode)) {
+      if (checkIndirectX(param, opcode[8].opcode.toInt())) {
         return true
       }
-      if (checkIndirectY(param, opcode[9].opcode)) {
+      if (checkIndirectY(param, opcode[9].opcode.toInt())) {
         return true
       }
-      if (checkSingle(param, opcode[10].opcode)) {
+      if (checkSingle(param, opcode[10].opcode.toInt())) {
         return true
       }
-      if (checkBranch(param, opcode[11].opcode)) {
+      if (checkBranch(param, opcode[11].opcode.toInt())) {
         return true
       }
     }

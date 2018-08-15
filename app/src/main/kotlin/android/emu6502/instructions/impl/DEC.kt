@@ -11,9 +11,9 @@ class DEC(private val cpu: CPU) : BaseInstruction(Instruction.DEC, cpu) {
   }
 
   fun DEC(addr: Int) {
-    var value = cpu.memory.get(addr)
-    value = (value - 1).and(0xff)
-    cpu.memory.storeByte(addr, value)
+    var value = cpu.read(addr) - 1
+    value = value.and(0xff)
+    cpu.write(addr, value)
     cpu.setSVFlagsForValue(value)
   }
 }

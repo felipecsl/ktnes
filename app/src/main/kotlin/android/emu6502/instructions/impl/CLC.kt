@@ -7,7 +7,7 @@ import android.emu6502.instructions.Instruction
 /** CLear Carry */
 class CLC(private val cpu: CPU) : BaseInstruction(Instruction.CLC, cpu) {
   override fun single() {
-    cpu.CLC()
+    cpu.clearCarry()
   }
 }
 

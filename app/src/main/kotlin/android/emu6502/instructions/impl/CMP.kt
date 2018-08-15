@@ -11,7 +11,7 @@ class CMP(private val cpu: CPU) : BaseInstruction(Instruction.CMP, cpu) {
   }
 
   override fun zeroPage() {
-    val value = cpu.memory.get(cpu.popByte())
+    val value = cpu.read(cpu.popByte())
     cpu.doCompare(cpu.A, value)
   }
 }

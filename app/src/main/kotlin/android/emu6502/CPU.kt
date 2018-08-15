@@ -5,13 +5,15 @@ import android.emu6502.instructions.Instruction
 import android.emu6502.instructions.InstructionTarget
 import android.emu6502.instructions.Opcodes
 import android.emu6502.instructions.impl.*
+import android.emu6502.nes.Console
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import java.util.*
 import java.util.concurrent.CountDownLatch
+import kotlin.experimental.and
 
-class CPU(val memory: Memory) : Display.Callbacks {
+class CPU : Display.Callbacks {
+  lateinit var console: Console
   private val bgHandlerThread = HandlerThread("Screencast Thread")
   private val bgHandler: Handler
   private var executionLock: CountDownLatch? = null
@@ -21,95 +23,165 @@ class CPU(val memory: Memory) : Display.Callbacks {
     bgHandler = Handler(bgHandlerThread.looper)
   }
 
-  var A: Int = 0      // Accumulator
-  var X: Int = 0      // Register X
-  var Y: Int = 0      // Register Y
-  var PC: Int = 0x600 // Program counter
-  var SP: Int = 0xFF  // Stack pointer
-  var P: Int = 0x30   // Processor flags
+  var A: Int = 0                     // Accumulator
+  var X: Int = 0                     // Register X
+  var Y: Int = 0                     // Register Y
+  var PC: Int = 0                     // Program counter
+  var SP: Int = 0xFF                 // Stack pointer
+  var P: Int = 0x30                   // Processor flags
+  var stall: Int = 0                  // number of cycles to stall
+  var cycles: Int = 0                 // number of cycles
+  var interrupt: Interrupt = Interrupt.NONE
 
-  private var isRunning = false
-  private var debug = false
-  private var monitoring = false
   private var TAG = "CPU"
-  private val instructionList: HashMap<Int, InstructionTarget> = HashMap()
-  private val operationList: HashMap<Instruction, BaseInstruction> = hashMapOf(
-      Pair(Instruction.ADC, ADC(this)), Pair(Instruction.AND, AND(this)),
-      Pair(Instruction.ASL, ASL(this)), Pair(Instruction.BIT, BIT(this)),
-      Pair(Instruction.LDA, LDA(this)), Pair(Instruction.LDX, LDX(this)),
-      Pair(Instruction.LDY, LDY(this)), Pair(Instruction.STA, STA(memory, this)),
-      Pair(Instruction.STX, STX(this)), Pair(Instruction.TAX, TAX(this)),
-      Pair(Instruction.INX, INX(this)), Pair(Instruction.DEX, DEX(this)),
-      Pair(Instruction.ORA, ORA(this)), Pair(Instruction.CPX, CPX(this)),
-      Pair(Instruction.BRK, BRK(this)), Pair(Instruction.BNE, BNE(this)),
-      Pair(Instruction.JMP, JMP(this)), Pair(Instruction.JSR, JSR(this)),
-      Pair(Instruction.RTS, RTS(this)), Pair(Instruction.SEI, SEI(this)),
-      Pair(Instruction.DEY, DEY(this)), Pair(Instruction.CLC, CLC(this)),
-      Pair(Instruction.CMP, CMP(this)), Pair(Instruction.BEQ, BEQ(this)),
-      Pair(Instruction.TXA, TXA(this)), Pair(Instruction.BPL, BPL(this)),
-      Pair(Instruction.LSR, LSR(this)), Pair(Instruction.BCS, BCS(this)),
-      Pair(Instruction.INC, INC(this)), Pair(Instruction.NOP, NOP(this)),
-      Pair(Instruction.SEC, SEC(this)), Pair(Instruction.SBC, SBC(this)),
-      Pair(Instruction.BCC, BCC(this)), Pair(Instruction.DEC, DEC(this))
-      //Pair(Instruction.BMI, BMI(this)), Pair(Instruction.BVC, BVC(this)),
-      //Pair(Instruction.BVS, BVS(this)), Pair(Instruction.CPY, CPY(this)),
-      //Pair(Instruction.EOR, EOR(this)), Pair(Instruction.CLI, CLI(this)),
-      //Pair(Instruction.CLV, CLV(this)), Pair(Instruction.CLD, CLD(this)),
-      //Pair(Instruction.SED, SED(this)), Pair(Instruction.TAY, TAY(this)),
-      //Pair(Instruction.TYA, TYA(this)), Pair(Instruction.INY, INY(this)),
-      //Pair(Instruction.ROR, ROR(this)), Pair(Instruction.ROL, ROL(this)),
-      //Pair(Instruction.RTI, RTI(this)), Pair(Instruction.TXS, TXS(this)),
-      //Pair(Instruction.TSX, TSX(this)), Pair(Instruction.PHA, PHA(this)),
-      //Pair(Instruction.PLA, PLA(this)), Pair(Instruction.PHP, PHP(this)),
-      //Pair(Instruction.PLP, PLP(this)), Pair(Instruction.STY, STY(this))
+  private val instructionList: MutableMap<Int, InstructionTarget> = mutableMapOf()
+  private val operationList: Map<Instruction, BaseInstruction> = mapOf(
+      Instruction.ADC to ADC(this), Instruction.AND to AND(this),
+      Instruction.ASL to ASL(this), Instruction.BIT to BIT(this),
+      Instruction.LDA to LDA(this), Instruction.LDX to LDX(this),
+      Instruction.LDY to LDY(this), Instruction.STA to STA(this),
+      Instruction.STX to STX(this), Instruction.TAX to TAX(this),
+      Instruction.INX to INX(this), Instruction.DEX to DEX(this),
+      Instruction.ORA to ORA(this), Instruction.CPX to CPX(this),
+      Instruction.BRK to BRK(this), Instruction.BNE to BNE(this),
+      Instruction.JMP to JMP(this), Instruction.JSR to JSR(this),
+      Instruction.RTS to RTS(this), Instruction.SEI to SEI(this),
+      Instruction.DEY to DEY(this), Instruction.CLC to CLC(this),
+      Instruction.CMP to CMP(this), Instruction.BEQ to BEQ(this),
+      Instruction.TXA to TXA(this), Instruction.BPL to BPL(this),
+      Instruction.LSR to LSR(this), Instruction.BCS to BCS(this),
+      Instruction.INC to INC(this), Instruction.NOP to NOP(this),
+      Instruction.SEC to SEC(this), Instruction.SBC to SBC(this),
+      Instruction.BCC to BCC(this), Instruction.DEC to DEC(this),
+      Instruction.BMI to BMI(this), Instruction.BVC to BVC(this),
+      Instruction.BVS to BVS(this), Instruction.CPY to CPY(this),
+      Instruction.EOR to EOR(this), Instruction.CLI to CLI(this),
+      Instruction.CLV to CLV(this), Instruction.CLD to CLD(this),
+      Instruction.SED to SED(this), Instruction.TAY to TAY(this),
+      Instruction.TYA to TYA(this), Instruction.INY to INY(this),
+      Instruction.ROR to ROR(this), Instruction.ROL to ROL(this),
+      Instruction.RTI to RTI(this), Instruction.TXS to TXS(this),
+      Instruction.TSX to TSX(this), Instruction.PHA to PHA(this),
+      Instruction.PLA to PLA(this), Instruction.PHP to PHP(this),
+      Instruction.PLP to PLP(this), Instruction.STY to STY(this)
   )
 
   // for testing only
   fun testRun() {
-    isRunning = true
     while (true) {
-      setRandomByte()
       executeNextInstruction()
-      if (PC == 0 || !isRunning) {
+      if (PC == 0) {
         break
       }
     }
     stop()
   }
 
-  fun run() {
-    isRunning = true
-    bgHandler.post { innerRun() }
+  fun read16(address: Int): Int {
+    val lo = read(address)
+    val hi = read(address + 1)
+    return (hi shl 8) or lo
   }
 
-  private fun innerRun() {
-    (0..97).forEach { execute() }
-    bgHandler.postDelayed({ innerRun() }, 10)
-  }
-
-  private fun execute() {
-    if (!isRunning) {
-      return
+  fun read(address: Int): Int {
+    when {
+      address < 0x2000 ->
+        return console.ram[address % 0x0800]
+      address < 0x4000 ->
+        return console.ppu.readRegister(0x2000 + address % 8)
+      address == 0x4014 ->
+        return console.ppu.readRegister(address)
+      address == 0x4015 ->
+        return console.apu.readRegister(address)
+      address == 0x4016 ->
+        return console.controller1.read()
+      address == 0x4017 ->
+        return console.controller2.read()
+    //address < 0x6000 ->
+    // TODO: I/O registers
+      address >= 0x6000 ->
+        return console.mapper.read(address)
+      else ->
+        throw RuntimeException("unhandled cpu memory read at address: ${address.toHexString()}")
     }
+  }
 
-    setRandomByte()
-    executeNextInstruction()
+  fun write(address: Int, value: Int) {
+    when {
+      address < 0x2000 ->
+        console.ram[address % 0x0800] = value
+      address < 0x4000 ->
+        console.ppu.writeRegister(0x2000 + address % 8, value)
+      address == 0x4014 ->
+        console.ppu.writeRegister(address, value)
+      address == 0x4015 ->
+        console.apu.writeRegister(address, value)
+      address == 0x4016 ->
+        console.controller1.write(value)
+      address == 0x4017 ->
+        console.controller2.write(value)
+    //address < 0x6000 ->
+    // TODO: I/O registers
+      address >= 0x6000 ->
+        console.mapper.write(address, value)
+      else ->
+        throw RuntimeException("unhandled cpu memory write at address: ${address.toHexString()}")
+    }
+  }
 
-    if (PC == 0 || !isRunning) {
+  fun step(): Int {
+    Log.i("CPU", "step()")
+    if (stall > 0) {
+      stall--
+      return 1
+    }
+    if (interrupt == Interrupt.NMI)
+      nmi()
+    else if (interrupt == Interrupt.IRQ)
+      irq()
+    interrupt = Interrupt.NONE
+    val cycles = executeNextInstruction()
+    this.cycles += cycles
+
+    if (PC == 0) {
       stop()
       Log.i(TAG, "Program end at PC=$" + (PC - 1).toHexString() + ", A=$" + A.toHexString() +
           ", X=$" + X.toHexString() + ", Y=$" + Y.toHexString())
     }
+
+    return cycles
   }
 
-  private fun executeNextInstruction() {
-    val instruction = popByte()
+  private fun irq() {
+    stackPush16(PC)
+    findInstruction(Instruction.PHP).method.invoke()
+    PC = read(0xfffe)
+    setInterrupt()
+    cycles += 7
+  }
+
+  private fun findInstruction(instruction: Instruction): InstructionTarget {
+    return instructionList[Opcodes.MAP[instruction]!!.first { it.opcode != 0xff }.opcode]
+        ?: throw RuntimeException("Instruction $instruction not found")
+  }
+
+  private fun nmi() {
+    stackPush16(PC)
+    findInstruction(Instruction.PHP).method.invoke()
+    PC = read(0xfffa)
+    setInterrupt()
+    cycles += 7
+  }
+
+  private fun executeNextInstruction(): Int {
+    val instruction = read(PC)
     val target = instructionList[instruction]
     if (target != null) {
       target.method.invoke()
+      return target.cycles
     } else {
       val candidate = Opcodes.MAP.entries
-          .first { e -> e.value.any { it.opcode == instruction } }
+          .first { (_, value) -> value.any { it.opcode == instruction } }
       throw Exception(
           "Address $${PC.toHexString()} - unknown opcode 0x${instruction.toHexString()} " +
               "(instruction ${candidate.key.name})")
@@ -117,62 +189,46 @@ class CPU(val memory: Memory) : Display.Callbacks {
   }
 
   fun stop() {
-    isRunning = false
     bgHandler.removeCallbacks(null)
   }
 
   fun reset() {
-    var i = 0
-    while (i < 0x600) {
-      memory.set(i++, 0x00)
-    }
     A = 0
     Y = 0
     X = 0
-    PC = 0x600
-    SP = 0xff
-    P = 0x30
+    PC = read16(0xFFFC)
+    SP = 0xFD
+    P = 0x24
   }
 
   fun addInstruction(opcode: Int, target: InstructionTarget) {
-    instructionList.put(opcode, target)
+    instructionList[opcode] = target
   }
 
   fun popByte(): Int {
-    return memory.get(PC++).and(0xff)
+    return console.ram[PC++].and(0xff)
   }
 
-  private fun setRandomByte() {
-    memory.set(0xfe, Math.floor(Math.random() * 256).toInt())
+  fun popWord(): Int {
+    return popByte() + popByte().shl(8)
   }
 
   fun setSZFlagsForRegA() {
     setSVFlagsForValue(A)
   }
 
-  fun setSZflagsForRegX() {
+  fun setSZFlagsForRegX() {
     setSVFlagsForValue(X)
   }
 
-  fun setSZflagsForRegY() {
+  fun setSZFlagsForRegY() {
     setSVFlagsForValue(Y)
   }
 
+  // set sign and overflow
   fun setSVFlagsForValue(value: Int) {
-    if (value != 0) {
-      P = P.and(0xfd)
-    } else {
-      P = P.or(0x02)
-    }
-    if (value.and(0x80) != 0) {
-      P = P.or(0x80)
-    } else {
-      P = P.and(0x7f)
-    }
-  }
-
-  fun popWord(): Int {
-    return popByte() + popByte().shl(8)
+    P = if (value != 0) P.and(0xfd) else P.or(0x02)
+    P = if (value.and(0x80) != 0) P.or(0x80) else P.and(0x7f)
   }
 
   fun overflow(): Boolean {
@@ -196,7 +252,7 @@ class CPU(val memory: Memory) : Display.Callbacks {
   }
 
   fun setCarryFlagFromBit0(value: Int) {
-    P = P.and(0xfe).or(value.and(1))
+    P = P.and(0xfe).or(value.and(1).toInt())
   }
 
   fun jumpBranch(offset: Int) {
@@ -209,25 +265,35 @@ class CPU(val memory: Memory) : Display.Callbacks {
 
   fun doCompare(reg: Int, value: Int) {
     if (reg >= value) {
-      SEC()
+      setCarry()
     } else {
-      CLC()
+      clearCarry()
     }
     setSVFlagsForValue(reg - value)
   }
 
   /** CLear Carry */
-  fun CLC() {
+  fun clearCarry() {
     P = P.and(0xfe)
   }
 
   /** SEt Carry */
-  fun SEC() {
+  fun setCarry() {
     P = P.or(1)
   }
 
+  /** SEt Interrupt */
+  fun setInterrupt() {
+    P = P.or(4)
+  }
+
+  /** CLear Decimal */
+  fun clearDecimal() {
+    P = P.and(0xf7)
+  }
+
   /** CLear oVerflow */
-  fun CLV() {
+  fun clearOverflow() {
     P = P.and(0xbf)
   }
 
@@ -236,21 +302,21 @@ class CPU(val memory: Memory) : Display.Callbacks {
   }
 
   fun stackPush(value: Int) {
-    memory.set(SP.and(0xff) + 0x100, value.and(0xff))
-    SP--
-    if (SP < 0) {
-      SP = SP.and(0xff)
-      Log.i(TAG, "6502 Stack filled! Wrapping...")
-    }
+    write(0x100 or SP, value)
+    SP.dec()
+  }
+
+  // push16 pushes two bytes onto the stack
+  fun stackPush16(value: Int) {
+    val hi = value shr 8
+    val lo = value and 0xff
+    stackPush(hi)
+    stackPush(lo)
   }
 
   fun stackPop(): Int {
-    SP++
-    if (SP >= 0x100) {
-      SP = SP.and(0xff)
-      Log.i(TAG, "6502 Stack emptied! Wrapping...")
-    }
-    return memory.get(SP + 0x100)
+    SP.inc()
+    return read(0x100 or SP)
   }
 
   /**
@@ -288,7 +354,19 @@ class CPU(val memory: Memory) : Display.Callbacks {
     executionLock?.countDown()
   }
 
+  // triggerIRQ causes an IRQ interrupt to occur on the next cycle
   fun triggerIRQ() {
-    throw NotImplementedError()
+    if (P and 0x20 == 0) {
+      interrupt = Interrupt.IRQ
+    }
+  }
+
+  // triggerNMI causes a non-maskable interrupt to occur on the next cycle
+  fun triggerNMI() {
+    interrupt = Interrupt.NMI
+  }
+
+  companion object {
+    const val FREQUENCY = 1789773
   }
 }

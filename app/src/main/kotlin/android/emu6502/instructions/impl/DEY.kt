@@ -8,6 +8,6 @@ import android.emu6502.instructions.Instruction
 class DEY(private val cpu: CPU) : BaseInstruction(Instruction.DEY, cpu) {
   override fun single() {
     cpu.Y = (cpu.Y - 1).and(0xff)
-    cpu.setSZflagsForRegY()
+    cpu.setSZFlagsForRegY()
   }
 }

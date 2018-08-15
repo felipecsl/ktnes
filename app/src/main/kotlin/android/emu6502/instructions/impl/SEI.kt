@@ -6,5 +6,8 @@ import android.emu6502.instructions.Instruction
 
 /** SEt Interrupt */
 class SEI(private val cpu: CPU) : BaseInstruction(Instruction.SEI, cpu) {
+  override fun single() {
+    cpu.setInterrupt()
+  }
 }
 

@@ -16,10 +16,10 @@ class Memory(private val display: Display) {
   }
 
   fun storeByte(addr: Int, value: Int) {
-    set(addr, value.and(0xff))
-    if (addr in 0x200..0x5ff) {
-      display.updatePixel(addr, mem[addr].and(0x0f))
-    }
+//    set(addr, value.and(0xff))
+//    if (addr in 0x200..0x5ff) {
+//      display.updatePixel(addr, mem[addr].and(0x0f))
+//    }
   }
   // Store keycode in ZP $ff
   fun storeKeypress(keyCode: Int) {

@@ -8,11 +8,11 @@ import android.emu6502.instructions.Instruction
 class LDX(private val cpu: CPU) : BaseInstruction(Instruction.LDX, cpu) {
   override fun immediate() {
     cpu.X = cpu.popByte()
-    cpu.setSZflagsForRegX()
+    cpu.setSZFlagsForRegX()
   }
 
   override fun zeroPage() {
-    cpu.X = cpu.memory.get(cpu.popByte())
-    cpu.setSZflagsForRegX()
+    cpu.X = cpu.read(cpu.popByte())
+    cpu.setSZFlagsForRegX()
   }
 }

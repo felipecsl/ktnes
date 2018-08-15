@@ -11,9 +11,9 @@ interface Mapper {
 
   companion object {
     fun newMapper(cartridge: Cartridge, ppu: PPU, cpu: CPU): Mapper =
-        when (cartridge.mapper.toInt()) {
+        when (cartridge.mapper) {
           4 -> MMC3(cartridge, ppu, cpu)
-          else -> throw NotImplementedError("Mapper ${cartridge.mapper.toInt()} not implemented")
+          else -> throw NotImplementedError("Mapper ${cartridge.mapper} not implemented")
         }
   }
 }

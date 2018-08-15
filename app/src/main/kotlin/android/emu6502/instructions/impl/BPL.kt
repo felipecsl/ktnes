@@ -9,7 +9,7 @@ class BPL(private val cpu: CPU) : BaseInstruction(Instruction.BPL, cpu) {
   override fun branch() {
     val offset = cpu.popByte()
     if (!cpu.negative()) {
-      cpu.jumpBranch(offset)
+      cpu.jumpBranch(offset.toInt())
     }
   }
 }

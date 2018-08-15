@@ -1,19 +1,28 @@
 package android.emu6502.app
 
-import android.emu6502.Emulator
 import android.emu6502.R
+import android.emu6502.nes.Console
+import android.emu6502.nes.INESFileParser
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
 
 class MainActivity : AppCompatActivity() {
-  private lateinit var emulator: Emulator
+  private lateinit var console: Console
+  private val bgHandlerThread = HandlerThread("CPU Thread")
+  private val bgHandler: Handler
+
+  init {
+    bgHandlerThread.start()
+    bgHandler = Handler(bgHandlerThread.looper)
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -23,23 +32,29 @@ class MainActivity : AppCompatActivity() {
     actionBar.setDisplayHomeAsUpEnabled(true)
     fabRun.setOnClickListener {
       display_wrapper.visibility = View.VISIBLE
-      emulator = Emulator(display)
-      emulator.assembler.assembleCode(txtInstructions.text.toString().split("\n"))
-      Snackbar.make(layout_content,
-          "Code assembled successfully, ${emulator.assembler.codeLen} bytes.",
-          Snackbar.LENGTH_SHORT).show()
-      emulator.cpu.run()
+      val stream = resources.openRawResource(R.raw.smb3)
+      val cartridge = INESFileParser.parseCartridge(stream)
+      console = Console.newConsole(cartridge, display)
+      console.reset()
+      bgHandler.post {
+        step()
+      }
     }
 
-    btnReset.setOnClickListener { emulator.reset() }
+    btnReset.setOnClickListener { console.cpu.reset() }
 
     val onClickButton = { code: Int ->
-      emulator.cpu.memory.storeKeypress(code)
+//      console.cpu.memory.storeKeypress(code)
     }
     arrowLeft.setOnClickListener { onClickButton(0x61) }
     arrowRight.setOnClickListener { onClickButton(0x64) }
     arrowUp.setOnClickListener { onClickButton(0x77) }
     arrowDown.setOnClickListener { onClickButton(0x73) }
+  }
+
+  private fun step() {
+    console.step()
+    bgHandler.postDelayed({ step() }, 10)
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

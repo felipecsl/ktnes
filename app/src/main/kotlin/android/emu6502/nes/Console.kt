@@ -13,20 +13,37 @@ class Console(
     val controller1: Controller,
     val controller2: Controller,
     val mapper: Mapper,
-    val ram: ByteArray = ByteArray(2048)
+    val display: Display,
+    val ram: IntArray = IntArray(2048)
 ) {
-  fun step() {
+  fun step(): Int {
+    val cpuCycles = cpu.step()
+    val ppuCycles = cpuCycles * 3
+    0.until(ppuCycles).forEach {
+      ppu.step()
+      mapper.step()
+    }
+    0.until(cpuCycles).forEach {
+      apu.step()
+    }
+    display.setView(ppu.front)
+    return cpuCycles
+  }
 
+  fun reset() {
+    cpu.reset()
   }
 
   companion object {
     fun newConsole(cartridge: Cartridge, display: Display): Console {
       val ppu = PPU()
-      val memory = Memory(display)
-      val cpu = CPU(memory)
+      val cpu = CPU()
       val mapper = Mapper.newMapper(cartridge, ppu, cpu)
       val apu = APU()
-      return Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper)
+      val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, display)
+      ppu.console = console
+      cpu.console = console
+      return console
     }
   }
 }

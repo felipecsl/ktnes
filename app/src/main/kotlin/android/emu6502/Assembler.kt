@@ -2,7 +2,7 @@ package android.emu6502
 
 import java.util.regex.Pattern
 
-class Assembler(private var memory: Memory, private val symbols: Symbols) {
+class Assembler(private var memory: Memory, private val symbols: MutableMap<String, String>) {
   var codeLen = 0
   var defaultCodePC = BOOTSTRAP_ADDRESS
   private var labels = Labels(this, symbols)
@@ -93,7 +93,8 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       return DCB(param)
     }
 
-    val opcode = Opcodes.MAP[Instruction.valueOf(command)]
+    TODO()
+/*    val opcode = Opcodes.MAP[Instruction.valueOf(command)]
 
     if (opcode != null) {
       if (checkImmediate(param, opcode[0].opcode.toInt())) {
@@ -132,7 +133,7 @@ class Assembler(private var memory: Memory, private val symbols: Symbols) {
       if (checkBranch(param, opcode[11].opcode.toInt())) {
         return true
       }
-    }
+    }*/
     return false
   }
 

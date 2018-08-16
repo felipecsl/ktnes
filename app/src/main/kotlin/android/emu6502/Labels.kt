@@ -3,7 +3,7 @@ package android.emu6502
 import java.util.*
 
 class Labels(private val assembler: Assembler,
-    private val symbols: Symbols) : HashMap<String, Int>() {
+    private val symbols: Map<String, String>) : HashMap<String, Int>() {
   private val labelIndex: ArrayList<String> = ArrayList()
 
   fun indexLines(lines: List<String>) {

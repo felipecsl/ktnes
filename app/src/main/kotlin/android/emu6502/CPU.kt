@@ -1,7 +1,6 @@
 package android.emu6502
 
 import android.emu6502.nes.Console
-import android.os.Build.VERSION_CODES.P
 import android.os.Handler
 import android.os.HandlerThread
 import java.util.concurrent.CountDownLatch
@@ -228,20 +227,9 @@ class CPU : Display.Callbacks {
   }
 
   fun reset() {
-    A = 0
-    Y = 0
-    X = 0
     PC = read16(0xFFFC)
     SP = 0xFD
     setFlags(0x24)
-  }
-
-  fun overflow(): Boolean {
-    return P.and(0x40) != 0
-  }
-
-  fun negative(): Boolean {
-    return P.and(0x80) != 0
   }
 
   // push pushes a byte onto the stack
@@ -301,7 +289,7 @@ class CPU : Display.Callbacks {
 
   // triggerIRQ causes an IRQ interrupt to occur on the next cycle
   fun triggerIRQ() {
-    if (P and 0x20 == 0) {
+    if (I == 0) {
       interrupt = Interrupt.IRQ
     }
   }

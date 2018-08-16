@@ -1,8 +1,5 @@
 package android.emu6502
 
-import android.emu6502.instructions.Instruction
-import android.emu6502.instructions.Opcodes
-import android.emu6502.instructions.Symbols
 import java.util.regex.Pattern
 
 class Assembler(private var memory: Memory, private val symbols: Symbols) {

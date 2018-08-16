@@ -1,6 +1,5 @@
 package android.emu6502
 
-import android.emu6502.instructions.Symbols
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test

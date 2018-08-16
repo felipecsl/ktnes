@@ -1,6 +1,5 @@
 package android.emu6502
 
-import android.emu6502.instructions.Symbols
 import java.util.*
 
 class Labels(private val assembler: Assembler,

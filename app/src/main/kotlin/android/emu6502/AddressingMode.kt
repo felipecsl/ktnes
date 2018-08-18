@@ -1,6 +1,7 @@
 package android.emu6502
 
 enum class AddressingMode {
+  UNUSED,
   MODE_ABSOLUTE,
   MODE_ABSOLUTEX,
   MODE_ABSOLUTEY,

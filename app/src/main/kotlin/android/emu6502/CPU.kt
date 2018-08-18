@@ -4,8 +4,10 @@ import android.emu6502.nes.Console
 import android.os.Handler
 import android.os.HandlerThread
 import java.util.concurrent.CountDownLatch
+import java.util.logging.Logger
 
 class CPU : Display.Callbacks {
+  private val LOG = Logger.getLogger(CPU::class.java.name)
   lateinit var console: Console
   private val bgHandlerThread = HandlerThread("Screencast Thread")
   private val bgHandler: Handler
@@ -115,6 +117,8 @@ class CPU : Display.Callbacks {
         console.ram[address % 0x0800] = value
       address < 0x4000 ->
         console.ppu.writeRegister(0x2000 + address % 8, value)
+      address < 0x4014 ->
+        console.apu.writeRegister(address, value)
       address == 0x4014 ->
         console.ppu.writeRegister(address, value)
       address == 0x4015 ->
@@ -179,7 +183,10 @@ class CPU : Display.Callbacks {
       cycles += instructionPageCycles[opcode]
     }
     val info = StepInfo(address, PC, mode)
-    table[opcode](info)
+    val function = table[opcode]
+    LOG.info("Running instruction ${function.name.toUpperCase()} ($opcode) " +
+        "with address ${info.address.toHexString()}")
+    function(info)
   }
 
   private fun isPageCrossed(mode: AddressingMode, address: Int) =
@@ -197,6 +204,7 @@ class CPU : Display.Callbacks {
         AddressingMode.MODE_ZEROPAGE -> false
         AddressingMode.MODE_ZEROPAGEX -> false
         AddressingMode.MODE_ZEROPAGEY -> false
+        else -> throw RuntimeException("Invalid addressing mode $mode")
       }
 
   private fun pagesDiffer(a: Int, b: Int) =
@@ -220,9 +228,10 @@ class CPU : Display.Callbacks {
         AddressingMode.MODE_ZEROPAGE -> read(PC + 1)
         AddressingMode.MODE_ZEROPAGEX -> (read(PC + 1) + X) and 0xff
         AddressingMode.MODE_ZEROPAGEY -> (read(PC + 1) + Y) and 0xff
+        else -> throw RuntimeException("Invalid addressing mode $mode")
       }
 
-  fun stop() {
+  private fun stop() {
     bgHandler.removeCallbacks(null)
   }
 
@@ -784,7 +793,6 @@ class CPU : Display.Callbacks {
 
   companion object {
     const val FREQUENCY = 1789773
-    const val TAG = "CPU"
     val instructionModes = arrayOf(
         6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
         10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,

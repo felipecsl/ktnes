@@ -9,8 +9,8 @@ class PPU(
     private var frame: Int = 0,            // frame counter
 
     // storage variables
-    var paletteData: IntArray = IntArray(32),
-    var nameTableData: IntArray = IntArray(2048),
+    private var paletteData: IntArray = IntArray(32),
+    private var nameTableData: IntArray = IntArray(2048),
     private var oamData: IntArray = IntArray(256),
     var front: Array<IntArray>   = Array(Display.NUM_X) { IntArray(Display.NUM_Y) },
     var back: Array<IntArray>    = Array(Display.NUM_X) { IntArray(Display.NUM_Y) },
@@ -26,7 +26,7 @@ class PPU(
     var nmiOccurred: Boolean = false,
     var nmiOutput: Boolean = false,
     var nmiPrevious: Boolean = false,
-    var nmiDelay: Byte = 0,
+    var nmiDelay: Int = 0,
 
     // background temporary variables
     var nameTableByte: Int = 0,
@@ -70,6 +70,10 @@ class PPU(
     // $2007 PPUDATA
     var bufferedData: Int = 0 // for buffered reads
 ) {
+  init {
+    reset()
+  }
+
   lateinit var console: Console
 
   fun readRegister(address: Int): Int {
@@ -186,7 +190,8 @@ class PPU(
   }
 
   private fun clearVerticalBlank() {
-
+    nmiOccurred = false
+    nmiChange()
   }
 
   private fun setVerticalBlank() {
@@ -308,7 +313,7 @@ class PPU(
       address < 0x2000 -> console.mapper.read(address)
       address < 0x3F00 -> {
         val mode = console.cartridge.mirror
-        nameTableData[mirrorAddress(mode.toByte(), address) % 2048]
+        nameTableData[mirrorAddress(mode, address) % 2048]
       }
       address < 0x4000 -> readPalette(address % 32)
       else -> throw RuntimeException("unhandled PPU memory read at address: $address")
@@ -331,7 +336,7 @@ class PPU(
       address < 0x2000 -> console.mapper.write(address, value)
       address < 0x3F00 -> {
         val mode = console.cartridge.mirror
-        nameTableData[mirrorAddress(mode.toByte(), address) % 2048] = value
+        nameTableData[mirrorAddress(mode, address) % 2048] = value
       }
       address < 0x4000 -> writePalette(address % 32, value)
       else -> throw RuntimeException("unhandled ppu memory write at address: $address")
@@ -461,7 +466,7 @@ class PPU(
   private fun tick() {
     if (nmiDelay > 0) {
       nmiDelay--
-      if (nmiDelay == 0.toByte() && nmiOutput && nmiOccurred) {
+      if (nmiDelay == 0 && nmiOutput && nmiOccurred) {
         console.cpu.triggerNMI()
       }
     }
@@ -598,5 +603,14 @@ class PPU(
   private fun fetchNameTableByte() {
     val address = 0x2000 or (v and 0x0FFF)
     nameTableByte = read(address)
+  }
+
+  private fun reset() {
+    cycle = 340
+    scanLine = 240
+    frame = 0
+    writeControl(0)
+    writeMask(0)
+    writeOAMAddress(0)
   }
 }

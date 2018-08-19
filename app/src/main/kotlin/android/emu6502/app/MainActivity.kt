@@ -33,8 +33,9 @@ class MainActivity : AppCompatActivity() {
     fabRun.setOnClickListener {
       display_wrapper.visibility = View.VISIBLE
       val stream = resources.openRawResource(R.raw.smb3)
+      val cpuTemplate = resources.openRawResource(R.raw.template)
       val cartridge = INESFileParser.parseCartridge(stream)
-      console = Console.newConsole(cartridge, display)
+      console = Console.newConsole(cartridge, display, cpuTemplate)
       console.reset()
       bgHandler.post {
         step()
@@ -54,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
   private fun step() {
     console.step()
-    bgHandler.postDelayed({ step() }, 10)
+    bgHandler.post { step() }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

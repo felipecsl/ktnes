@@ -3,10 +3,12 @@ package android.emu6502
 import android.emu6502.nes.Console
 import android.os.Handler
 import android.os.HandlerThread
+import java.io.InputStream
 import java.util.concurrent.CountDownLatch
 import java.util.logging.Logger
 
-class CPU : Display.Callbacks {
+class CPU(cpuTemplate: InputStream) : Display.Callbacks {
+  private val cpuTemplateReader = cpuTemplate.bufferedReader()
   private val LOG = Logger.getLogger(CPU::class.java.name)
   lateinit var console: Console
   private val bgHandlerThread = HandlerThread("Screencast Thread")
@@ -18,11 +20,12 @@ class CPU : Display.Callbacks {
     bgHandler = Handler(bgHandlerThread.looper)
   }
 
-  var A: Int = 0                     // Accumulator
-  var X: Int = 0                     // Register X
-  var Y: Int = 0                     // Register Y
-  var PC: Int = 0                     // Program counter
-  var SP: Int = 0xFF                 // Stack pointer
+  var cycles: Long = 0              // number of cycles
+  var PC: Int = 0                   // Program counter
+  var SP: Int = 0xFF                // Stack pointer
+  var A: Int = 0                    // Accumulator
+  var X: Int = 0                    // Register X
+  var Y: Int = 0                    // Register Y
   var C: Int = 0                    // carry flag
   var Z: Int = 0                    // zero flag
   var I: Int = 0                    // interrupt disable flag
@@ -31,9 +34,8 @@ class CPU : Display.Callbacks {
   var U: Int = 0                    // unused flag
   var V: Int = 0                    // overflow flag
   var N: Int = 0                    // negative flag
-  var stall: Int = 0                  // number of cycles to stall
-  var cycles: Int = 0                 // number of cycles
-  var interrupt: Interrupt = Interrupt.NONE
+  var stall: Int = 0                // number of cycles to stall
+  private var interrupt: Interrupt = Interrupt.NONE
   val table = arrayOf(
       ::brk, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
       ::php, ::ora, ::asl, ::anc, ::nop, ::ora, ::asl, ::slo,
@@ -136,7 +138,7 @@ class CPU : Display.Callbacks {
     }
   }
 
-  fun step(): Int {
+  fun step(): Long {
     if (stall > 0) {
       stall--
       return 1
@@ -184,9 +186,44 @@ class CPU : Display.Callbacks {
     }
     val info = StepInfo(address, PC, mode)
     val function = table[opcode]
-    LOG.info("Running instruction ${function.name.toUpperCase()} ($opcode) " +
-        "with address ${info.address.toHexString()}")
+    val line = cpuTemplateReader.readLine().split(", ")
+    validateState(line, function.name.toUpperCase(), opcode, info.address.toHexString())
     function(info)
+  }
+
+  private fun validateState(line: List<String>, instruction: String, opcode: Int, address: String) {
+    val debugLog = "Cycles=$cycles, instruction=$instruction ($opcode), address=0x$address, " +
+        "A=$A, X=$X, Y=$Y, PC=$PC, SP=$SP, flags=${flags()}, interrupt=$interrupt"
+    if (line[0].toLong() != cycles) {
+      throw RuntimeException("Cycle mismatch. expected=${line[0]}, actual=$cycles\n$debugLog")
+    }
+    if (line[1].toInt() != opcode) {
+      throw RuntimeException("Opcode mismatch. Expected ${line[1]}, actual=$opcode\n$debugLog")
+    }
+    if (line[2] != "0x$address") {
+      throw RuntimeException("Address mismatch. Expected ${line[2]}, actual=$address\n$debugLog")
+    }
+    if (line[3].toInt() != A) {
+      throw RuntimeException("A register mismatch. Expected ${line[3]}, actual=$A\n$debugLog")
+    }
+    if (line[4].toInt() != X) {
+      throw RuntimeException("X register mismatch. Expected ${line[4]}, actual=$X\n$debugLog")
+    }
+    if (line[5].toInt() != Y) {
+      throw RuntimeException("Y register mismatch. Expected ${line[5]}, actual=$Y\n$debugLog")
+    }
+    if (line[6].toInt() != PC) {
+      throw RuntimeException("PC register mismatch. Expected ${line[6]}, actual=$PC\n$debugLog")
+    }
+    if (line[7].toInt() != SP) {
+      throw RuntimeException("SP register mismatch. Expected ${line[7]}, actual=$SP\n$debugLog")
+    }
+    if (line[8].toInt() != flags()) {
+      throw RuntimeException("Flags mismatch. Expected ${line[8]}, actual=$${flags()}\n$debugLog")
+    }
+    if (line[9].toInt() != interrupt.ordinal) {
+      throw RuntimeException("interrupt mismatch. Expected ${line[9]}, actual=$$interrupt\n$debugLog")
+    }
   }
 
   private fun isPageCrossed(mode: AddressingMode, address: Int) =
@@ -244,7 +281,7 @@ class CPU : Display.Callbacks {
   // push pushes a byte onto the stack
   private fun push(value: Int) {
     write(0x100 or SP, value)
-    SP.dec()
+    SP = (SP - 1) and 0xFF
   }
 
   // push16 pushes two bytes onto the stack
@@ -257,7 +294,7 @@ class CPU : Display.Callbacks {
 
   // pull pops a byte from the stack
   private fun pull(): Int {
-    SP.inc()
+    SP = (SP + 1) and 0xFF
     return read(0x100 or SP)
   }
 
@@ -346,7 +383,7 @@ class CPU : Display.Callbacks {
     val a = A
     val b = read(info.address)
     val c = C
-    A = a + b + c
+    A = (a + b + c) and 0xFF
     setZN(A)
     C = if (a + b + c > 0xFF) 1 else 0
     V = if ((a xor b) and 0x80 == 0 && (a xor A) and 0x80 != 0) 1 else 0
@@ -365,8 +402,7 @@ class CPU : Display.Callbacks {
       A = A shl 1
       setZN(A)
     } else {
-      var
-          value = read(info.address)
+      var value = read(info.address)
       C = (value shr 7) and 1
       value = value shl 1
       write(info.address, value)
@@ -501,13 +537,13 @@ class CPU : Display.Callbacks {
 
   // DEX - Decrement X Register
   private fun dex(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
-    X--
+    X = (X - 1) and 0xFF
     setZN(X)
   }
 
   // DEY - Decrement Y Register
   private fun dey(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
-    Y--
+    Y = (Y - 1) and 0xFF
     setZN(Y)
   }
 
@@ -519,20 +555,20 @@ class CPU : Display.Callbacks {
 
   // INC - Increment Memory
   private fun inc(info: StepInfo) {
-    val value = read(info.address) + 1
+    val value = (read(info.address) + 1) and 0xFF
     write(info.address, value)
     setZN(value)
   }
 
   // INX - Increment X Register
   private fun inx(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
-    X++
+    X = (X + 1) and 0xFF
     setZN(X)
   }
 
   // INY - Increment Y Register
   private fun iny(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
-    Y++
+    Y = (Y + 1) and 0xFF
     setZN(Y)
   }
 
@@ -661,9 +697,9 @@ class CPU : Display.Callbacks {
     val a = A
     val b = read(info.address)
     val c = C
-    A = a - b - (1 - c)
+    A = (a - b - ((1 - c) and 0xFF)) and 0xFF
     setZN(A)
-    C = if (a - b - (1 - c) >= 0) 1 else 0
+    C = if (a - b - ((1 - c) and 0xFF) >= 0) 1 else 0
     V = if ((a xor b) and 0x80 != 0 && (a xor A) and 0x80 != 0) 1 else 0
   }
 
@@ -722,73 +758,72 @@ class CPU : Display.Callbacks {
   }
 
   // TXS - Transfer X to Stack Pointer
-  fun txs(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun txs(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
     SP = X
   }
 
   // TYA - Transfer Y to Accumulator
-  fun tya(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun tya(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
     A = Y
     setZN(A)
   }
 
   // illegal opcodes below
-
-  fun ahx(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun ahx(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun alr(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun alr(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun anc(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun anc(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun arr(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun arr(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun axs(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun axs(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun dcp(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun dcp(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun isc(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun isc(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun kil(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun kil(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun las(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun las(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun lax(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun lax(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun rla(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun rla(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun rra(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun rra(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun sax(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun sax(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun shx(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun shx(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun shy(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun shy(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun slo(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun slo(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun sre(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun sre(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun tas(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun tas(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
-  fun xaa(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
+  private fun xaa(@Suppress("UNUSED_PARAMETER") info: StepInfo) {
   }
 
   companion object {

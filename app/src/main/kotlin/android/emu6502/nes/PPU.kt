@@ -87,8 +87,8 @@ class PPU(
 
   private fun readStatus(): Int {
     var result = register and 0x1F
-    result = result or flagSpriteOverflow shl 5
-    result = result or flagSpriteZeroHit shl 6
+    result = result or (flagSpriteOverflow shl 5)
+    result = result or (flagSpriteZeroHit shl 6)
     if (nmiOccurred) {
       result = result or (1 shl 7)
     }
@@ -118,11 +118,11 @@ class PPU(
     var address = value shl 8
     0.until(256).forEach {
       oamData[oamAddress] = cpu.read(address)
-      oamAddress++
+      oamAddress = (oamAddress + 1) and 0xFF
       address++
     }
     cpu.stall += 513
-    if (cpu.cycles % 2 == 1) {
+    if (cpu.cycles % 2 == 1L) {
       cpu.stall++
     }
   }
@@ -207,9 +207,9 @@ class PPU(
     val h = if (flagSpriteSize == 0) 8 else 16
     var count = 0
     0.until(64).forEach { i ->
-      val y = oamData[i * 4 + 0]
-      val a = oamData[i * 4 + 2]
-      val x = oamData[i * 4 + 3]
+      val y = oamData[i * 4 + 0] and 0xFF
+      val a = oamData[i * 4 + 2] and 0xFF
+      val x = oamData[i * 4 + 3] and 0xFF
       val row = scanLine - y
       if (row < 0 || row >= h) {
         // continue
@@ -231,8 +231,8 @@ class PPU(
   }
 
   private fun fetchSpritePattern(i: Int, _row: Int): Int {
-    var tile = oamData[i * 4 + 1]
-    val attributes: Int = oamData[i * 4 + 2]
+    var tile = oamData[i * 4 + 1] and 0xFF
+    val attributes: Int = oamData[i * 4 + 2] and 0xFF
     val address: Int
     var row = _row
     if (flagSpriteSize == 0) {

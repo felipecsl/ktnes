@@ -2,8 +2,8 @@ package android.emu6502.nes
 
 import android.emu6502.CPU
 import android.emu6502.Display
-import android.emu6502.Memory
 import android.emu6502.nes.mappers.Mapper
+import java.io.InputStream
 
 class Console(
     val cpu: CPU,
@@ -16,7 +16,7 @@ class Console(
     val display: Display,
     val ram: IntArray = IntArray(2048)
 ) {
-  fun step(): Int {
+  fun step(): Long {
     val cpuCycles = cpu.step()
     val ppuCycles = cpuCycles * 3
     0.until(ppuCycles).forEach {
@@ -35,9 +35,9 @@ class Console(
   }
 
   companion object {
-    fun newConsole(cartridge: Cartridge, display: Display): Console {
+    fun newConsole(cartridge: Cartridge, display: Display, cpuTemplate: InputStream): Console {
       val ppu = PPU()
-      val cpu = CPU()
+      val cpu = CPU(cpuTemplate)
       val mapper = Mapper.newMapper(cartridge, ppu, cpu)
       val apu = APU()
       val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, display)

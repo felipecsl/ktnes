@@ -6,7 +6,7 @@ data class Cartridge(
     // @formatter:off
     val prg: Array<Int>,                       // PRG-ROM banks
     val chr: Array<Int>,                       // CHR-ROM banks
-    val mapper: Int,                         // mapper type
+    val mapper: Int,                         // mapper_state_reference type
     var mirror: Int,                          // mirroring mode
     val battery: Int,                        // battery present
     val sram: IntArray = IntArray(0x2000)   // Save RAM

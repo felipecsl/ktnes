@@ -35,10 +35,15 @@ class Console(
   }
 
   companion object {
-    fun newConsole(cartridge: Cartridge, display: Display, cpuTemplate: InputStream): Console {
+    fun newConsole(
+        cartridge: Cartridge,
+        display: Display,
+        cpuReference: InputStream,
+        mapperReference: InputStream
+    ): Console {
       val ppu = PPU()
-      val cpu = CPU(cpuTemplate)
-      val mapper = Mapper.newMapper(cartridge, ppu, cpu)
+      val cpu = CPU(cpuReference)
+      val mapper = Mapper.newMapper(cartridge, ppu, cpu, mapperReference)
       val apu = APU()
       val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, display)
       ppu.console = console

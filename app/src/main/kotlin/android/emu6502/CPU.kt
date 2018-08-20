@@ -186,43 +186,38 @@ class CPU(cpuTemplate: InputStream) : Display.Callbacks {
     }
     val info = StepInfo(address, PC, mode)
     val function = table[opcode]
-    val line = cpuTemplateReader.readLine().split(", ")
-    validateState(line, function.name.toUpperCase(), opcode, info.address.toHexString())
+    val expectedState = cpuTemplateReader.readLine().split(", ")
+    validateState(expectedState, opcode, info.address.toHexString())
     function(info)
   }
 
-  private fun validateState(line: List<String>, instruction: String, opcode: Int, address: String) {
-    val debugLog = "Cycles=$cycles, instruction=$instruction ($opcode), address=0x$address, " +
-        "A=$A, X=$X, Y=$Y, PC=$PC, SP=$SP, flags=${flags()}, interrupt=$interrupt"
-    if (line[0].toLong() != cycles) {
-      throw RuntimeException("Cycle mismatch. expected=${line[0]}, actual=$cycles\n$debugLog")
-    }
-    if (line[1].toInt() != opcode) {
-      throw RuntimeException("Opcode mismatch. Expected ${line[1]}, actual=$opcode\n$debugLog")
-    }
-    if (line[2] != "0x$address") {
-      throw RuntimeException("Address mismatch. Expected ${line[2]}, actual=$address\n$debugLog")
-    }
-    if (line[3].toInt() != A) {
-      throw RuntimeException("A register mismatch. Expected ${line[3]}, actual=$A\n$debugLog")
-    }
-    if (line[4].toInt() != X) {
-      throw RuntimeException("X register mismatch. Expected ${line[4]}, actual=$X\n$debugLog")
-    }
-    if (line[5].toInt() != Y) {
-      throw RuntimeException("Y register mismatch. Expected ${line[5]}, actual=$Y\n$debugLog")
-    }
-    if (line[6].toInt() != PC) {
-      throw RuntimeException("PC register mismatch. Expected ${line[6]}, actual=$PC\n$debugLog")
-    }
-    if (line[7].toInt() != SP) {
-      throw RuntimeException("SP register mismatch. Expected ${line[7]}, actual=$SP\n$debugLog")
-    }
-    if (line[8].toInt() != flags()) {
-      throw RuntimeException("Flags mismatch. Expected ${line[8]}, actual=$${flags()}\n$debugLog")
-    }
-    if (line[9].toInt() != interrupt.ordinal) {
-      throw RuntimeException("interrupt mismatch. Expected ${line[9]}, actual=$$interrupt\n$debugLog")
+  private fun validateState(expectedState: List<String>, opcode: Int, address: String) {
+    val map = mapOf(
+        "cycles" to cycles,
+        "opcode" to opcode,
+        "address" to "0x$address",
+        "A" to A,
+        "X" to X,
+        "Y" to Y,
+        "PC" to PC,
+        "SP" to SP,
+        "flags" to flags(),
+        "interrupt" to interrupt.ordinal
+    )
+    map.entries.forEachIndexed { i, (_, v) ->
+      if (expectedState[i] != v.toString()) {
+        val actualInstruction = table[opcode].name.toUpperCase()
+        val actual = "cycles=$cycles, opcode=$opcode ($actualInstruction), address=0x$address, " +
+            "A=$A, X=$X, Y=$Y, PC=$PC, SP=$SP, flags=${flags()}, interrupt=${interrupt.ordinal}"
+        val expected = map.keys.mapIndexed { index, k ->
+          val value = expectedState[index]
+          if (k == "opcode") {
+            val expectedInstruction = table[value.toInt()].name.toUpperCase()
+            "$k=$value ($expectedInstruction)"
+          } else "$k=$value"
+        }.joinToString()
+        throw RuntimeException("State mismatch.\nExpected:\n$expected\nActual:\n$actual")
+      }
     }
   }
 

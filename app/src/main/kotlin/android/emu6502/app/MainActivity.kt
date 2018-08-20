@@ -33,9 +33,10 @@ class MainActivity : AppCompatActivity() {
     fabRun.setOnClickListener {
       display_wrapper.visibility = View.VISIBLE
       val stream = resources.openRawResource(R.raw.smb3)
-      val cpuTemplate = resources.openRawResource(R.raw.template)
+      val cpuReference = resources.openRawResource(R.raw.cpu_state_reference)
+      val mapperReference = resources.openRawResource(R.raw.mapper_state_reference)
       val cartridge = INESFileParser.parseCartridge(stream)
-      console = Console.newConsole(cartridge, display, cpuTemplate)
+      console = Console.newConsole(cartridge, display, cpuReference, mapperReference)
       console.reset()
       bgHandler.post {
         step()

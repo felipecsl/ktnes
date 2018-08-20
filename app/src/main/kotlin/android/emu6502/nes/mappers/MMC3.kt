@@ -4,13 +4,16 @@ import android.emu6502.CPU
 import android.emu6502.nes.Cartridge
 import android.emu6502.nes.PPU
 import android.emu6502.toHexString
+import java.io.InputStream
 
 // http://wiki.nesdev.com/w/index.php/MMC3
 class MMC3(
     private val cartridge: Cartridge,
     private val ppu: PPU,
-    private val cpu: CPU
+    private val cpu: CPU,
+    mapperReference: InputStream
 ) : Mapper {
+  private val mapperReferenceReader = mapperReference.bufferedReader()
   private var register: Int = 0
   private var registers = IntArray(8)
   private var prgMode: Int = 0
@@ -198,13 +201,36 @@ class MMC3(
       return
     }
     handleScanLine()
+    val expectedState = mapperReferenceReader.readLine().split(", ")
+    validateState(expectedState)
+  }
+
+  private fun validateState(expectedState: List<String>) {
+    val map = mapOf(
+        "register" to register,
+        "registers" to registers,
+        "prgMode" to prgMode,
+        "chrMode" to chrMode,
+        "prgOffsets" to prgOffsets,
+        "chrOffsets" to chrOffsets,
+        "reload" to reload,
+        "counter" to counter,
+        "irqEnable" to irqEnable
+    )
+    map.entries.forEachIndexed { i, (_, v) ->
+      if (expectedState[i] != v.toString()) {
+        val expected = map.keys.mapIndexed { index, k -> "$k=${expectedState[index]}" }
+        val actual = map.entries.map { (k, v) -> "$k=$v" }
+        throw RuntimeException("State mismatch.\nExpected:\n$expected\nActual:\n$actual")
+      }
+    }
   }
 
   private fun handleScanLine() {
     if (counter == 0) {
       counter = reload
     } else {
-      counter--
+      counter = (counter - 1) and 0xFF
       if (counter == 0 && irqEnable) {
         cpu.triggerIRQ()
       }

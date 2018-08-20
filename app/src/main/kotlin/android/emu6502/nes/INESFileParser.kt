@@ -30,13 +30,13 @@ internal class INESFileParser {
           if (!inesFileHeader.isValid()) {
             throw IllegalArgumentException("Invalid INES file header")
           }
-          // mapper type
+          // mapper_state_reference type
           val control1 = inesFileHeader.control1.toInt()
           val mapper1 = control1 shr 4
           val mapper2 = inesFileHeader.control2.toInt() shr 4
           val mapper = mapper1 or (mapper2 shl 4)
           if (mapper != 4) {
-            throw IllegalArgumentException("Unsupported mapper type $mapper")
+            throw IllegalArgumentException("Unsupported mapper_state_reference type $mapper")
           }
           // mirroring type
           val mirror1 = control1 and 1

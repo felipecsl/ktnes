@@ -1,6 +1,6 @@
 package com.felipecsl.android
 
-class Memory(private val display: Display) {
+class Memory {
   private val mem = IntArray(65536)
 
   fun get(addr: Int): Int {

@@ -4,10 +4,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import com.felipecsl.android.nes.Console
 import java.util.concurrent.CountDownLatch
-import java.util.logging.Logger
 
-class CPU(private val stepCallback: StepCallback? = null) : Display.Callbacks {
-  private val LOG = Logger.getLogger(CPU::class.java.name)
+class CPU(private val stepCallback: StepCallback? = null) {
   lateinit var console: Console
   private val bgHandlerThread = HandlerThread("Screencast Thread")
   private val bgHandler: Handler
@@ -292,15 +290,6 @@ class CPU(private val stepCallback: StepCallback? = null) : Display.Callbacks {
     flags = flags or (V shl 6)
     flags = flags or (N shl 7)
     return flags
-  }
-
-  override fun onUpdate() {
-    executionLock = CountDownLatch(1)
-    executionLock?.await()
-  }
-
-  override fun onDraw() {
-    executionLock?.countDown()
   }
 
   // triggerIRQ causes an IRQ interrupt to occur on the next cycle

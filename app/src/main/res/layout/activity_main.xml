@@ -44,12 +44,10 @@
                 <FrameLayout
                     android:id="@+id/display_wrapper"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@android:color/black"
-                    android:visibility="gone">
+                    android:layout_height="match_parent">
 
-                    <com.felipecsl.android.Display
-                        android:id="@+id/display"
+                    <com.felipecsl.android.NesGLSurfaceView
+                        android:id="@+id/surface_view"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"/>
                 </FrameLayout>

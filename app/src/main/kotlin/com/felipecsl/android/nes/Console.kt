@@ -1,7 +1,7 @@
 package com.felipecsl.android.nes
 
 import com.felipecsl.android.CPU
-import com.felipecsl.android.Display
+import com.felipecsl.android.NesGLSurfaceView
 import com.felipecsl.android.nes.mappers.MMC3
 import com.felipecsl.android.nes.mappers.Mapper
 
@@ -13,7 +13,7 @@ class Console(
     val controller1: Controller,
     val controller2: Controller,
     val mapper: Mapper,
-    val display: Display,
+    val surfaceView: NesGLSurfaceView,
     val ram: IntArray = IntArray(2048)
 ) {
   fun step(): Long {
@@ -26,7 +26,7 @@ class Console(
     0.until(cpuCycles).forEach {
       apu.step()
     }
-    display.setView(ppu.front)
+    surfaceView.setTexture(ppu.front)
     return cpuCycles
   }
 
@@ -37,14 +37,14 @@ class Console(
   companion object {
     fun newConsole(
         cartridge: Cartridge,
-        display: Display,
+        surfaceView: NesGLSurfaceView,
         ppu: PPU = PPU(),
         apu: APU = APU(),
         cpu: CPU = CPU(),
         mapperStepCallback: MMC3.StepCallback? = null,
         mapper: Mapper = Mapper.newMapper(cartridge, ppu, cpu, mapperStepCallback)
     ): Console {
-      val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, display)
+      val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, surfaceView)
       ppu.console = console
       cpu.console = console
       return console

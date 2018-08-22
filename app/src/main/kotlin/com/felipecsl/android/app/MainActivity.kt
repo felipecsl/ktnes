@@ -1,8 +1,6 @@
 package com.felipecsl.android.app
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -13,16 +11,11 @@ import com.felipecsl.android.nes.Console
 import com.felipecsl.android.nes.INESFileParser
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
   private lateinit var console: Console
-  private val bgHandlerThread = HandlerThread("CPU Thread")
-  private val bgHandler: Handler
-
-  init {
-    bgHandlerThread.start()
-    bgHandler = Handler(bgHandlerThread.looper)
-  }
+  private val executor = Executors.newSingleThreadExecutor()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -33,11 +26,9 @@ class MainActivity : AppCompatActivity() {
     fabRun.setOnClickListener {
       display_wrapper.visibility = View.VISIBLE
       val cartridge = INESFileParser.parseCartridge(resources.openRawResource(R.raw.smb3))
-      console = Console.newConsole(cartridge, display)
+      console = Console.newConsole(cartridge, surface_view)
       console.reset()
-      bgHandler.post {
-        step()
-      }
+      executor.submit { step() }
     }
 
     btnReset.setOnClickListener { console.cpu.reset() }
@@ -53,7 +44,7 @@ class MainActivity : AppCompatActivity() {
 
   private fun step() {
     console.step()
-    bgHandler.post { step() }
+    executor.submit { step() }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

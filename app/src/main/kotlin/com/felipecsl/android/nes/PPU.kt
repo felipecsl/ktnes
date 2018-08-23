@@ -481,9 +481,9 @@ class PPU(
       if (color % 4 == 0) {
         continue
       }
-      return i to color
+      return Pair(i, color)
     }
-    return 0 to 0
+    return Pair(0, 0)
   }
 
   private fun tick() {

@@ -10,12 +10,11 @@ import java.util.logging.Logger
 
 class Sprite(private val texture: Int) {
   var image: Bitmap? = null
-  private var textureCreated = false
+  private var context: RenderContext? = null
 
   fun draw() {
-    if (!textureCreated && image != null) {
+    if (image != null) {
       createTexture(image!!)
-//      textureCreated = true
     }
     renderTexture()
   }
@@ -51,6 +50,9 @@ class Sprite(private val texture: Int) {
   }
 
   private fun createProgram(): RenderContext? {
+    if (context != null) {
+      return context
+    }
     val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER)
     if (vertexShader == 0) {
       return null
@@ -73,7 +75,7 @@ class Sprite(private val texture: Int) {
       }
     }
     // Bind attributes and uniforms
-    return RenderContext(
+    context = RenderContext(
         texSamplerHandle = GLES20.glGetUniformLocation(program, "tex_sampler"),
         texCoordHandle = GLES20.glGetAttribLocation(program, "a_texcoord"),
         posCoordHandle = GLES20.glGetAttribLocation(program, "a_position"),
@@ -81,6 +83,7 @@ class Sprite(private val texture: Int) {
         posVertices = createVerticesBuffer(POS_VERTICES),
         shaderProgram = program
     )
+    return context
   }
 
   private fun createTexture(bitmap: Bitmap) {

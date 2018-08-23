@@ -18,12 +18,11 @@ class Console(
 ) {
   fun step(): Long {
     val cpuCycles = cpu.step()
-    val ppuCycles = cpuCycles * 3
-    0.until(ppuCycles).forEach {
+    for (it in 0 until cpuCycles * 3) {
       ppu.step()
       mapper.step()
     }
-    0.until(cpuCycles).forEach {
+    for (it in 0 until cpuCycles) {
       apu.step()
     }
     surfaceView.setTexture(ppu.front)

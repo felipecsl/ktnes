@@ -3,13 +3,11 @@ package com.felipecsl.android
 import android.os.Handler
 import android.os.HandlerThread
 import com.felipecsl.android.nes.Console
-import java.util.concurrent.CountDownLatch
 
 class CPU(private val stepCallback: StepCallback? = null) {
   lateinit var console: Console
   private val bgHandlerThread = HandlerThread("Screencast Thread")
   private val bgHandler: Handler
-  private var executionLock: CountDownLatch? = null
 
   interface StepCallback {
     fun onStep(cycles: Long, PC: Int, SP: Int, A: Int, X: Int, Y: Int, C: Int, Z: Int, I: Int,
@@ -36,7 +34,6 @@ class CPU(private val stepCallback: StepCallback? = null) {
   var V: Int = 0                    // overflow flag
   var N: Int = 0                    // negative flag
   var stall: Int = 0                // number of cycles to stall
-  var lastOpcode: String? = null
   private var interrupt: Interrupt = Interrupt.NOT_SET
   val table = arrayOf(
       ::brk, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
@@ -142,7 +139,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
 
   fun step(): Long {
     stepCallback?.onStep(
-        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt.ordinal, stall, lastOpcode)
+        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt.ordinal, stall, null)
     if (stall > 0) {
       stall--
       return 1
@@ -190,7 +187,6 @@ class CPU(private val stepCallback: StepCallback? = null) {
     }
     val info = StepInfo(address, PC, mode)
     val function = table[opcode]
-    lastOpcode = function.name.toUpperCase()
     function(info)
   }
 

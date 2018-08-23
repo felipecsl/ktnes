@@ -10,9 +10,9 @@ class PPU(
     private var frame: Int = 0,            // frame counter
 
     // storage variables
-    private var paletteData: IntArray = IntArray(32),
-    private var nameTableData: IntArray = IntArray(2048),
-    private var oamData: IntArray = IntArray(IMG_WIDTH),
+    var paletteData: IntArray = IntArray(32),
+    var nameTableData: IntArray = IntArray(2048),
+    var oamData: IntArray = IntArray(IMG_WIDTH),
     var front: Bitmap  = Bitmap.createBitmap(IMG_WIDTH, IMG_HEIGHT, Bitmap.Config.RGB_565),
     var back: Bitmap = Bitmap.createBitmap(IMG_WIDTH, IMG_HEIGHT, Bitmap.Config.RGB_565),
 
@@ -144,13 +144,13 @@ class PPU(
   }
 
   fun step() {
-    stepCallback?.step(cycle, scanLine, frame, paletteData, nameTableData, oamData, v, t, x, w, f,
-        register, nmiOccurred, nmiOutput, nmiPrevious, nmiDelay, nameTableByte, attributeTableByte,
-        lowTileByte, highTileByte, tileData, spriteCount, spritePatterns, spritePositions, spritePriorities,
-        spriteIndexes, flagNameTable, flagIncrement, flagSpriteTable, flagBackgroundTable,
-        flagSpriteSize, flagMasterSlave, flagGrayscale, flagShowLeftBackground, flagShowLeftSprites,
-        flagShowBackground, flagShowSprites, flagRedTint, flagGreenTint, flagBlueTint,
-        flagSpriteZeroHit, flagSpriteOverflow, oamAddress, bufferedData)
+//    stepCallback?.step(cycle, scanLine, frame, paletteData, nameTableData, oamData, v, t, x, w, f,
+//        register, nmiOccurred, nmiOutput, nmiPrevious, nmiDelay, nameTableByte, attributeTableByte,
+//        lowTileByte, highTileByte, tileData, spriteCount, spritePatterns, spritePositions, spritePriorities,
+//        spriteIndexes, flagNameTable, flagIncrement, flagSpriteTable, flagBackgroundTable,
+//        flagSpriteSize, flagMasterSlave, flagGrayscale, flagShowLeftBackground, flagShowLeftSprites,
+//        flagShowBackground, flagShowSprites, flagRedTint, flagGreenTint, flagBlueTint,
+//        flagSpriteZeroHit, flagSpriteOverflow, oamAddress, bufferedData)
     tick()
     val renderingEnabled = flagShowBackground != 0 || flagShowSprites != 0
     val preLine = scanLine == 261
@@ -638,8 +638,8 @@ class PPU(
   }
 
   companion object {
-    val IMG_WIDTH = 256
-    val IMG_HEIGHT = 240
+    const val IMG_WIDTH = 256
+    const val IMG_HEIGHT = 240
     val PALETTE = arrayOf(
         0x666666, 0x002A88, 0x1412A7, 0x3B00A4, 0x5C007E, 0x6E0040, 0x6C0600, 0x561D00,
         0x333500, 0x0B4800, 0x005200, 0x004F08, 0x00404D, 0x000000, 0x000000, 0x000000,

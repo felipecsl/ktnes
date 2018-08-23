@@ -9,14 +9,23 @@ import java.nio.FloatBuffer
 import java.util.logging.Logger
 
 class Sprite(private val texture: Int) {
-  var image: Bitmap? = null
+  private var image: Bitmap? = null
   private var context: RenderContext? = null
+  private var isDirty = false
 
   fun draw() {
-    if (image != null) {
+    if (isDirty) {
       createTexture(image!!)
+      isDirty = false
     }
     renderTexture()
+  }
+
+  fun setImage(image: Bitmap) {
+    if (image != this.image) {
+      this.image = image
+      isDirty = true
+    }
   }
 
   data class RenderContext(

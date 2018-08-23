@@ -20,7 +20,11 @@ class MainActivity : AppCompatActivity() {
   private val LOG = Logger.getLogger("NesGLRenderer")
   private var lastSecond: Long = 0
   private var totalCycles: Long = 0
-  private val executor = Executors.newSingleThreadExecutor()
+  private val executor = Executors.newSingleThreadExecutor {
+    Thread(it).also { t ->
+      t.priority = Thread.MAX_PRIORITY
+    }
+  }
   private val cpuRunnable = object : Runnable {
     @SuppressLint("SetTextI18n")
     override fun run() {

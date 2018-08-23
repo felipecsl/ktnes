@@ -11,16 +11,16 @@ class NesGLSurfaceView(
     context: Context,
     attributeSet: AttributeSet
 ) : GLSurfaceView(context, attributeSet) {
-  val renderer: NesGLRenderer
-  val mainHandler = Handler(Looper.getMainLooper())
+  private val renderer: NesGLRenderer
+  private val mainHandler = Handler(Looper.getMainLooper())
 
   init {
     // Create an OpenGL ES 2.0 context
     setEGLContextClientVersion(2)
-    renderer = NesGLRenderer()
-    // Render the view only when there is a change in the drawing data
     // Set the Renderer for drawing on the GLSurfaceView
+    renderer = NesGLRenderer()
     setRenderer(renderer)
+    // Render the view only when there is a change in the drawing data
     renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
   }
 

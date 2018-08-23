@@ -35,6 +35,6 @@ class NesGLRenderer : GLSurfaceView.Renderer {
   }
 
   fun setBitmap(image: Bitmap) {
-    sprite.image = image
+    sprite.setImage(image)
   }
 }

@@ -34,6 +34,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
   var V: Int = 0                    // overflow flag
   var N: Int = 0                    // negative flag
   var stall: Int = 0                // number of cycles to stall
+  private val addressingModes = AddressingMode.values()
   private var interrupt: Interrupt = Interrupt.NOT_SET
   val table = arrayOf(
       ::brk, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
@@ -70,17 +71,6 @@ class CPU(private val stepCallback: StepCallback? = null) {
       ::sed, ::sbc, ::nop, ::isc, ::nop, ::sbc, ::inc, ::isc
   )
 
-  // for testing only
-  fun testRun() {
-    while (true) {
-      executeNextInstruction()
-      if (PC == 0) {
-        break
-      }
-    }
-    stop()
-  }
-
   private fun read16(address: Int): Int {
     val lo = read(address)
     val hi = read(address + 1)
@@ -90,9 +80,8 @@ class CPU(private val stepCallback: StepCallback? = null) {
   // read16bug emulates a 6502 bug that caused the low byte to wrap without
   // incrementing the high byte
   private fun read16bug(address: Int): Int {
-    val a = address
-    val b = (a and 0xFF00) or (a + 1)
-    val lo = read(a)
+    val b = (address and 0xFF00) or (address + 1)
+    val lo = read(address)
     val hi = read(b)
     return (hi shl 8) or lo
   }
@@ -138,8 +127,8 @@ class CPU(private val stepCallback: StepCallback? = null) {
   }
 
   fun step(): Long {
-    stepCallback?.onStep(
-        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt.ordinal, stall, null)
+//    stepCallback?.onStep(
+//        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt.ordinal, stall, null)
     if (stall > 0) {
       stall--
       return 1
@@ -177,7 +166,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
   private fun executeNextInstruction() {
     val opcode = read(PC)
     val mode = instructionModes[opcode]
-    val addressingMode = AddressingMode.values()[mode]
+    val addressingMode = addressingModes[mode]
     val address = addressForMode(addressingMode)
     val pageCrossed = isPageCrossed(addressingMode, address)
     PC += instructionSizes[opcode]
@@ -185,9 +174,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
     if (pageCrossed) {
       cycles += instructionPageCycles[opcode]
     }
-    val info = StepInfo(address, PC, mode)
-    val function = table[opcode]
-    function(info)
+    table[opcode](StepInfo(address, PC, mode))
   }
 
   private fun isPageCrossed(mode: AddressingMode, address: Int) =
@@ -249,7 +236,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
   }
 
   // push16 pushes two bytes onto the stack
-  fun push16(value: Int) {
+  private fun push16(value: Int) {
     val hi = value shr 8
     val lo = value and 0xff
     push(hi)
@@ -305,12 +292,12 @@ class CPU(private val stepCallback: StepCallback? = null) {
     setNFlag(value)
   }
 
-  fun setZFlag(value: Int) {
+  private fun setZFlag(value: Int) {
     Z = if (value == 0) 1 else 0
   }
 
   // setN sets the negative flag if the argument is negative (high bit is set)
-  fun setNFlag(value: Int) {
+  private fun setNFlag(value: Int) {
     N = if (value and 0x80 != 0) 1 else 0
   }
 
@@ -438,7 +425,7 @@ class CPU(private val stepCallback: StepCallback? = null) {
   }
 
   // BVS - Branch if Overflow Set
-  fun bvs(info: StepInfo) {
+  private fun bvs(info: StepInfo) {
     if (V != 0) {
       PC = info.address
       addBranchCycles(info)

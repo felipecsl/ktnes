@@ -1,1 +1,4 @@
-include ':app'
+include ':common'
+include ':common-testing-jvm'
+include ':android:app'
+include ':android:native-lib'

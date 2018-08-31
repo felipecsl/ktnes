@@ -1,17 +1,19 @@
 package com.felipecsl.android
 
+import android.opengl.GLES11Ext.GL_BGRA
 import android.opengl.GLES20.*
 import com.felipecsl.knes.Bitmap
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.logging.Logger
 
 class Sprite(private val texture: Int) {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
   private var isDirty = false
-  private var buffer = ByteBuffer.allocateDirect(256 * 240 * 3)
+  private var buffer: IntBuffer? = null
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -39,15 +41,6 @@ class Sprite(private val texture: Int) {
 
   private fun renderTexture() {
     val context = createProgram() ?: return
-    // Use our shader program
-    glUseProgram(context.shaderProgram)
-    // Disable blending
-    glDisable(GL_BLEND)
-    // Set the vertex attributes
-    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
-    glEnableVertexAttribArray(context.texCoordHandle)
-    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
-    glEnableVertexAttribArray(context.posCoordHandle)
     // Set the input texture
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, texture)
@@ -90,34 +83,37 @@ class Sprite(private val texture: Int) {
         posVertices = createVerticesBuffer(POS_VERTICES),
         shaderProgram = program
     )
-    createTexture()
     return context
   }
 
-  private fun createTexture() {
-    for (i in 0 until (256 * 240)) {
-      buffer.put(0)
-    }
-    buffer.position(0)
+  private fun createTexture(width: Int, height: Int) {
     glBindTexture(GL_TEXTURE_2D, texture)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, width, height, 0, GL_BGRA,
         GL_UNSIGNED_BYTE, buffer)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    // Use our shader program
+    val context = context!!
+    glUseProgram(context.shaderProgram)
+    // Disable blending
+    glDisable(GL_BLEND)
+    // Set the vertex attributes
+    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
+    glEnableVertexAttribArray(context.texCoordHandle)
+    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
+    glEnableVertexAttribArray(context.posCoordHandle)
   }
 
   private fun updateTexture(bitmap: Bitmap) {
-    buffer.position(0)
-    bitmap.pixels.forEach { pixel ->
-      buffer.put((pixel shr 16 and 0xFF).toByte())
-      buffer.put((pixel shr 8 and 0xFF).toByte())
-      buffer.put((pixel and 0xFF).toByte())
+    if (buffer == null) {
+      buffer = IntBuffer.wrap(bitmap.pixels)
+      createTexture(bitmap.width, bitmap.height)
     }
-    buffer.position(0)
+//    buffer!!.position(0)
     glBindTexture(GL_TEXTURE_2D, texture)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_RGB,
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_BGRA,
         GL_UNSIGNED_BYTE, buffer)
   }
 

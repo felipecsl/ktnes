@@ -462,7 +462,7 @@ internal class PPU(
       spritePixel.sprite = 0
       return spritePixel
     }
-    for (i: Int in 0..spriteCount - 1) {
+    for (i in 0..spriteCount - 1) {
       var offset = (cycle - 1) - spritePositions[i]
       if (offset < 0 || offset > 7) {
         continue

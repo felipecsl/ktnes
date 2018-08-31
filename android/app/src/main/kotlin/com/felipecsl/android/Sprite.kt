@@ -5,14 +5,13 @@ import com.felipecsl.knes.Bitmap
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import java.util.logging.Logger
 
 class Sprite(private val texture: Int) {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
   private var isDirty = false
-  private var buffer: IntBuffer = ByteBuffer.allocateDirect(256 * 240 * 4).asIntBuffer()
+  private var buffer = ByteBuffer.allocateDirect(256 * 240 * 3)
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -101,7 +100,7 @@ class Sprite(private val texture: Int) {
     }
     buffer.position(0)
     glBindTexture(GL_TEXTURE_2D, texture)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 240, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB,
         GL_UNSIGNED_BYTE, buffer)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -110,12 +109,15 @@ class Sprite(private val texture: Int) {
   }
 
   private fun updateTexture(bitmap: Bitmap) {
-    bitmap.pixels.forEachIndexed { i, pixel ->
-      buffer.put(i, pixel)
+    buffer.position(0)
+    bitmap.pixels.forEach { pixel ->
+      buffer.put((pixel shr 16 and 0xFF).toByte())
+      buffer.put((pixel shr 8 and 0xFF).toByte())
+      buffer.put((pixel and 0xFF).toByte())
     }
     buffer.position(0)
     glBindTexture(GL_TEXTURE_2D, texture)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_RGBA,
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_RGB,
         GL_UNSIGNED_BYTE, buffer)
   }
 

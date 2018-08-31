@@ -1,6 +1,7 @@
 package com.felipecsl.knes
 
 import com.felipecsl.knes.CPU.Companion.FREQUENCY
+import kotlin.math.roundToInt
 
 object Director {
   fun startConsole(
@@ -23,7 +24,7 @@ object Director {
       val secondsSpent = (currentTimeMs() - startTime) / 1000
       val clock = totalCycles / secondsSpent
       val speed = (clock / FREQUENCY.toFloat()) * 100
-      println("Clock=${clock}Hz ($speed% speed)")
+      println("Clock=${clock}Hz (${speed.roundToInt()}% speed)")
     }
   }
 }

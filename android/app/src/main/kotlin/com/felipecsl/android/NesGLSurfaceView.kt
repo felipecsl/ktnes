@@ -9,7 +9,7 @@ class NesGLSurfaceView(
     context: Context,
     attributeSet: AttributeSet
 ) : GLSurfaceView(context, attributeSet) {
-  private lateinit var renderer: NesGLRenderer
+  private var renderer: NesGLRenderer
 
   init {
     // Create an OpenGL ES 2.0 context

@@ -25,6 +25,7 @@ class Sprite(private val texture: Int) {
   )
 
   fun draw() {
+    createProgramIfNeeded()
     if (isDirty) {
       updateTexture(image!!)
       isDirty = false
@@ -40,26 +41,25 @@ class Sprite(private val texture: Int) {
   }
 
   private fun renderTexture() {
-    val context = createProgram() ?: return
     // Set the input texture
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, texture)
-    glUniform1i(context.texSamplerHandle, 0)
+    glUniform1i(context!!.texSamplerHandle, 0)
     // Draw!
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
   }
 
-  private fun createProgram(): RenderContext? {
+  private fun createProgramIfNeeded() {
     if (context != null) {
-      return context
+      return
     }
     val vertexShader = loadShader(GL_VERTEX_SHADER, VERTEX_SHADER)
     if (vertexShader == 0) {
-      return null
+      throw RuntimeException("Failed to create vertex shader")
     }
     val pixelShader = loadShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
     if (pixelShader == 0) {
-      return null
+      throw RuntimeException("Failed to create pixel shader")
     }
     val program = glCreateProgram()
     if (program != 0) {
@@ -83,7 +83,6 @@ class Sprite(private val texture: Int) {
         posVertices = createVerticesBuffer(POS_VERTICES),
         shaderProgram = program
     )
-    return context
   }
 
   private fun createTexture(width: Int, height: Int) {
@@ -107,14 +106,11 @@ class Sprite(private val texture: Int) {
   }
 
   private fun updateTexture(bitmap: Bitmap) {
-    if (buffer == null) {
-      buffer = IntBuffer.wrap(bitmap.pixels)
-      createTexture(bitmap.width, bitmap.height)
-    }
-//    buffer!!.position(0)
+    buffer = IntBuffer.wrap(bitmap.pixels)
+    createTexture(bitmap.width, bitmap.height)
     glBindTexture(GL_TEXTURE_2D, texture)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_BGRA,
-        GL_UNSIGNED_BYTE, buffer)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_BGRA, GL_UNSIGNED_BYTE,
+        buffer)
   }
 
   private fun createVerticesBuffer(vertices: FloatArray): FloatBuffer {

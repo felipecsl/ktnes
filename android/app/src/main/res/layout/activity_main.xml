@@ -86,44 +86,16 @@
 
           </LinearLayout>
 
+          <Switch
+            android:id="@+id/switch1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Use native impl" />
+
         </LinearLayout>
 
       </LinearLayout>
-
-      <FrameLayout
-        android:layout_width="110dp"
-        android:layout_height="110dp"
-        android:layout_gravity="center_horizontal">
-
-        <Button
-          android:id="@+id/arrowLeft"
-          android:layout_width="40dp"
-          android:layout_height="40dp"
-          android:layout_gravity="left|center_vertical"
-          android:text="◀"/>
-
-        <Button
-          android:id="@+id/arrowUp"
-          android:layout_width="40dp"
-          android:layout_height="40dp"
-          android:layout_gravity="top|center_horizontal"
-          android:text="▲"/>
-
-        <Button
-          android:id="@+id/arrowRight"
-          android:layout_width="40dp"
-          android:layout_height="40dp"
-          android:layout_gravity="right|center_vertical"
-          android:text="▶"/>
-
-        <Button
-          android:id="@+id/arrowDown"
-          android:layout_width="40dp"
-          android:layout_height="40dp"
-          android:layout_gravity="bottom|center_horizontal"
-          android:text="▼"/>
-
-      </FrameLayout>
 
     </LinearLayout>
 

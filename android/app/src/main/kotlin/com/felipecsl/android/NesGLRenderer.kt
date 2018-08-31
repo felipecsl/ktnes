@@ -1,8 +1,8 @@
 package com.felipecsl.android
 
-import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
+import com.felipecsl.knes.Bitmap
 import java.util.logging.Logger
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10

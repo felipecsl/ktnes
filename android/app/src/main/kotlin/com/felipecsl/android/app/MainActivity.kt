@@ -6,10 +6,11 @@ import android.view.MenuItem
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import com.felipecsl.android.R
-import com.felipecsl.knes.Bitmap
 import com.felipecsl.knes.Director
 import com.felipecsl.knes.Surface
 import com.felipecsl.knes.startConsole
+import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
 import java.util.concurrent.Executors
@@ -18,12 +19,7 @@ import java.util.logging.Logger
 class MainActivity : AppCompatActivity() {
   private val LOG = Logger.getLogger("NesGLRenderer")
   private val executor = Executors.newSingleThreadExecutor()
-  private val surface = object : Surface {
-    override fun setTexture(bitmap: Bitmap) {
-      surface_view.setTexture(bitmap.delegate)
-    }
-  }
-
+  private val surfaceView by lazy { surface_view }
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
@@ -33,23 +29,19 @@ class MainActivity : AppCompatActivity() {
     fabRun.setOnClickListener {
       val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
       executor.submit {
-        if (USE_NATIVE_CONSOLE_IMPL) {
+        if (switch1.isChecked) {
+          Snackbar.make(switch1, "Using Kotlin/Native implementation",
+              BaseTransientBottomBar.LENGTH_SHORT).show()
           startConsole(cartridgeData)
         } else {
-          Director.startConsole(cartridgeData, surface)
+          Snackbar.make(switch1, "Using JVM implementation",
+              BaseTransientBottomBar.LENGTH_SHORT).show()
+          Director.startConsole(cartridgeData, Surface(surfaceView))
         }
       }
     }
 
 //    btnReset.setOnClickListener { console.cpu.reset() }
-
-    val onClickButton = { code: Int ->
-      //      console.cpu.memory.storeKeypress(code)
-    }
-    arrowLeft.setOnClickListener { onClickButton(0x61) }
-    arrowRight.setOnClickListener { onClickButton(0x64) }
-    arrowUp.setOnClickListener { onClickButton(0x77) }
-    arrowDown.setOnClickListener { onClickButton(0x73) }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -71,7 +63,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   companion object {
-    private const val USE_NATIVE_CONSOLE_IMPL = false
+    private const val USE_NATIVE_CONSOLE_IMPL = true
 
     init {
       System.loadLibrary("knes")

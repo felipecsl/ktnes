@@ -1,5 +1,5 @@
 package com.felipecsl.knes
 
-interface Surface {
+expect class Surface {
   fun setTexture(bitmap: Bitmap)
 }

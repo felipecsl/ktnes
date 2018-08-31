@@ -121,7 +121,7 @@ internal class PPU(
   private fun writeDMA(value: Int) {
     val cpu = console.cpu
     var address = value shl 8
-    0.until(256).forEach {
+    (0..255).forEach {
       oamData[oamAddress] = cpu.read(address)
       oamAddress = (oamAddress + 1) and 0xFF
       address++
@@ -218,13 +218,13 @@ internal class PPU(
   private fun evaluateSprites() {
     val h = if (flagSpriteSize == 0) 8 else 16
     var count = 0
-    0.until(64).forEach { i ->
+    for (i in 0..63) {
       val y = oamData[i * 4 + 0] and 0xFF
       val a = oamData[i * 4 + 2] and 0xFF
       val x = oamData[i * 4 + 3] and 0xFF
       val row = scanLine - y
       if (row < 0 || row >= h) {
-        // continue
+        continue
       } else {
         if (count < 8) {
           spritePatterns[count] = fetchSpritePattern(i, row)
@@ -269,7 +269,7 @@ internal class PPU(
     var lowTileByte = read(address)
     var highTileByte = read(address + 8)
     var data = 0
-    0.until(8).forEach {
+    for (it in 0..7) {
       val p1: Int
       val p2: Int
       if (attributes and 0x40 == 0x40) {
@@ -462,7 +462,7 @@ internal class PPU(
       spritePixel.sprite = 0
       return spritePixel
     }
-    for (i: Int in 0.until(spriteCount)) {
+    for (i: Int in 0..spriteCount - 1) {
       var offset = (cycle - 1) - spritePositions[i]
       if (offset < 0 || offset > 7) {
         continue

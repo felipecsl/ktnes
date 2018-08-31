@@ -10,7 +10,9 @@ fun startConsole(env: CPointer<JNIEnvVar>, self: jobject, cartridgeData: jbyteAr
   val len = jni.GetArrayLength!!.invoke(env, cartridgeData)
   memScoped {
     val buffer = ByteArray(len)
-    jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, buffer.refTo(0).getPointer(this))
-    Director.startConsole(buffer)
+    val surface = Surface()
+    val bufferPointer = buffer.refTo(0).getPointer(memScope)
+    jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
+    Director.startConsole(buffer, surface)
   }
 }

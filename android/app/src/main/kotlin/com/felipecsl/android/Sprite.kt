@@ -1,32 +1,18 @@
 package com.felipecsl.android
 
-import android.graphics.Bitmap
-import android.opengl.GLES20
-import android.opengl.GLUtils
+import android.opengl.GLES20.*
+import com.felipecsl.knes.Bitmap
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.logging.Logger
 
 class Sprite(private val texture: Int) {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
   private var isDirty = false
-
-  fun draw() {
-    if (isDirty) {
-      createTexture(image!!)
-      isDirty = false
-    }
-    renderTexture()
-  }
-
-  fun setImage(image: Bitmap) {
-    if (image != this.image) {
-      this.image = image
-      isDirty = true
-    }
-  }
+  private var buffer: IntBuffer = ByteBuffer.allocateDirect(256 * 240 * 4).asIntBuffer()
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -37,75 +23,100 @@ class Sprite(private val texture: Int) {
       val posVertices: FloatBuffer? = null
   )
 
+  fun draw() {
+    if (isDirty) {
+      updateTexture(image!!)
+      isDirty = false
+    }
+    renderTexture()
+  }
+
+  fun setImage(image: Bitmap) {
+    if (image !== this.image) {
+      this.image = image
+      isDirty = true
+    }
+  }
+
   private fun renderTexture() {
     val context = createProgram() ?: return
     // Use our shader program
-    GLES20.glUseProgram(context.shaderProgram)
+    glUseProgram(context.shaderProgram)
     // Disable blending
-    GLES20.glDisable(GLES20.GL_BLEND)
+    glDisable(GL_BLEND)
     // Set the vertex attributes
-    GLES20.glVertexAttribPointer(
-        context.texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.texVertices)
-    GLES20.glEnableVertexAttribArray(context.texCoordHandle)
-    GLES20.glVertexAttribPointer(
-        context.posCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.posVertices)
-    GLES20.glEnableVertexAttribArray(context.posCoordHandle)
+    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
+    glEnableVertexAttribArray(context.texCoordHandle)
+    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
+    glEnableVertexAttribArray(context.posCoordHandle)
     // Set the input texture
-    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
-    GLES20.glUniform1i(context.texSamplerHandle, 0)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glUniform1i(context.texSamplerHandle, 0)
     // Draw!
-    GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
   }
 
   private fun createProgram(): RenderContext? {
     if (context != null) {
       return context
     }
-    val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER)
+    val vertexShader = loadShader(GL_VERTEX_SHADER, VERTEX_SHADER)
     if (vertexShader == 0) {
       return null
     }
-    val pixelShader = loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
+    val pixelShader = loadShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
     if (pixelShader == 0) {
       return null
     }
-    val program = GLES20.glCreateProgram()
+    val program = glCreateProgram()
     if (program != 0) {
-      GLES20.glAttachShader(program, vertexShader)
-      GLES20.glAttachShader(program, pixelShader)
-      GLES20.glLinkProgram(program)
+      glAttachShader(program, vertexShader)
+      glAttachShader(program, pixelShader)
+      glLinkProgram(program)
       val linkStatus = IntArray(1)
-      GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0)
-      if (linkStatus[0] != GLES20.GL_TRUE) {
-        val info = GLES20.glGetProgramInfoLog(program)
-        GLES20.glDeleteProgram(program)
+      glGetProgramiv(program, GL_LINK_STATUS, linkStatus, 0)
+      if (linkStatus[0] != GL_TRUE) {
+        val info = glGetProgramInfoLog(program)
+        glDeleteProgram(program)
         throw RuntimeException("Could not link program: $info")
       }
     }
     // Bind attributes and uniforms
     context = RenderContext(
-        texSamplerHandle = GLES20.glGetUniformLocation(program, "tex_sampler"),
-        texCoordHandle = GLES20.glGetAttribLocation(program, "a_texcoord"),
-        posCoordHandle = GLES20.glGetAttribLocation(program, "a_position"),
+        texSamplerHandle = glGetUniformLocation(program, "tex_sampler"),
+        texCoordHandle = glGetAttribLocation(program, "a_texcoord"),
+        posCoordHandle = glGetAttribLocation(program, "a_position"),
         texVertices = createVerticesBuffer(TEX_VERTICES),
         posVertices = createVerticesBuffer(POS_VERTICES),
         shaderProgram = program
     )
+    createTexture()
     return context
   }
 
-  private fun createTexture(bitmap: Bitmap) {
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
-    GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
-    GLES20.glTexParameteri(
-        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
-    GLES20.glTexParameteri(
-        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
-    GLES20.glTexParameteri(
-        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-    GLES20.glTexParameteri(
-        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+  private fun createTexture() {
+    for (i in 0 until (256 * 240)) {
+      buffer.put(0)
+    }
+    buffer.position(0)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 240, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, buffer)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+  }
+
+  private fun updateTexture(bitmap: Bitmap) {
+    bitmap.pixels.forEachIndexed { i, pixel ->
+      buffer.put(i, pixel)
+    }
+    buffer.position(0)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_RGBA,
+        GL_UNSIGNED_BYTE, buffer)
   }
 
   private fun createVerticesBuffer(vertices: FloatArray): FloatBuffer {
@@ -120,15 +131,15 @@ class Sprite(private val texture: Int) {
   }
 
   private fun loadShader(shaderType: Int, source: String): Int {
-    val shader = GLES20.glCreateShader(shaderType)
+    val shader = glCreateShader(shaderType)
     if (shader != 0) {
-      GLES20.glShaderSource(shader, source)
-      GLES20.glCompileShader(shader)
+      glShaderSource(shader, source)
+      glCompileShader(shader)
       val compiled = IntArray(1)
-      GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled, 0)
+      glGetShaderiv(shader, GL_COMPILE_STATUS, compiled, 0)
       if (compiled[0] == 0) {
-        val info = GLES20.glGetShaderInfoLog(shader)
-        GLES20.glDeleteShader(shader)
+        val info = glGetShaderInfoLog(shader)
+        glDeleteShader(shader)
         throw RuntimeException("Could not compile shader $shaderType:$info")
       }
     }

@@ -1,19 +1,16 @@
 package com.felipecsl.knes
 
+import cnames.structs.ANativeWindow
+import platform.android.*
 import kotlinx.cinterop.*
+import platform.egl.*
 import platform.gles2.*
 
-actual class Surface {
+actual class Sprite {
   private var context: RenderContext? = null
-  private val texture: Int
   private var image: Bitmap? = null
   private var isDirty = false
-
-  init {
-    val textureHandle = IntArray(1)
-    glGenTextures(1, textureHandle.toCValues())
-    texture = textureHandle[0]
-  }
+  private var texture: Int? = null
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -24,7 +21,11 @@ actual class Surface {
       val posVertices: CValuesRef<FloatVar>? = null
   )
 
-  actual fun setTexture(bitmap: Bitmap) {
+  actual fun setTexture(texture: Int) {
+    this.texture = texture
+  }
+
+  actual fun setImage(image: Bitmap) {
     if (image !== this.image) {
       this.image = image
       isDirty = true
@@ -32,41 +33,50 @@ actual class Surface {
     draw()
   }
 
-  fun draw() {
+  actual fun draw() {
+    createProgramIfNeeded()
     if (isDirty) {
-      createTexture(image!!)
+      updateTexture(image!!)
       isDirty = false
     }
     renderTexture()
+    // need to call requestRender() here
+  }
+
+  private fun updateTexture(bitmap: Bitmap) {
+    createTexture(bitmap)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_BGRA_IMG,
+        GL_UNSIGNED_BYTE, bitmap.pixels.toCValues())
   }
 
   private fun createTexture(bitmap: Bitmap) {
     memScoped {
-      glBindTexture(GL_TEXTURE_2D, texture)
+      glBindTexture(GL_TEXTURE_2D, texture!!)
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmap.width, bitmap.height, 0, GL_RGB,
           GL_UNSIGNED_SHORT_5_6_5, bitmap.pixels.toCValues())
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+      // Use our shader program
+      val context = context!!
+      glUseProgram(context.shaderProgram)
+      // Disable blending
+      glDisable(GL_BLEND)
+      // Set the vertex attributes
+      glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, 0, 0, context.texVertices)
+      glEnableVertexAttribArray(context.texCoordHandle)
+      glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, 0, 0, context.posVertices)
+      glEnableVertexAttribArray(context.posCoordHandle)
     }
   }
 
   private fun renderTexture() {
-    val context = createProgram() ?: return
-    // Use our shader program
-    glUseProgram(context.shaderProgram)
-    // Disable blending
-    glDisable(GL_BLEND)
-    // Set the vertex attributes
-    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, 0, 0, context.texVertices)
-    glEnableVertexAttribArray(context.texCoordHandle)
-    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, 0, 0, context.posVertices)
-    glEnableVertexAttribArray(context.posCoordHandle)
     // Set the input texture
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, texture)
-    glUniform1i(context.texSamplerHandle, 0)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
+    glUniform1i(context!!.texSamplerHandle, 0)
     // Draw!
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
   }
@@ -95,84 +105,17 @@ actual class Surface {
     return shader
   }
 
-/*  fun initialize(window: CPointer<ANativeWindow>): Boolean {
-    with (container.arena) {
-      LOG.info("Initializing context..")
-      val display = eglGetDisplay(null)
-      if (display == null) {
-        logError("eglGetDisplay() returned error ${eglGetError()}")
-        return false
-      }
-      if (eglInitialize(display, null, null) == 0) {
-        LOG.error("eglInitialize() returned error ${eglGetError()}")
-        return false
-      }
-
-      val attribs = cValuesOf(
-          EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-          EGL_BLUE_SIZE, 8,
-          EGL_GREEN_SIZE, 8,
-          EGL_RED_SIZE, 8,
-          EGL_NONE
-      )
-      val numConfigs = alloc<IntVar>()
-      if (eglChooseConfig(display, attribs, null, 0, numConfigs.ptr) == 0) {
-        throw Error("eglChooseConfig()#1 returned error ${eglGetError()}")
-      }
-      val supportedConfigs = allocArray<EGLConfigVar>(numConfigs.value)
-      if (eglChooseConfig(display, attribs, supportedConfigs, numConfigs.value, numConfigs.ptr) == 0) {
-        throw Error("eglChooseConfig()#2 returned error ${eglGetError()}")
-      }
-      var configIndex = 0
-      while (configIndex < numConfigs.value) {
-        val r = alloc<IntVar>()
-        val g = alloc<IntVar>()
-        val b = alloc<IntVar>()
-        val d = alloc<IntVar>()
-        if (eglGetConfigAttrib(display, supportedConfigs[configIndex], EGL_RED_SIZE, r.ptr) != 0 &&
-            eglGetConfigAttrib(display, supportedConfigs[configIndex], EGL_GREEN_SIZE, g.ptr) != 0 &&
-            eglGetConfigAttrib(display, supportedConfigs[configIndex], EGL_BLUE_SIZE, b.ptr) != 0 &&
-            eglGetConfigAttrib(display, supportedConfigs[configIndex], EGL_DEPTH_SIZE, d.ptr) != 0 &&
-            r.value == 8 && g.value == 8 && b.value == 8 && d.value == 0) break
-        ++configIndex
-      }
-      if (configIndex >= numConfigs.value)
-        configIndex = 0
-
-      val surface = eglCreateWindowSurface(display, supportedConfigs[configIndex], window, null)
-          ?: throw Error("eglCreateWindowSurface() returned error ${eglGetError()}")
-
-      val context = eglCreateContext(display, supportedConfigs[configIndex], null, null)
-          ?: throw Error("eglCreateContext() returned error ${eglGetError()}")
-
-      if (eglMakeCurrent(display, surface, surface, context) == 0) {
-        throw Error("eglMakeCurrent() returned error ${eglGetError()}")
-      }
-
-      val width = alloc<IntVar>()
-      val height = alloc<IntVar>()
-      if (eglQuerySurface(display, surface, EGL_WIDTH, width.ptr) == 0
-          || eglQuerySurface(display, surface, EGL_HEIGHT, height.ptr) == 0) {
-        throw Error("eglQuerySurface() returned error ${eglGetError()}")
-      }
-
-      glViewport(0, 0, width.value, height.value)
-
-      return true
-    }
-  }*/
-
-  private fun createProgram(): RenderContext? {
+  private fun createProgramIfNeeded() {
     if (context != null) {
-      return context
+      return
     }
     val vertexShader = loadShader(GL_VERTEX_SHADER, VERTEX_SHADER)
     if (vertexShader == 0) {
-      return null
+      return
     }
     val pixelShader = loadShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
     if (pixelShader == 0) {
-      return null
+      return
     }
     val program = glCreateProgram()
     if (program != 0) {
@@ -182,9 +125,14 @@ actual class Surface {
       val linkStatus = IntArray(1)
       glGetProgramiv(program, GL_LINK_STATUS, linkStatus.toCValues())
       if (linkStatus[0] != GL_TRUE) {
-//        val info = glGetProgramInfoLog(program)
-        glDeleteProgram(program)
-        throw RuntimeException("Could not link program")
+        val buff = ByteArray(256)
+        memScoped {
+          val len = alloc<IntVar>()
+          glGetProgramInfoLog(program, buff.size, len.ptr, buff.toCValues())
+          glDeleteProgram(program)
+          println("Could not link program: ${buff.stringFromUtf8()}")
+          return
+        }
       }
     }
     // Bind attributes and uniforms
@@ -196,7 +144,6 @@ actual class Surface {
         posVertices = POS_VERTICES.toCValues(),
         shaderProgram = program
     )
-    return context
   }
 
   companion object {

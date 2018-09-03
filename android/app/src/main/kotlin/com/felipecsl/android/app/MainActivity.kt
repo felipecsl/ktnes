@@ -6,26 +6,28 @@ import android.view.MenuItem
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import com.felipecsl.android.R
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.toolbar.*
 import com.felipecsl.knes.Director
-import com.felipecsl.knes.Surface
+import com.felipecsl.knes.Sprite
 import com.felipecsl.knes.startConsole
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.toolbar.*
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 class MainActivity : AppCompatActivity() {
   private val LOG = Logger.getLogger("NesGLRenderer")
   private val executor = Executors.newSingleThreadExecutor()
-  private val surfaceView by lazy { surface_view }
+  private val nesGlSurfaceView by lazy { nes_gl_surface_view }
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     setSupportActionBar(toolbar)
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
+    val sprite = Sprite(nesGlSurfaceView)
+    nesGlSurfaceView.setSprite(sprite)
     fabRun.setOnClickListener {
       val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
       executor.submit {
@@ -36,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         } else {
           Snackbar.make(switch1, "Using JVM implementation",
               BaseTransientBottomBar.LENGTH_SHORT).show()
-          Director.startConsole(cartridgeData, Surface(surfaceView))
+          Director.startConsole(cartridgeData, sprite)
         }
       }
     }
@@ -63,8 +65,6 @@ class MainActivity : AppCompatActivity() {
   }
 
   companion object {
-    private const val USE_NATIVE_CONSOLE_IMPL = true
-
     init {
       System.loadLibrary("knes")
     }

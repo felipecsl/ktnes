@@ -1,18 +1,19 @@
-package com.felipecsl.android
+package com.felipecsl.knes
 
 import android.opengl.GLES11Ext.GL_BGRA
 import android.opengl.GLES20.*
-import com.felipecsl.knes.Bitmap
+import com.felipecsl.android.NesGLSurfaceView
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.logging.Logger
 
-class Sprite(private val texture: Int) {
+actual class Sprite(private val nesGLSurfaceView: NesGLSurfaceView) {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
   private var isDirty = false
+  private var texture: Int? = null
   private var buffer: IntBuffer? = null
 
   data class RenderContext(
@@ -24,7 +25,11 @@ class Sprite(private val texture: Int) {
       val posVertices: FloatBuffer? = null
   )
 
-  fun draw() {
+  actual fun setTexture(texture: Int) {
+    this.texture = texture
+  }
+
+  actual fun draw() {
     createProgramIfNeeded()
     if (isDirty) {
       updateTexture(image!!)
@@ -33,17 +38,18 @@ class Sprite(private val texture: Int) {
     renderTexture()
   }
 
-  fun setImage(image: Bitmap) {
+  actual fun setImage(image: Bitmap) {
     if (image !== this.image) {
       this.image = image
       isDirty = true
     }
+    nesGLSurfaceView.requestRender()
   }
 
   private fun renderTexture() {
     // Set the input texture
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, texture)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
     glUniform1i(context!!.texSamplerHandle, 0)
     // Draw!
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
@@ -86,7 +92,7 @@ class Sprite(private val texture: Int) {
   }
 
   private fun createTexture(width: Int, height: Int) {
-    glBindTexture(GL_TEXTURE_2D, texture)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, width, height, 0, GL_BGRA,
         GL_UNSIGNED_BYTE, buffer)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -108,7 +114,7 @@ class Sprite(private val texture: Int) {
   private fun updateTexture(bitmap: Bitmap) {
     buffer = IntBuffer.wrap(bitmap.pixels)
     createTexture(bitmap.width, bitmap.height)
-    glBindTexture(GL_TEXTURE_2D, texture)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height, GL_BGRA, GL_UNSIGNED_BYTE,
         buffer)
   }

@@ -47,9 +47,10 @@
           android:layout_height="match_parent">
 
           <com.felipecsl.android.NesGLSurfaceView
-            android:id="@+id/surface_view"
+            android:id="@+id/nes_gl_surface_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
+
         </FrameLayout>
 
       </androidx.cardview.widget.CardView>

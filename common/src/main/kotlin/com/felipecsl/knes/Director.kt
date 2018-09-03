@@ -6,14 +6,14 @@ import kotlin.math.roundToInt
 object Director {
   fun startConsole(
       cartridgeData: ByteArray,
-      surface: Surface,
+      sprite: Sprite,
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null
   ) {
     val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
     val console = Console.newConsole(
-        cartridge, surface, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
+        cartridge, sprite, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
     console.reset()
     while (true) {
       var totalCycles = 0L

@@ -8,7 +8,7 @@ internal class Console(
     val controller1: Controller,
     val controller2: Controller,
     val mapper: Mapper,
-    val surface: Surface,
+    val sprite: Sprite,
     val ram: IntArray = IntArray(2048)
 ) {
   fun step(): Long {
@@ -20,7 +20,7 @@ internal class Console(
     for (it in 0 until cpuCycles) {
       apu.step()
     }
-    surface.setTexture(ppu.front)
+    sprite.setImage(ppu.front)
     return cpuCycles
   }
 
@@ -31,7 +31,7 @@ internal class Console(
   companion object {
     fun newConsole(
         cartridge: Cartridge,
-        surface: Surface,
+        sprite: Sprite,
         bitmapFactory: (Int, Int) -> Bitmap,
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
@@ -42,7 +42,7 @@ internal class Console(
         mapper: Mapper = Mapper.newMapper(cartridge, ppu, cpu, mapperCallback)
     ): Console {
       val console = Console(cpu, apu, ppu, cartridge,
-          Controller(), Controller(), mapper, surface)
+          Controller(), Controller(), mapper, sprite)
       ppu.console = console
       cpu.console = console
       return console

@@ -3,12 +3,12 @@ package com.felipecsl.android
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.felipecsl.knes.Bitmap
+import com.felipecsl.knes.Sprite
 import java.util.logging.Logger
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class NesGLRenderer : GLSurfaceView.Renderer {
-  private lateinit var sprite: Sprite
+class NesGLRenderer(private val sprite: Sprite) : GLSurfaceView.Renderer {
   // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
   private val LOG = Logger.getLogger("NesGLRenderer")
 
@@ -18,7 +18,7 @@ class NesGLRenderer : GLSurfaceView.Renderer {
     val textureHandle = IntArray(1)
     GLES20.glGenTextures(1, textureHandle, 0)
     if (textureHandle[0] != 0) {
-      sprite = Sprite(textureHandle[0])
+      sprite.setTexture(textureHandle[0])
     } else {
       throw RuntimeException("Cannot create GL texture")
     }
@@ -32,9 +32,5 @@ class NesGLRenderer : GLSurfaceView.Renderer {
     // Adjust the viewport based on geometry changes,
     // such as screen rotation
     GLES20.glViewport(0, 0, width, height)
-  }
-
-  fun setBitmap(image: Bitmap) {
-    sprite.setImage(image)
   }
 }

@@ -3,26 +3,21 @@ package com.felipecsl.android
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
-import com.felipecsl.knes.Bitmap
+import com.felipecsl.knes.Sprite
 
 class NesGLSurfaceView(
     context: Context,
     attributeSet: AttributeSet
 ) : GLSurfaceView(context, attributeSet) {
-  private var renderer: NesGLRenderer
+  private lateinit var renderer: NesGLRenderer
 
-  init {
+  fun setSprite(sprite: Sprite) {
     // Create an OpenGL ES 2.0 context
     setEGLContextClientVersion(2)
     // Set the Renderer for drawing on the GLSurfaceView
-    renderer = NesGLRenderer()
+    renderer = NesGLRenderer(sprite)
     setRenderer(renderer)
     // Render the view only when there is a change in the drawing data
     renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
-  }
-
-  fun setTexture(image: Bitmap) {
-    renderer.setBitmap(image)
-    requestRender()
   }
 }

@@ -21,9 +21,9 @@ object Director {
       while (totalCycles < FREQUENCY) {
         totalCycles += console.step()
       }
-      val secondsSpent = (currentTimeMs() - startTime) / 1000
+      val secondsSpent = (currentTimeMs() - startTime) / 1000L
       val clock = totalCycles / secondsSpent
-      val speed = (clock / FREQUENCY.toFloat()) * 100
+      val speed = (clock / FREQUENCY.toFloat()) * 100F
       println("Clock=${clock}Hz (${speed.roundToInt()}% speed)")
     }
   }

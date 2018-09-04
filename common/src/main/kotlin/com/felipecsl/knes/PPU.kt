@@ -419,8 +419,14 @@ internal class PPU(
   private fun renderPixel() {
     val x = cycle - 1
     val y = scanLine
-    var background = backgroundPixel()
-    var (i, sprite) = spritePixel()
+    var background = if (flagShowBackground == 0) {
+      0
+    } else {
+      ((tileData shr 32) shr ((7 - this.x) * 4)) and 0x0F
+    }
+    spritePixel()
+    var sprite = spritePixel.sprite
+    val i = spritePixel.i
     if (x < 8 && flagShowLeftBackground == 0) {
       background = 0
     }
@@ -442,18 +448,6 @@ internal class PPU(
       if (spritePriorities[i] == 0) (sprite or 0x10) else background
     }
     back.setPixel(x, y, PALETTE[readPalette(color) % 64])
-  }
-
-  private fun backgroundPixel(): Int {
-    if (flagShowBackground == 0) {
-      return 0
-    }
-    val data = fetchTileData() shr ((7 - x) * 4)
-    return (data and 0x0F)
-  }
-
-  private fun fetchTileData(): Int {
-    return tileData shr 32
   }
 
   private fun spritePixel(): SpritePixel {

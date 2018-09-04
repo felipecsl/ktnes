@@ -33,7 +33,8 @@ internal class PPU(
     var lowTileByte: Int = 0,
     var highTileByte: Int = 0,
     var tileData: Int = 0,
-    var spritePixel: SpritePixel = SpritePixel(),
+    var spritePixelI: Int = 0,
+    var spritePixelSprite: Int = 0,
 
     // sprite temporary variables
     private var spriteCount: Int = 0,
@@ -70,10 +71,6 @@ internal class PPU(
     // $2007 PPUDATA
     var bufferedData: Int = 0 // for buffered reads
 ) {
-  data class SpritePixel(
-      var i: Int = 0,
-      var sprite: Int = 0
-  )
 
   init {
     reset()
@@ -164,17 +161,51 @@ internal class PPU(
         }
       }
       if (preLine && cycle >= 280 && cycle <= 304) {
-        copyY()
+        // copy y
+        v = (v and 0x841F) or (t and 0x7BE0)
       }
       if (renderLine) {
         if (fetchCycle && cycle % 8 == 0) {
-          incrementX()
+          // increment x
+          if (v and 0x001F == 31) {
+            // coarse X = 0
+            v = v and 0xFFE0
+            // switch horizontal nametable
+            v = v xor 0x0400
+          } else {
+            // increment coarse X
+            v++
+          }
         }
         if (cycle == 256) {
-          incrementY()
+          // increment y
+          if (v and 0x7000 != 0x7000) {
+            // increment fine Y
+            v += 0x1000
+          } else {
+            // fine Y = 0
+            v = v and 0x8FFF
+            // let y = coarse Y
+            var y = (v and 0x03E0) shr 5
+            when (y) {
+              29 -> {
+                // coarse Y = 0
+                y = 0
+                // switch vertical nametable
+                v = v xor 0x0800
+              }
+              31 -> // coarse Y = 0, nametable not switched
+                y = 0
+              else -> // increment coarse Y
+                y++
+            }
+            // put coarse Y back into v
+            v = (v and 0xFC1F) or (y shl 5)
+          }
         }
         if (cycle == 257) {
-          copyX()
+          // copy x
+          v = (v and 0xFBE0) or (t and 0x041F)
         }
       }
     }
@@ -362,60 +393,6 @@ internal class PPU(
     attributeTableByte = ((read(address) shr shift) and 3) shl 2
   }
 
-  private fun copyY() {
-    // vert(v) = vert(t)
-    // v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
-    v = (v and 0x841F) or (t and 0x7BE0)
-  }
-
-  private fun copyX() {
-    // hori(v) = hori(t)
-    // v: .....F.. ...EDCBA = t: .....F.. ...EDCBA
-    v = (v and 0xFBE0) or (t and 0x041F)
-  }
-
-  private fun incrementY() {
-    // increment vert(v)
-    // if fine Y < 7
-    if (v and 0x7000 != 0x7000) {
-      // increment fine Y
-      v += 0x1000
-    } else {
-      // fine Y = 0
-      v = v and 0x8FFF
-      // let y = coarse Y
-      var y = (v and 0x03E0) shr 5
-      when (y) {
-        29 -> {
-          // coarse Y = 0
-          y = 0
-          // switch vertical nametable
-          v = v xor 0x0800
-        }
-        31 -> // coarse Y = 0, nametable not switched
-          y = 0
-        else -> // increment coarse Y
-          y++
-      }
-      // put coarse Y back into v
-      v = (v and 0xFC1F) or (y shl 5)
-    }
-  }
-
-  private fun incrementX() {
-    // increment hori(v)
-    // if coarse X == 31
-    if (v and 0x001F == 31) {
-      // coarse X = 0
-      v = v and 0xFFE0
-      // switch horizontal nametable
-      v = v xor 0x0400
-    } else {
-      // increment coarse X
-      v++
-    }
-  }
-
   private fun renderPixel() {
     val x = cycle - 1
     val y = scanLine
@@ -425,54 +402,51 @@ internal class PPU(
       ((tileData shr 32) shr ((7 - this.x) * 4)) and 0x0F
     }
     spritePixel()
-    var sprite = spritePixel.sprite
-    val i = spritePixel.i
     if (x < 8 && flagShowLeftBackground == 0) {
       background = 0
     }
     if (x < 8 && flagShowLeftSprites == 0) {
-      sprite = 0
+      spritePixelSprite = 0
     }
     val b = background % 4 != 0
-    val s = sprite % 4 != 0
+    val s = spritePixelSprite % 4 != 0
     val color = if (!b && !s) {
       0
     } else if (!b && s) {
-      sprite or 0x10
+      spritePixelSprite or 0x10
     } else if (b && !s) {
       background
     } else {
-      if (spriteIndexes[i] == 0 && x < 255) {
+      if (spriteIndexes[spritePixelI] == 0 && x < 255) {
         flagSpriteZeroHit = 1
       }
-      if (spritePriorities[i] == 0) (sprite or 0x10) else background
+      if (spritePriorities[spritePixelI] == 0) (spritePixelSprite or 0x10) else background
     }
     back.setPixel(x, y, PALETTE[readPalette(color) % 64])
   }
 
-  private fun spritePixel(): SpritePixel {
+  private fun spritePixel() {
     if (flagShowSprites == 0) {
-      spritePixel.i = 0
-      spritePixel.sprite = 0
-      return spritePixel
-    }
-    for (i in 0..spriteCount - 1) {
-      var offset = (cycle - 1) - spritePositions[i]
-      if (offset < 0 || offset > 7) {
-        continue
+      spritePixelI = 0
+      spritePixelSprite = 0
+    } else {
+      for (i in 0..spriteCount - 1) {
+        var offset = (cycle - 1) - spritePositions[i]
+        if (offset < 0 || offset > 7) {
+          continue
+        }
+        offset = 7 - offset
+        val color = (spritePatterns[i] shr offset * 4) and 0x0F
+        if (color % 4 == 0) {
+          continue
+        }
+        spritePixelI = i
+        spritePixelSprite = color
+        return
       }
-      offset = 7 - offset
-      val color = (spritePatterns[i] shr offset * 4) and 0x0F
-      if (color % 4 == 0) {
-        continue
-      }
-      spritePixel.i = i
-      spritePixel.sprite = color
-      return spritePixel
+      spritePixelI = 0
+      spritePixelSprite = 0
     }
-    spritePixel.i = 0
-    spritePixel.sprite = 0
-    return spritePixel
   }
 
   private fun tick() {

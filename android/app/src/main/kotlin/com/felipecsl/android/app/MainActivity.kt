@@ -1,42 +1,49 @@
 package com.felipecsl.android.app
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.widget.Switch
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import com.felipecsl.android.NesGLSurfaceView
 import com.felipecsl.android.R
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.toolbar.*
-import com.felipecsl.knes.Director
-import com.felipecsl.knes.Sprite
-import com.felipecsl.knes.startConsole
+import com.felipecsl.knes.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 class MainActivity : AppCompatActivity() {
-  private val LOG = Logger.getLogger("NesGLRenderer")
   private val executor = Executors.newSingleThreadExecutor()
-  private val nesGlSurfaceView by lazy { nes_gl_surface_view }
+  private val nesGlSurfaceView by lazy { findViewById<NesGLSurfaceView>(R.id.nes_gl_surface_view) }
+  private val surfaceView by lazy { findViewById<SurfaceView>(R.id.surface_view) }
+  private val fabRun by lazy { findViewById<FloatingActionButton>(R.id.fabRun) }
+  private val toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
+  private val implSwitch by lazy { findViewById<Switch>(R.id.implementation_switch) }
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     setSupportActionBar(toolbar)
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
-    val sprite = Sprite(nesGlSurfaceView)
+    val sprite = Sprite(GLSprite(nesGlSurfaceView))
+//    val sprite = Sprite(CanvasSprite(surfaceView.holder))
     nesGlSurfaceView.setSprite(sprite)
     fabRun.setOnClickListener {
       val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
       executor.submit {
-        if (switch1.isChecked) {
-          Snackbar.make(switch1, "Using Kotlin/Native implementation",
+        if (implSwitch.isChecked) {
+          Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
               BaseTransientBottomBar.LENGTH_SHORT).show()
           startConsole(cartridgeData)
         } else {
-          Snackbar.make(switch1, "Using JVM implementation",
+          Snackbar.make(implSwitch, "Using JVM implementation",
               BaseTransientBottomBar.LENGTH_SHORT).show()
           Director.startConsole(cartridgeData, sprite)
         }

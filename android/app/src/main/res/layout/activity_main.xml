@@ -1,8 +1,7 @@
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-  android:id="@+id/layout_content"
-  xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:app="http://schemas.android.com/apk/res-auto"
   xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/layout_content"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   tools:context="com.felipecsl.android.app.MainActivity">
@@ -18,7 +17,7 @@
       android:layout_height="wrap_content"
       android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-      <include layout="@layout/toolbar"/>
+      <include layout="@layout/toolbar" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -32,15 +31,6 @@
         android:layout_height="300dp"
         android:layout_margin="@dimen/card_margin">
 
-        <EditText
-          android:id="@+id/txtInstructions"
-          android:layout_width="match_parent"
-          android:layout_height="match_parent"
-          android:fontFamily="monospace"
-          android:gravity="top"
-          android:text="define appleL         $00 ; screen location of apple, low byte\ndefine appleH         $01 ; screen location of apple, high byte\ndefine snakeHeadL     $10 ; screen location of snake head, low byte\ndefine snakeHeadH     $11 ; screen location of snake head, high byte\ndefine snakeBodyStart $12 ; start of snake body byte pairs\ndefine snakeDirection $02 ; direction (possible values are below)\ndefine snakeLength    $03 ; snake length, in bytes\n\n; Directions (each using a separate bit)\ndefine movingUp      1\ndefine movingRight   2\ndefine movingDown    4\ndefine movingLeft    8\n\n; ASCII values of keys controlling the snake\ndefine ASCII_w      $77\ndefine ASCII_a      $61\ndefine ASCII_s      $73\ndefine ASCII_d      $64\n\n; System variables\ndefine sysRandom    $fe\ndefine sysLastKey   $ff\n\n\n  jsr init\n  jsr loop\n\ninit:\n  jsr initSnake\n  jsr generateApplePosition\n  rts\n\n\ninitSnake:\n  lda #movingRight  ;start direction\n  sta snakeDirection\n\n  lda #4  ;start length (2 segments)\n  sta snakeLength\n  \n  lda #$11\n  sta snakeHeadL\n  \n  lda #$10\n  sta snakeBodyStart\n  \n  lda #$0f\n  sta $14 ; body segment 1\n  \n  lda #$04\n  sta snakeHeadH\n  sta $13 ; body segment 1\n  sta $15 ; body segment 2\n  rts\n\n\ngenerateApplePosition:\n  ;load a new random byte into $00\n  lda sysRandom\n  sta appleL\n\n  ;load a new random number from 2 to 5 into $01\n  lda sysRandom\n  and #$03 ;mask out lowest 2 bits\n  clc\n  adc #2\n  sta appleH\n\n  rts\n\n\nloop:\n  jsr readKeys\n  jsr checkCollision\n  jsr updateSnake\n  jsr drawApple\n  jsr drawSnake\n  jsr spinWheels\n  jmp loop\n\n\nreadKeys:\n  lda sysLastKey\n  cmp #ASCII_w\n  beq upKey\n  cmp #ASCII_d\n  beq rightKey\n  cmp #ASCII_s\n  beq downKey\n  cmp #ASCII_a\n  beq leftKey\n  rts\nupKey:\n  lda #movingDown\n  bit snakeDirection\n  bne illegalMove\n\n  lda #movingUp\n  sta snakeDirection\n  rts\nrightKey:\n  lda #movingLeft\n  bit snakeDirection\n  bne illegalMove\n\n  lda #movingRight\n  sta snakeDirection\n  rts\ndownKey:\n  lda #movingUp\n  bit snakeDirection\n  bne illegalMove\n\n  lda #movingDown\n  sta snakeDirection\n  rts\nleftKey:\n  lda #movingRight\n  bit snakeDirection\n  bne illegalMove\n\n  lda #movingLeft\n  sta snakeDirection\n  rts\nillegalMove:\n  rts\n\n\ncheckCollision:\n  jsr checkAppleCollision\n  jsr checkSnakeCollision\n  rts\n\n\ncheckAppleCollision:\n  lda appleL\n  cmp snakeHeadL\n  bne doneCheckingAppleCollision\n  lda appleH\n  cmp snakeHeadH\n  bne doneCheckingAppleCollision\n\n  ;eat apple\n  inc snakeLength\n  inc snakeLength ;increase length\n  jsr generateApplePosition\ndoneCheckingAppleCollision:\n  rts\n\n\ncheckSnakeCollision:\n  ldx #2 ;start with second segment\nsnakeCollisionLoop:\n  lda snakeHeadL,x\n  cmp snakeHeadL\n  bne continueCollisionLoop\n\nmaybeCollided:\n  lda snakeHeadH,x\n  cmp snakeHeadH\n  beq didCollide\n\ncontinueCollisionLoop:\n  inx\n  inx\n  cpx snakeLength          ;got to last section with no collision\n  beq didntCollide\n  jmp snakeCollisionLoop\n\ndidCollide:\n  jmp gameOver\ndidntCollide:\n  rts\n\n\nupdateSnake:\n  ldx snakeLength\n  dex\n  txa\nupdateloop:\n  lda snakeHeadL,x\n  sta snakeBodyStart,x\n  dex\n  bpl updateloop\n\n  lda snakeDirection\n  lsr\n  bcs up\n  lsr\n  bcs right\n  lsr\n  bcs down\n  lsr\n  bcs left\nup:\n  lda snakeHeadL\n  sec\n  sbc #$20\n  sta snakeHeadL\n  bcc upup\n  rts\nupup:\n  dec snakeHeadH\n  lda #$1\n  cmp snakeHeadH\n  beq collision\n  rts\nright:\n  inc snakeHeadL\n  lda #$1f\n  bit snakeHeadL\n  beq collision\n  rts\ndown:\n  lda snakeHeadL\n  clc\n  adc #$20\n  sta snakeHeadL\n  bcs downdown\n  rts\ndowndown:\n  inc snakeHeadH\n  lda #$6\n  cmp snakeHeadH\n  beq collision\n  rts\nleft:\n  dec snakeHeadL\n  lda snakeHeadL\n  and #$1f\n  cmp #$1f\n  beq collision\n  rts\ncollision:\n  jmp gameOver\n\n\ndrawApple:\n  ldy #0\n  lda sysRandom\n  sta (appleL),y\n  rts\n\n\ndrawSnake:\n  ldx #0\n  lda #1\n  sta (snakeHeadL,x) ; paint head\n  \n  ldx snakeLength\n  lda #0\n  sta (snakeHeadL,x) ; erase end of tail\n  rts\n\n\nspinWheels:\n  ldx #0\nspinloop:\n  nop\n  nop\n  dex\n  bne spinloop\n  rts\n\n\ngameOver:"
-          android:textSize="10sp"/>
-
         <FrameLayout
           android:id="@+id/display_wrapper"
           android:layout_width="match_parent"
@@ -49,7 +39,13 @@
           <com.felipecsl.android.NesGLSurfaceView
             android:id="@+id/nes_gl_surface_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent" />
+
+          <SurfaceView
+            android:id="@+id/surface_view"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         </FrameLayout>
 
@@ -65,7 +61,7 @@
           style="?android:attr/buttonBarButtonStyle"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:text="Reset"/>
+          android:text="Reset" />
 
         <LinearLayout
           android:layout_width="match_parent"
@@ -83,12 +79,12 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:fontFamily="monospace"
-              android:text="Clock=0MHz"/>
+              android:text="Clock=0MHz" />
 
           </LinearLayout>
 
           <Switch
-            android:id="@+id/switch1"
+            android:id="@+id/implementation_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -109,6 +105,6 @@
     android:layout_gravity="end|bottom"
     android:layout_margin="@dimen/fab_margin"
     android:src="@drawable/ic_play_arrow_white_48dp"
-    app:borderWidth="0dp"/>
+    app:borderWidth="0dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

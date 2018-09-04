@@ -1,5 +1,13 @@
 package com.felipecsl.knes
 
+import com.felipecsl.knes.AddressingMode.MODE_ABSOLUTEX
+import com.felipecsl.knes.AddressingMode.MODE_ACCUMULATOR
+import com.felipecsl.knes.AddressingMode.MODE_IMPLIED
+import com.felipecsl.knes.AddressingMode.MODE_INDIRECT
+import com.felipecsl.knes.AddressingMode.MODE_RELATIVE
+import com.felipecsl.knes.AddressingMode.MODE_ZEROPAGEX
+import com.felipecsl.knes.AddressingMode.UNUSED
+
 internal class CPU(private val stepCallback: CPUStepCallback? = null) {
   lateinit var console: Console
 
@@ -19,7 +27,22 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
   var V: Int = 0                    // overflow flag
   var N: Int = 0                    // negative flag
   var stall: Int = 0                // number of cycles to stall
-  private val addressingModes = AddressingMode.values()
+  private val addressingModes = arrayOf(
+      AddressingMode.UNUSED,
+      AddressingMode.MODE_ABSOLUTE,
+      AddressingMode.MODE_ABSOLUTEX,
+      AddressingMode.MODE_ABSOLUTEY,
+      AddressingMode.MODE_ACCUMULATOR,
+      AddressingMode.MODE_IMMEDIATE,
+      AddressingMode.MODE_IMPLIED,
+      AddressingMode.MODE_INDEXEDINDIRECT,
+      AddressingMode.MODE_INDIRECT,
+      AddressingMode.MODE_INDIRECTINDEXED,
+      AddressingMode.MODE_RELATIVE,
+      AddressingMode.MODE_ZEROPAGE,
+      AddressingMode.MODE_ZEROPAGEX,
+      AddressingMode.MODE_ZEROPAGEY
+  )
   private var interrupt: Interrupt = Interrupt.NOT_SET
   val table = arrayOf(
       ::brk, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
@@ -171,7 +194,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
     table[opcode](stepInfo)
   }
 
-  private fun isPageCrossed(mode: AddressingMode, address: Int) =
+  private fun isPageCrossed(mode: Int, address: Int) =
       when (mode) {
         AddressingMode.MODE_ABSOLUTE -> false
         AddressingMode.MODE_ABSOLUTEX -> pagesDiffer(address - X, address)
@@ -192,7 +215,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
   private fun pagesDiffer(a: Int, b: Int) =
       a and 0xFF00 != b and 0xFF00
 
-  private fun addressForMode(mode: AddressingMode) =
+  private fun addressForMode(mode: Int) =
       when (mode) {
         AddressingMode.MODE_ABSOLUTE -> read16(PC + 1)
         AddressingMode.MODE_ABSOLUTEX -> read16(PC + 1) + X
@@ -333,7 +356,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
 
   // ASL - Arithmetic Shift Left
   private fun asl(info: StepInfo) {
-    if (info.mode == AddressingMode.MODE_ACCUMULATOR.ordinal) {
+    if (info.mode == AddressingMode.MODE_ACCUMULATOR) {
       C = (A shr 7) and 1
       A = A shl 1
       setZN(A)
@@ -539,7 +562,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
 
   // LSR - Logical Shift Right
   private fun lsr(info: StepInfo) {
-    if (info.mode == AddressingMode.MODE_ACCUMULATOR.ordinal) {
+    if (info.mode == AddressingMode.MODE_ACCUMULATOR) {
       C = A and 1
       A = A shr 1
       setZN(A)
@@ -585,7 +608,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
 
   // ROL - Rotate Left
   private fun rol(info: StepInfo) {
-    if (info.mode == AddressingMode.MODE_ACCUMULATOR.ordinal) {
+    if (info.mode == AddressingMode.MODE_ACCUMULATOR) {
       val c = C
       C = (A shr 7) and 1
       A = (A shl 1) or c
@@ -602,7 +625,7 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
 
   // ROR - Rotate Right
   private fun ror(info: StepInfo) {
-    if (info.mode == AddressingMode.MODE_ACCUMULATOR.ordinal) {
+    if (info.mode == AddressingMode.MODE_ACCUMULATOR) {
       val c = C
       C = A and 1
       A = (A shr 1) or (c shl 7)

@@ -16,3 +16,4 @@ lib
 .DS_Store
 local.properties
 .gradle
+*.so

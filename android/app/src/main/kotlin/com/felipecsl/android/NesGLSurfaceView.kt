@@ -17,7 +17,5 @@ class NesGLSurfaceView(
     // Set the Renderer for drawing on the GLSurfaceView
     renderer = NesGLRenderer(sprite)
     setRenderer(renderer)
-    // Render the view only when there is a change in the drawing data
-    renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
   }
 }

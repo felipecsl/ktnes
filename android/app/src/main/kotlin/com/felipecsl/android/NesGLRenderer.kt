@@ -9,9 +9,6 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class NesGLRenderer(private val sprite: Sprite) : GLSurfaceView.Renderer {
-  // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
-  private val LOG = Logger.getLogger("NesGLRenderer")
-
   override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
     // Set the background frame color
     GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)

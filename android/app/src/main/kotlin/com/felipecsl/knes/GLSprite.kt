@@ -2,13 +2,12 @@ package com.felipecsl.knes
 
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
-import android.opengl.GLSurfaceView
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class GLSprite(private val glSurfaceView: GLSurfaceView) : SpriteFacade {
+class GLSprite : SpriteFacade {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
   private var isDirty = false
@@ -42,7 +41,6 @@ class GLSprite(private val glSurfaceView: GLSurfaceView) : SpriteFacade {
       this.image = image
       isDirty = true
     }
-    glSurfaceView.requestRender()
   }
 
   private fun renderTexture() {

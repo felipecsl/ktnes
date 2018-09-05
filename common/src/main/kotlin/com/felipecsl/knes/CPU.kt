@@ -44,40 +44,6 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
       AddressingMode.MODE_ZEROPAGEY
   )
   private var interrupt: Interrupt = Interrupt.NOT_SET
-  val table = arrayOf(
-      ::brk, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
-      ::php, ::ora, ::asl, ::anc, ::nop, ::ora, ::asl, ::slo,
-      ::bpl, ::ora, ::kil, ::slo, ::nop, ::ora, ::asl, ::slo,
-      ::clc, ::ora, ::nop, ::slo, ::nop, ::ora, ::asl, ::slo,
-      ::jsr, ::and, ::kil, ::rla, ::bit, ::and, ::rol, ::rla,
-      ::plp, ::and, ::rol, ::anc, ::bit, ::and, ::rol, ::rla,
-      ::bmi, ::and, ::kil, ::rla, ::nop, ::and, ::rol, ::rla,
-      ::sec, ::and, ::nop, ::rla, ::nop, ::and, ::rol, ::rla,
-      ::rti, ::eor, ::kil, ::sre, ::nop, ::eor, ::lsr, ::sre,
-      ::pha, ::eor, ::lsr, ::alr, ::jmp, ::eor, ::lsr, ::sre,
-      ::bvc, ::eor, ::kil, ::sre, ::nop, ::eor, ::lsr, ::sre,
-      ::cli, ::eor, ::nop, ::sre, ::nop, ::eor, ::lsr, ::sre,
-      ::rts, ::adc, ::kil, ::rra, ::nop, ::adc, ::ror, ::rra,
-      ::pla, ::adc, ::ror, ::arr, ::jmp, ::adc, ::ror, ::rra,
-      ::bvs, ::adc, ::kil, ::rra, ::nop, ::adc, ::ror, ::rra,
-      ::sei, ::adc, ::nop, ::rra, ::nop, ::adc, ::ror, ::rra,
-      ::nop, ::sta, ::nop, ::sax, ::sty, ::sta, ::stx, ::sax,
-      ::dey, ::nop, ::txa, ::xaa, ::sty, ::sta, ::stx, ::sax,
-      ::bcc, ::sta, ::kil, ::ahx, ::sty, ::sta, ::stx, ::sax,
-      ::tya, ::sta, ::txs, ::tas, ::shy, ::sta, ::shx, ::ahx,
-      ::ldy, ::lda, ::ldx, ::lax, ::ldy, ::lda, ::ldx, ::lax,
-      ::tay, ::lda, ::tax, ::lax, ::ldy, ::lda, ::ldx, ::lax,
-      ::bcs, ::lda, ::kil, ::lax, ::ldy, ::lda, ::ldx, ::lax,
-      ::clv, ::lda, ::tsx, ::las, ::ldy, ::lda, ::ldx, ::lax,
-      ::cpy, ::cmp, ::nop, ::dcp, ::cpy, ::cmp, ::dec, ::dcp,
-      ::iny, ::cmp, ::dex, ::axs, ::cpy, ::cmp, ::dec, ::dcp,
-      ::bne, ::cmp, ::kil, ::dcp, ::nop, ::cmp, ::dec, ::dcp,
-      ::cld, ::cmp, ::nop, ::dcp, ::nop, ::cmp, ::dec, ::dcp,
-      ::cpx, ::sbc, ::nop, ::isc, ::cpx, ::sbc, ::inc, ::isc,
-      ::inx, ::sbc, ::nop, ::sbc, ::cpx, ::sbc, ::inc, ::isc,
-      ::beq, ::sbc, ::kil, ::isc, ::nop, ::sbc, ::inc, ::isc,
-      ::sed, ::sbc, ::nop, ::isc, ::nop, ::sbc, ::inc, ::isc
-  )
 
   private fun read16(address: Int): Int {
     val lo = read(address)
@@ -191,7 +157,83 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
     stepInfo.address = address
     stepInfo.PC = PC
     stepInfo.mode = mode
-    table[opcode](stepInfo)
+    when (opcode) {
+      0 -> brk(stepInfo)
+      1, 5, 9, 13, 17, 21, 25, 29 -> ora(stepInfo)
+      2, 18, 34, 50, 66, 82, 98, 114, 146, 178, 210, 242 -> kil(stepInfo)
+      3, 7, 15, 19, 23, 27, 31 -> slo(stepInfo)
+      4, 12, 20, 26, 28, 52, 58, 60, 68, 84, 90, 92, 100, 116, 122, 124, 128, 130, 137, 194, 212, 218, 220, 226, 234, 244, 250, 252 -> nop(stepInfo)
+      6, 10, 14, 22, 30 -> asl(stepInfo)
+      8 -> php(stepInfo)
+      11, 43 -> anc(stepInfo)
+      16 -> bpl(stepInfo)
+      24 -> clc(stepInfo)
+      32 -> jsr(stepInfo)
+      33, 37, 41, 45, 49, 53, 57, 61 -> and(stepInfo)
+      35, 39, 47, 51, 55, 59, 63 -> rla(stepInfo)
+      36, 44 -> bit(stepInfo)
+      38, 42, 46, 54, 62 -> rol(stepInfo)
+      40 -> plp(stepInfo)
+      48 -> bmi(stepInfo)
+      56 -> sec(stepInfo)
+      64 -> rti(stepInfo)
+      65, 69, 73, 77, 81, 85, 89, 93 -> eor(stepInfo)
+      67, 71, 79, 83, 87, 91, 95 -> sre(stepInfo)
+      70, 74, 78, 86, 94 -> lsr(stepInfo)
+      72 -> pha(stepInfo)
+      75 -> alr(stepInfo)
+      76, 108 -> jmp(stepInfo)
+      80 -> bvc(stepInfo)
+      88 -> cli(stepInfo)
+      96 -> rts(stepInfo)
+      97, 101, 105, 109, 113, 117, 121, 125 -> adc(stepInfo)
+      99, 103, 111, 115, 119, 123, 127 -> rra(stepInfo)
+      102, 106, 110, 118, 126 -> ror(stepInfo)
+      104 -> pla(stepInfo)
+      107 -> arr(stepInfo)
+      112 -> bvs(stepInfo)
+      120 -> sei(stepInfo)
+      129, 133, 141, 145, 149, 153, 157 -> sta(stepInfo)
+      131, 135, 143, 151 -> sax(stepInfo)
+      132, 140, 148 -> sty(stepInfo)
+      134, 142, 150 -> stx(stepInfo)
+      136 -> dey(stepInfo)
+      138 -> txa(stepInfo)
+      139 -> xaa(stepInfo)
+      144 -> bcc(stepInfo)
+      147, 159 -> ahx(stepInfo)
+      152 -> tya(stepInfo)
+      154 -> txs(stepInfo)
+      155 -> tas(stepInfo)
+      156 -> shy(stepInfo)
+      158 -> shx(stepInfo)
+      160, 164, 172, 180, 188 -> ldy(stepInfo)
+      161, 165, 169, 173, 177, 181, 185, 189 -> lda(stepInfo)
+      162, 166, 174, 182, 190 -> ldx(stepInfo)
+      163, 167, 171, 175, 179, 183, 191 -> lax(stepInfo)
+      168 -> tay(stepInfo)
+      170 -> tax(stepInfo)
+      176 -> bcs(stepInfo)
+      184 -> clv(stepInfo)
+      186 -> tsx(stepInfo)
+      187 -> las(stepInfo)
+      192, 196, 204 -> cpy(stepInfo)
+      193, 197, 201, 205, 209, 213, 217, 221 -> cmp(stepInfo)
+      195, 199, 207, 211, 215, 219, 223 -> dcp(stepInfo)
+      198, 206, 214, 222 -> dec(stepInfo)
+      200 -> iny(stepInfo)
+      202 -> dex(stepInfo)
+      203 -> axs(stepInfo)
+      208 -> bne(stepInfo)
+      216 -> cld(stepInfo)
+      224, 228, 236 -> cpx(stepInfo)
+      225, 229, 233, 235, 237, 241, 245, 249, 253 -> sbc(stepInfo)
+      227, 231, 239, 243, 247, 251, 255 -> isc(stepInfo)
+      230, 238, 246, 254 -> inc(stepInfo)
+      232 -> inx(stepInfo)
+      240 -> beq(stepInfo)
+      248 -> sed(stepInfo)
+    }
   }
 
   private fun isPageCrossed(mode: Int, address: Int) =

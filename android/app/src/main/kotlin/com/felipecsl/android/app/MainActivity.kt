@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     setSupportActionBar(toolbar)
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
-    val sprite = Sprite(GLSprite(nesGlSurfaceView))
+    val sprite = Sprite(GLSprite())
 //    val sprite = Sprite(CanvasSprite(surfaceView.holder))
     nesGlSurfaceView.setSprite(sprite)
     fabRun.setOnClickListener {

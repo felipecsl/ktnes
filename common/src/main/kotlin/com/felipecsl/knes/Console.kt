@@ -14,8 +14,9 @@ internal class Console(
   fun step(): Long {
     val cpuCycles = cpu.step()
     for (it in 0 until cpuCycles * 3) {
-      ppu.step()
-      mapper.step()
+      if (!ppu.step()) {
+        mapper.step()
+      }
     }
     for (it in 0 until cpuCycles) {
       apu.step()
@@ -39,10 +40,9 @@ internal class Console(
         ppu: PPU = PPU(bitmapFactory, ppuCallback),
         apu: APU = APU(),
         cpu: CPU = CPU(cpuCallback),
-        mapper: Mapper = Mapper.newMapper(cartridge, ppu, cpu, mapperCallback)
+        mapper: Mapper = Mapper.newMapper(cartridge, cpu, mapperCallback)
     ): Console {
-      val console = Console(cpu, apu, ppu, cartridge,
-          Controller(), Controller(), mapper, sprite)
+      val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, sprite)
       ppu.console = console
       cpu.console = console
       return console

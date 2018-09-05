@@ -3,7 +3,6 @@ package com.felipecsl.knes
 // http://wiki.nesdev.com/w/index.php/MMC3
 internal class MMC3(
     private val cartridge: Cartridge,
-    private val ppu: PPU,
     private val cpu: CPU,
     private val stepCallback: MapperStepCallback? = null
 ) : Mapper {
@@ -64,20 +63,29 @@ internal class MMC3(
   private fun writeRegister(address: Int, value: Int) {
     if (address <= 0x9FFF && address % 2 == 0)
       writeBankSelect(value)
-    else if (address <= 0x9FFF && address % 2 == 1)
-      writeBankData(value)
-    else if (address <= 0xBFFF && address % 2 == 0)
-      writeMirror(value)
+    else if (address <= 0x9FFF && address % 2 == 1) {
+      registers[register] = value
+      updateOffsets()
+    }
+    else if (address <= 0xBFFF && address % 2 == 0) {
+      when (value and 1) {
+          0 -> cartridge.mirror = MirrorVertical
+          1 -> cartridge.mirror = MirrorHorizontal
+        }
+    }
     else if (address <= 0xBFFF && address % 2 == 1)
-      writeProtect()
-    else if (address <= 0xDFFF && address % 2 == 0)
-      writeIRQLatch(value)
-    else if (address <= 0xDFFF && address % 2 == 1)
-      writeIRQReload()
-    else if (address <= 0xFFFF && address % 2 == 0)
-      writeIRQDisable()
-    else if (address <= 0xFFFF && address % 2 == 1)
-      writeIRQEnable()
+    else if (address <= 0xDFFF && address % 2 == 0) {
+      reload = value
+    }
+    else if (address <= 0xDFFF && address % 2 == 1) {
+      counter = 0
+    }
+    else if (address <= 0xFFFF && address % 2 == 0) {
+      irqEnable = false
+    }
+    else if (address <= 0xFFFF && address % 2 == 1) {
+      irqEnable = true
+    }
   }
 
   private fun writeBankSelect(value: Int) {
@@ -152,53 +160,9 @@ internal class MMC3(
     return offset
   }
 
-  private fun writeBankData(value: Int) {
-    registers[register] = value
-    updateOffsets()
-  }
-
-  private fun writeMirror(value: Int) {
-    when (value and 1) {
-      0 -> cartridge.mirror = MirrorVertical
-      1 -> cartridge.mirror = MirrorHorizontal
-    }
-  }
-
-  private fun writeProtect() {
-  }
-
-  private fun writeIRQLatch(value: Int) {
-    reload = value
-  }
-
-  private fun writeIRQReload() {
-    counter = 0
-  }
-
-  private fun writeIRQDisable() {
-    irqEnable = false
-  }
-
-  private fun writeIRQEnable() {
-    irqEnable = true
-  }
-
   override fun step() {
 //    stepCallback?.onStep(register, registers, prgMode, chrMode, prgOffsets, chrOffsets, reload,
 //        counter, irqEnable)
-    if (ppu.cycle != 280) { // TODO: this *should* be 260
-      return
-    }
-    if (ppu.scanLine in 240..260) {
-      return
-    }
-    if (ppu.flagShowBackground == 0 && ppu.flagShowSprites == 0) {
-      return
-    }
-    handleScanLine()
-  }
-
-  private fun handleScanLine() {
     if (counter == 0) {
       counter = reload
     } else {

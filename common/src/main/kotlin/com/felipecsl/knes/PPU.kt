@@ -10,7 +10,7 @@ internal class PPU(
     // storage variables
     var paletteData: IntArray = IntArray(32),
     var nameTableData: IntArray = IntArray(2048),
-    var oamData: IntArray = IntArray(IMG_WIDTH),
+    var oamData: IntArray = IntArray(256),
     var front: Bitmap = bitmapFactory(IMG_WIDTH, IMG_HEIGHT),
     var back: Bitmap = bitmapFactory(IMG_WIDTH, IMG_HEIGHT),
 
@@ -129,7 +129,7 @@ internal class PPU(
     }
   }
 
-  fun step() {
+  fun step(): Boolean {
 //    stepCallback?.step(cycle, scanLine, frame, paletteData, nameTableData, oamData, v, t, x, w, f,
 //        register, nmiOccurred, nmiOutput, nmiPrevious, nmiDelay, nameTableByte, attributeTableByte,
 //        lowTileByte, highTileByte, tileData, spriteCount, spritePatterns, spritePositions, spritePriorities,
@@ -230,6 +230,9 @@ internal class PPU(
       flagSpriteZeroHit = 0
       flagSpriteOverflow = 0
     }
+    // TODO: this *should* be 260
+    // Returning false means we need to step the Mapper too
+    return cycle != 280 || scanLine in 240..260 || (flagShowBackground == 0 && flagShowSprites == 0)
   }
 
   private fun clearVerticalBlank() {
@@ -256,15 +259,14 @@ internal class PPU(
       val row = scanLine - y
       if (row < 0 || row >= h) {
         continue
-      } else {
-        if (count < 8) {
-          spritePatterns[count] = fetchSpritePattern(i, row)
-          spritePositions[count] = x
-          spritePriorities[count] = (a shr 5) and 1
-          spriteIndexes[count] = i
-        }
-        count++
       }
+      if (count < 8) {
+        spritePatterns[count] = fetchSpritePattern(i, row)
+        spritePositions[count] = x
+        spritePriorities[count] = (a shr 5) and 1
+        spriteIndexes[count] = i
+      }
+      count++
     }
     if (count > 8) {
       count = 8
@@ -304,13 +306,13 @@ internal class PPU(
       val p1: Int
       val p2: Int
       if (attributes and 0x40 == 0x40) {
-        p1 = (lowTileByte and 1) shl 0
-        p2 = (highTileByte and 1) shl 1
+        p1 = ((lowTileByte and 1) shl 0) and 0xFF
+        p2 = ((highTileByte and 1) shl 1) and 0xFF
         lowTileByte = lowTileByte shr 1
         highTileByte = highTileByte shr 1
       } else {
-        p1 = (lowTileByte and 0x80) shr 7
-        p2 = (highTileByte and 0x80) shr 6
+        p1 = ((lowTileByte and 0x80) shr 7) and 0xFF
+        p2 = ((highTileByte and 0x80) shr 6) and 0xFF
         lowTileByte = lowTileByte shl 1
         highTileByte = highTileByte shl 1
       }
@@ -364,13 +366,11 @@ internal class PPU(
   }
 
   private fun readPalette(address: Int): Int {
-    val addr = if (address >= 16 && address % 4 == 0) address - 16 else address
-    return paletteData[addr]
+    return paletteData[if (address >= 16 && address % 4 == 0) address - 16 else address]
   }
 
   private fun writePalette(address: Int, value: Int) {
-    val addr = if (address >= 16 && address % 4 == 0) address - 16 else address
-    paletteData[addr] = value
+    paletteData[if (address >= 16 && address % 4 == 0) address - 16 else address] = value
   }
 
   private fun write(addr: Int, value: Int) {
@@ -420,7 +420,11 @@ internal class PPU(
       if (spriteIndexes[spritePixelI] == 0 && x < 255) {
         flagSpriteZeroHit = 1
       }
-      if (spritePriorities[spritePixelI] == 0) (spritePixelSprite or 0x10) else background
+      if (spritePriorities[spritePixelI] == 0) {
+        spritePixelSprite or 0x10
+      } else {
+        background
+      }
     }
     back.setPixel(x, y, PALETTE[readPalette(color) % 64])
   }
@@ -430,17 +434,17 @@ internal class PPU(
       spritePixelI = 0
       spritePixelSprite = 0
     } else {
-      for (i in 0..spriteCount - 1) {
+      for (i in 0 until spriteCount) {
         var offset = (cycle - 1) - spritePositions[i]
         if (offset < 0 || offset > 7) {
           continue
         }
         offset = 7 - offset
-        val color = (spritePatterns[i] shr offset * 4) and 0x0F
+        val color = (spritePatterns[i] shr ((offset * 4) and 0xFF)) and 0x0F
         if (color % 4 == 0) {
           continue
         }
-        spritePixelI = i
+        spritePixelI = i and 0xFF
         spritePixelSprite = color
         return
       }

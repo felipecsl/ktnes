@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity() {
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
     val sprite = Sprite(GLSprite())
-//    val sprite = Sprite(CanvasSprite(surfaceView.holder))
     nesGlSurfaceView.setSprite(sprite)
     fabRun.setOnClickListener {
       val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()

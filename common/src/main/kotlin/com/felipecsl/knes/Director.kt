@@ -15,16 +15,18 @@ object Director {
     val console = Console.newConsole(
         cartridge, sprite, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
     console.reset()
+    var totalCycles = 0L
+    var startTime = currentTimeMs()
     while (true) {
-      var totalCycles = 0L
-      val startTime = currentTimeMs()
-      while (totalCycles < FREQUENCY) {
-        totalCycles += console.step()
+      totalCycles += console.step()
+      if (totalCycles >= FREQUENCY) {
+        val secondsSpent = (currentTimeMs() - startTime) / 1000L
+        val clock = totalCycles / secondsSpent
+        val speed = (clock / FREQUENCY.toFloat()) * 100F
+        println("Clock=${clock}Hz (${speed.roundToInt()}% speed)")
+        totalCycles = 0
+        startTime = currentTimeMs()
       }
-      val secondsSpent = (currentTimeMs() - startTime) / 1000L
-      val clock = totalCycles / secondsSpent
-      val speed = (clock / FREQUENCY.toFloat()) * 100F
-      println("Clock=${clock}Hz (${speed.roundToInt()}% speed)")
     }
   }
 }

@@ -8,12 +8,11 @@ internal interface Mapper {
   companion object {
     fun newMapper(
         cartridge: Cartridge,
-        ppu: PPU,
         cpu: CPU,
         stepCallback: MapperStepCallback?
     ): Mapper =
         when (cartridge.mapper) {
-          4 -> MMC3(cartridge, ppu, cpu, stepCallback)
+          4 -> MMC3(cartridge, cpu, stepCallback)
           else -> throw NotImplementedError("Mapper ${cartridge.mapper} not implemented")
         }
   }

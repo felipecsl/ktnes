@@ -10,7 +10,7 @@ actual class Sprite {
   private var context: RenderContext? = null
   private var image: Bitmap? = null
   private var isDirty = false
-  private var texture: Int? = null
+  private var texture: Int = 1
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -22,7 +22,7 @@ actual class Sprite {
   )
 
   actual fun setTexture(texture: Int) {
-    this.texture = texture
+//    this.texture = texture
   }
 
   actual fun setImage(image: Bitmap) {
@@ -40,7 +40,6 @@ actual class Sprite {
       isDirty = false
     }
     renderTexture()
-    // need to call requestRender() here
   }
 
   private fun updateTexture(bitmap: Bitmap) {
@@ -118,12 +117,15 @@ actual class Sprite {
       return
     }
     val program = glCreateProgram()
+    println("creating program")
     if (program != 0) {
       glAttachShader(program, vertexShader)
       glAttachShader(program, pixelShader)
+      println("linking program")
       glLinkProgram(program)
       val linkStatus = IntArray(1)
       glGetProgramiv(program, GL_LINK_STATUS, linkStatus.toCValues())
+      println("link status=${linkStatus[0]}")
       if (linkStatus[0] != GL_TRUE) {
         val buff = ByteArray(256)
         memScoped {

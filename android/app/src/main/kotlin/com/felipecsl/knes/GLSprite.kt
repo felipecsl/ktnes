@@ -10,7 +10,6 @@ import java.nio.IntBuffer
 class GLSprite : SpriteFacade {
   private var image: Bitmap? = null
   private var context: RenderContext? = null
-  private var isDirty = false
   private var texture: Int? = null
   private var buffer: IntBuffer? = null
 
@@ -28,19 +27,15 @@ class GLSprite : SpriteFacade {
   }
 
   override fun draw() {
-    createProgramIfNeeded()
-    if (isDirty) {
-      updateTexture(image!!)
-      isDirty = false
+    if (image != null) {
+      createProgramIfNeeded()
+      updateTexture()
+      renderTexture()
     }
-    renderTexture()
   }
 
   override fun setImage(image: Bitmap) {
-    if (image !== this.image) {
-      this.image = image
-      isDirty = true
-    }
+    this.image = image
   }
 
   private fun renderTexture() {
@@ -91,8 +86,7 @@ class GLSprite : SpriteFacade {
   private fun createTexture(width: Int, height: Int) {
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture!!)
     GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, width, height, 0,
-        GLES11Ext.GL_BGRA,
-        GLES20.GL_UNSIGNED_BYTE, buffer)
+        GLES11Ext.GL_BGRA, GLES20.GL_UNSIGNED_BYTE, buffer)
     GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
     GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
     GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
@@ -111,13 +105,17 @@ class GLSprite : SpriteFacade {
     GLES20.glEnableVertexAttribArray(context.posCoordHandle)
   }
 
-  private fun updateTexture(bitmap: Bitmap) {
-    buffer = IntBuffer.wrap(bitmap.pixels)
-    createTexture(bitmap.width, bitmap.height)
+  private fun updateTexture() {
+    val bitmap = image!!
+    if (buffer == null) {
+      buffer = IntBuffer.wrap(bitmap.pixels)
+      createTexture(bitmap.width, bitmap.height)
+    } else {
+      buffer = IntBuffer.wrap(bitmap.pixels)
+    }
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture!!)
     GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height,
-        GLES11Ext.GL_BGRA, GLES20.GL_UNSIGNED_BYTE,
-        buffer)
+        GLES11Ext.GL_BGRA, GLES20.GL_UNSIGNED_BYTE, buffer)
   }
 
   private fun createVerticesBuffer(vertices: FloatArray): FloatBuffer {

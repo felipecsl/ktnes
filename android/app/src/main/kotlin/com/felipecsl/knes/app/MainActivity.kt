@@ -1,28 +1,22 @@
-package com.felipecsl.android.app
+package com.felipecsl.knes.app
 
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.SurfaceHolder
-import android.view.SurfaceView
 import android.widget.Switch
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.felipecsl.android.NesGLSurfaceView
-import com.felipecsl.android.R
 import com.felipecsl.knes.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import java.util.concurrent.Executors
-import java.util.logging.Logger
 
 class MainActivity : AppCompatActivity() {
   private val executor = Executors.newSingleThreadExecutor()
   private val nesGlSurfaceView by lazy { findViewById<NesGLSurfaceView>(R.id.nes_gl_surface_view) }
-  private val surfaceView by lazy { findViewById<SurfaceView>(R.id.surface_view) }
   private val fabRun by lazy { findViewById<FloatingActionButton>(R.id.fabRun) }
   private val toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
   private val implSwitch by lazy { findViewById<Switch>(R.id.implementation_switch) }
@@ -44,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         } else {
           Snackbar.make(implSwitch, "Using JVM implementation",
               BaseTransientBottomBar.LENGTH_SHORT).show()
-          Director.startConsole(cartridgeData, sprite)
+          Director(cartridgeData, sprite).startConsole()
         }
       }
     }

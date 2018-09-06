@@ -17,6 +17,6 @@ fun startConsole(
     val sprite = Sprite()
     val bufferPointer = buffer.refTo(0).getPointer(memScope)
     jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
-    Director.startConsole(buffer, sprite)
+    Director(buffer, sprite).startConsole()
   }
 }

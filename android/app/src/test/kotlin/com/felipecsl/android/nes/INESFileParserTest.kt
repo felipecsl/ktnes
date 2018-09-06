@@ -1,5 +1,7 @@
 package com.felipecsl.android.nes
 
+import com.felipecsl.knes.INESFileHeader
+import com.felipecsl.knes.INESFileParser
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before

@@ -5,7 +5,7 @@
   android:keepScreenOn="true"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
-  tools:context="com.felipecsl.android.app.MainActivity">
+  tools:context=".app.MainActivity">
 
   <LinearLayout
     android:layout_width="match_parent"
@@ -39,12 +39,6 @@
 
           <com.felipecsl.android.NesGLSurfaceView
             android:id="@+id/nes_gl_surface_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-          <SurfaceView
-            android:id="@+id/surface_view"
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 

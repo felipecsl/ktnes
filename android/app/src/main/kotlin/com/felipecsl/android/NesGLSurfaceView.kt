@@ -13,7 +13,7 @@ class NesGLSurfaceView(
 
   fun setSprite(sprite: Sprite) {
     // Create an OpenGL ES 2.0 context
-    setEGLContextClientVersion(2)
+    setEGLContextClientVersion(3)
     // Set the Renderer for drawing on the GLSurfaceView
     renderer = NesGLRenderer(sprite)
     setRenderer(renderer)

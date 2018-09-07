@@ -152,7 +152,40 @@ internal class PPU(
     val fetchCycle = preFetchCycle || visibleCycle
     if (renderingEnabled) {
       if (visibleLine && visibleCycle) {
-        renderPixel()
+        // render pixel
+        val x1 = cycle - 1
+        val y = scanLine
+        var background = if (flagShowBackground == 0) {
+          0
+        } else {
+          ((tileData shr 32) shr ((7 - this.x) * 4)) and 0x0F
+        }
+        spritePixel()
+        if (x1 < 8 && flagShowLeftBackground == 0) {
+          background = 0
+        }
+        if (x1 < 8 && flagShowLeftSprites == 0) {
+          spritePixelSprite = 0
+        }
+        val b = background % 4 != 0
+        val s = spritePixelSprite % 4 != 0
+        val color = if (!b && !s) {
+          0
+        } else if (!b && s) {
+          spritePixelSprite or 0x10
+        } else if (b && !s) {
+          background
+        } else {
+          if (spriteIndexes[spritePixelI] == 0 && x1 < 255) {
+            flagSpriteZeroHit = 1
+          }
+          if (spritePriorities[spritePixelI] == 0) {
+            spritePixelSprite or 0x10
+          } else {
+            background
+          }
+        }
+        back.setPixel(x1, y, PALETTE[readPalette(color) % 64])
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
@@ -218,7 +251,30 @@ internal class PPU(
     if (renderingEnabled) {
       if (cycle == 257) {
         if (visibleLine) {
-          evaluateSprites()
+          // evaluate sprites
+          val h = if (flagSpriteSize == 0) 8 else 16
+          var count = 0
+          for (i in zeroTo63) {
+            val y = oamData[i * 4 + 0] and 0xFF
+            val a = oamData[i * 4 + 2] and 0xFF
+            val x = oamData[i * 4 + 3] and 0xFF
+            val row = scanLine - y
+            if (row < 0 || row >= h) {
+              continue
+            }
+            if (count < 8) {
+              spritePatterns[count] = fetchSpritePattern(i, row)
+              spritePositions[count] = x
+              spritePriorities[count] = (a shr 5) and 1
+              spriteIndexes[count] = i
+            }
+            count++
+          }
+          if (count > 8) {
+            count = 8
+            flagSpriteOverflow = 1
+          }
+          spriteCount = count
         } else {
           spriteCount = 0
         }
@@ -251,32 +307,6 @@ internal class PPU(
     this.back = front
     nmiOccurred = true
     nmiChange()
-  }
-
-  private fun evaluateSprites() {
-    val h = if (flagSpriteSize == 0) 8 else 16
-    var count = 0
-    for (i in zeroTo63) {
-      val y = oamData[i * 4 + 0] and 0xFF
-      val a = oamData[i * 4 + 2] and 0xFF
-      val x = oamData[i * 4 + 3] and 0xFF
-      val row = scanLine - y
-      if (row < 0 || row >= h) {
-        continue
-      }
-      if (count < 8) {
-        spritePatterns[count] = fetchSpritePattern(i, row)
-        spritePositions[count] = x
-        spritePriorities[count] = (a shr 5) and 1
-        spriteIndexes[count] = i
-      }
-      count++
-    }
-    if (count > 8) {
-      count = 8
-      flagSpriteOverflow = 1
-    }
-    spriteCount = count
   }
 
   private fun fetchSpritePattern(i: Int, _row: Int): Int {
@@ -391,42 +421,6 @@ internal class PPU(
     val address = 0x23C0 or (v and 0x0C00) or ((v shr 4) and 0x38) or ((v shr 2) and 0x07)
     val shift = ((v shr 4) and 4) or (v and 2)
     attributeTableByte = ((read(address) shr shift) and 3) shl 2
-  }
-
-  private fun renderPixel() {
-    val x = cycle - 1
-    val y = scanLine
-    var background = if (flagShowBackground == 0) {
-      0
-    } else {
-      ((tileData shr 32) shr ((7 - this.x) * 4)) and 0x0F
-    }
-    spritePixel()
-    if (x < 8 && flagShowLeftBackground == 0) {
-      background = 0
-    }
-    if (x < 8 && flagShowLeftSprites == 0) {
-      spritePixelSprite = 0
-    }
-    val b = background % 4 != 0
-    val s = spritePixelSprite % 4 != 0
-    val color = if (!b && !s) {
-      0
-    } else if (!b && s) {
-      spritePixelSprite or 0x10
-    } else if (b && !s) {
-      background
-    } else {
-      if (spriteIndexes[spritePixelI] == 0 && x < 255) {
-        flagSpriteZeroHit = 1
-      }
-      if (spritePriorities[spritePixelI] == 0) {
-        spritePixelSprite or 0x10
-      } else {
-        background
-      }
-    }
-    back.setPixel(x, y, PALETTE[readPalette(color) % 64])
   }
 
   private fun spritePixel() {
@@ -591,8 +585,7 @@ internal class PPU(
   }
 
   private fun fetchNameTableByte() {
-    val address = 0x2000 or (v and 0x0FFF)
-    nameTableByte = read(address)
+    nameTableByte = read(0x2000 or (v and 0x0FFF))
   }
 
   private fun reset() {

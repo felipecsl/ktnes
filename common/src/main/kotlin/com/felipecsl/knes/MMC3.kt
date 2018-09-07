@@ -55,43 +55,37 @@ internal class MMC3(
         chr[chrOffsets[bank] + offset] = value
       }
       address >= 0x8000 -> {
-        writeRegister(address, value)
+        // write register
+        if (address <= 0x9FFF && address % 2 == 0) {
+          // write bank select
+          prgMode = (value shr 6) and 1
+          chrMode = (value shr 7) and 1
+          register = value and 7
+          updateOffsets()
+        } else if (address <= 0x9FFF && address % 2 == 1) {
+          registers[register] = value
+          updateOffsets()
+        } else if (address <= 0xBFFF && address % 2 == 0) {
+          when (value and 1) {
+            0 -> cartridge.mirror = MirrorVertical
+            1 -> cartridge.mirror = MirrorHorizontal
+          }
+        } else if (address <= 0xBFFF && address % 2 == 1) {
+        } else if (address <= 0xDFFF && address % 2 == 0) {
+          reload = value
+        } else if (address <= 0xDFFF && address % 2 == 1) {
+          counter = 0
+        } else if (address <= 0xFFFF && address % 2 == 0) {
+          irqEnable = false
+        } else if (address <= 0xFFFF && address % 2 == 1) {
+          irqEnable = true
+        }
       }
       address >= 0x6000 -> {
         sram[address - 0x6000] = value
       }
       else -> throw RuntimeException("unhandled mapper4 write at address $address")
     }
-  }
-
-  private inline fun writeRegister(address: Int, value: Int) {
-    if (address <= 0x9FFF && address % 2 == 0) {
-      writeBankSelect(value)
-    } else if (address <= 0x9FFF && address % 2 == 1) {
-      registers[register] = value
-      updateOffsets()
-    } else if (address <= 0xBFFF && address % 2 == 0) {
-      when (value and 1) {
-        0 -> cartridge.mirror = MirrorVertical
-        1 -> cartridge.mirror = MirrorHorizontal
-      }
-    } else if (address <= 0xBFFF && address % 2 == 1) {
-    } else if (address <= 0xDFFF && address % 2 == 0) {
-      reload = value
-    } else if (address <= 0xDFFF && address % 2 == 1) {
-      counter = 0
-    } else if (address <= 0xFFFF && address % 2 == 0) {
-      irqEnable = false
-    } else if (address <= 0xFFFF && address % 2 == 1) {
-      irqEnable = true
-    }
-  }
-
-  private inline fun writeBankSelect(value: Int) {
-    prgMode = (value shr 6) and 1
-    chrMode = (value shr 7) and 1
-    register = value and 7
-    updateOffsets()
   }
 
   private inline fun updateOffsets() {

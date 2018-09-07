@@ -48,9 +48,7 @@ internal class CPU(
   private var interrupt: Interrupt = Interrupt.NOT_SET
 
   private fun read16(address: Int): Int {
-    val lo = read(address)
-    val hi = read(address + 1)
-    return (hi shl 8) or lo
+    return (read(address + 1) shl 8) or read(address)
   }
 
   // read16bug emulates a 6502 bug that caused the low byte to wrap without
@@ -110,10 +108,28 @@ internal class CPU(
     }
     val currCycles = cycles
     // execute interrupt
-    if (interrupt == Interrupt.NMI)
-      nmi()
-    else if (interrupt == Interrupt.IRQ)
-      irq()
+    if (interrupt == Interrupt.NMI) {
+      // nmi
+      push16(PC)
+      stepAddress = 0
+      stepPC = 0
+      stepMode = 0
+      php(stepAddress, stepPC, stepMode)
+      PC = read16(0xfffa)
+      I = 1
+      cycles += 7
+    }
+    else if (interrupt == Interrupt.IRQ) {
+      // irq
+      push16(PC)
+      stepAddress = 0
+      stepPC = 0
+      stepMode = 0
+      php(stepAddress, stepPC, stepMode)
+      PC = read16(0xfffe)
+      I = 1
+      cycles += 7
+    }
     interrupt = Interrupt.NONE
     val opcode = read(PC)
     val mode = instructionModes[opcode]
@@ -517,28 +533,6 @@ internal class CPU(
       }
     }
     return cycles - currCycles
-  }
-
-  private fun irq() {
-    push16(PC)
-    stepAddress = 0
-    stepPC = 0
-    stepMode = 0
-    php(stepAddress, stepPC, stepMode)
-    PC = read16(0xfffe)
-    I = 1
-    cycles += 7
-  }
-
-  private fun nmi() {
-    push16(PC)
-    stepAddress = 0
-    stepPC = 0
-    stepMode = 0
-    php(stepAddress, stepPC, stepMode)
-    PC = read16(0xfffa)
-    I = 1
-    cycles += 7
   }
 
   private fun isPageCrossed(mode: Int, address: Int) =

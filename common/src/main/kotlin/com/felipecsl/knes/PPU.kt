@@ -85,25 +85,38 @@ internal class PPU(
 
   fun readRegister(address: Int): Int {
     return when (address) {
-      0x2002 -> readStatus()
-      0x2004 -> readOAMData()
-      0x2007 -> readData()
+      0x2002 -> {
+        // read status
+        var result = register and 0x1F
+        result = result or (flagSpriteOverflow shl 5)
+        result = result or (flagSpriteZeroHit shl 6)
+        if (nmiOccurred) {
+          result = result or (1 shl 7)
+        }
+        nmiOccurred = false
+        nmiChange()
+        w = 0
+        result
+      }
+      0x2004 -> {
+        // read oam data
+        oamData[oamAddress]
+      }
+      0x2007 -> {
+        // read data
+        var value = read(v)
+        if (v % 0x4000 < 0x3F00) {
+          val buffered = bufferedData
+          bufferedData = value
+          value = buffered
+        } else {
+          bufferedData = read(v - 0x1000)
+        }
+        v += if (flagIncrement == 0) 1 else 32
+        value
+      }
       else -> 0
     }
-  }
-
-  private fun readStatus(): Int {
-    var result = register and 0x1F
-    result = result or (flagSpriteOverflow shl 5)
-    result = result or (flagSpriteZeroHit shl 6)
-    if (nmiOccurred) {
-      result = result or (1 shl 7)
-    }
-    nmiOccurred = false
-    nmiChange()
-    // w:                   = 0
-    w = 0
-    return result
   }
 
   fun writeRegister(address: Int, value: Int) {
@@ -111,25 +124,67 @@ internal class PPU(
     when (address) {
       0x2000 -> writeControl(value)
       0x2001 -> writeMask(value)
-      0x2003 -> writeOAMAddress(value)
-      0x2004 -> writeOAMData(value)
-      0x2005 -> writeScroll(value)
-      0x2006 -> writeAddress(value)
-      0x2007 -> writeData(value)
-      0x4014 -> writeDMA(value)
-    }
-  }
-
-  private fun writeDMA(value: Int) {
-    var address = value shl 8
-    for (it in zeroTo255) {
-      oamData[oamAddress] = cpu.read(address)
-      oamAddress = (oamAddress + 1) and 0xFF
-      address++
-    }
-    cpu.stall += 513
-    if (cpu.cycles % 2 == 1L) {
-      cpu.stall++
+      0x2003 -> {
+        // write oam address
+        oamAddress = value
+      }
+      0x2004 -> {
+        // write oam data
+        oamData[oamAddress] = value
+        oamAddress++
+      }
+      0x2005 -> {
+        // write scroll
+        if (w == 0) {
+          // t: ........ ...HGFED = d: HGFED...
+          // x:               CBA = d: .....CBA
+          // w:                   = 1
+          t = (t and 0xFFE0) or (value shr 3)
+          x = value and 0x07
+          w = 1
+        } else {
+          // t: .CBA..HG FED..... = d: HGFEDCBA
+          // w:                   = 0
+          t = (t and 0x8FFF) or ((value and 0x07) shl 12)
+          t = (t and 0xFC1F) or ((value and 0xF8) shl 2)
+          w = 0
+        }
+      }
+      0x2006 -> {
+        // write address
+        if (w == 0) {
+          // t: ..FEDCBA ........ = d: ..FEDCBA
+          // t: .X...... ........ = 0
+          // w:                   = 1
+          t = (t and 0x80FF) or ((value and 0x3F) shl 8)
+          w = 1
+        } else {
+          // t: ........ HGFEDCBA = d: HGFEDCBA
+          // v                    = t
+          // w:                   = 0
+          t = (t and 0xFF00) or value
+          v = t
+          w = 0
+        }
+      }
+      0x2007 -> {
+        // write data
+        write(v, value)
+        v += if (flagIncrement == 0) 1 else 32
+      }
+      0x4014 -> {
+        // write dma
+        var address1 = value shl 8
+        for (it in zeroTo255) {
+          oamData[oamAddress] = cpu.read(address1)
+          oamAddress = (oamAddress + 1) and 0xFF
+          address1++
+        }
+        cpu.stall += 513
+        if (cpu.cycles % 2 == 1L) {
+          cpu.stall++
+        }
+      }
     }
   }
 
@@ -386,10 +441,11 @@ internal class PPU(
   private fun read(_address: Int): Int {
     val address = _address % 0x4000
     return when {
-      address < 0x2000 -> mapper.read(address)
+      address < 0x2000 -> {
+        mapper.read(address)
+      }
       address < 0x3F00 -> {
-        val mode = cartridge.mirror
-        nameTableData[mirrorAddress(mode, address) % 2048]
+        nameTableData[mirrorAddress(cartridge.mirror, address) % 2048]
       }
       address < 0x4000 -> readPalette(address % 32)
       else -> throw RuntimeException("unhandled PPU memory read at address: $address")
@@ -403,7 +459,9 @@ internal class PPU(
   private fun write(addr: Int, value: Int) {
     val address = addr % 0x4000
     when {
-      address < 0x2000 -> mapper.write(address, value)
+      address < 0x2000 -> {
+        mapper.write(address, value)
+      }
       address < 0x3F00 -> {
         val mode = cartridge.mirror
         nameTableData[mirrorAddress(mode, address) % 2048] = value
@@ -469,79 +527,6 @@ internal class PPU(
     }
   }
 
-  // $2007: PPUDATA (read)
-  private fun readData(): Int {
-    var value = read(v)
-    // emulate buffered reads
-    if (v % 0x4000 < 0x3F00) {
-      val buffered = bufferedData
-      bufferedData = value
-      value = buffered
-    } else {
-      bufferedData = read(v - 0x1000)
-    }
-    // increment address
-    v += if (flagIncrement == 0) 1 else 32
-    return value
-  }
-
-  // $2007: PPUDATA (write)
-  private fun writeData(value: Int) {
-    write(v, value)
-    v += if (flagIncrement == 0) 1 else 32
-  }
-
-  // $2006: PPUADDR
-  private fun writeAddress(value: Int) {
-    if (w == 0) {
-      // t: ..FEDCBA ........ = d: ..FEDCBA
-      // t: .X...... ........ = 0
-      // w:                   = 1
-      t = (t and 0x80FF) or ((value and 0x3F) shl 8)
-      w = 1
-    } else {
-      // t: ........ HGFEDCBA = d: HGFEDCBA
-      // v                    = t
-      // w:                   = 0
-      t = (t and 0xFF00) or value
-      v = t
-      w = 0
-    }
-  }
-
-  // $2005: PPUSCROLL
-  private fun writeScroll(value: Int) {
-    if (w == 0) {
-      // t: ........ ...HGFED = d: HGFED...
-      // x:               CBA = d: .....CBA
-      // w:                   = 1
-      t = (t and 0xFFE0) or (value shr 3)
-      x = value and 0x07
-      w = 1
-    } else {
-      // t: .CBA..HG FED..... = d: HGFEDCBA
-      // w:                   = 0
-      t = (t and 0x8FFF) or ((value and 0x07) shl 12)
-      t = (t and 0xFC1F) or ((value and 0xF8) shl 2)
-      w = 0
-    }
-  }
-
-  private fun readOAMData(): Int {
-    return oamData[oamAddress]
-  }
-
-  // $2004: OAMDATA (write)
-  private fun writeOAMData(value: Int) {
-    oamData[oamAddress] = value
-    oamAddress++
-  }
-
-  // $2003: OAMADDR
-  private fun writeOAMAddress(value: Int) {
-    oamAddress = value
-  }
-
   private fun writeMask(value: Int) {
     flagGrayscale = (value shr 0) and 1
     flagShowLeftBackground = (value shr 1) and 1
@@ -583,7 +568,7 @@ internal class PPU(
     frame = 0
     writeControl(0)
     writeMask(0)
-    writeOAMAddress(0)
+    oamAddress = 0
   }
 
   companion object {

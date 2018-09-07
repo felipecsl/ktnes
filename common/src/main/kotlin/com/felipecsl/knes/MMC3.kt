@@ -64,7 +64,7 @@ internal class MMC3(
     }
   }
 
-  private fun writeRegister(address: Int, value: Int) {
+  private inline fun writeRegister(address: Int, value: Int) {
     if (address <= 0x9FFF && address % 2 == 0) {
       writeBankSelect(value)
     } else if (address <= 0x9FFF && address % 2 == 1) {
@@ -87,14 +87,14 @@ internal class MMC3(
     }
   }
 
-  private fun writeBankSelect(value: Int) {
+  private inline fun writeBankSelect(value: Int) {
     prgMode = (value shr 6) and 1
     chrMode = (value shr 7) and 1
     register = value and 7
     updateOffsets()
   }
 
-  private fun updateOffsets() {
+  private inline fun updateOffsets() {
     when (prgMode) {
       0 -> {
         prgOffsets[0] = prgBankOffset(registers[6])
@@ -133,7 +133,7 @@ internal class MMC3(
     }
   }
 
-  private fun chrBankOffset(index: Int): Int {
+  private inline fun chrBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100
@@ -147,7 +147,7 @@ internal class MMC3(
     return offset
   }
 
-  private fun prgBankOffset(index: Int): Int {
+  private inline fun prgBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100

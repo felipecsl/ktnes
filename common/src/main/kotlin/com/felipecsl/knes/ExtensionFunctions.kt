@@ -8,7 +8,7 @@ val mirrorLookup = arrayOf(
     arrayOf(0, 1, 2, 3)
 )
 
-fun mirrorAddress(mode: Int, addr: Int): Int {
+inline fun mirrorAddress(mode: Int, addr: Int): Int {
   val address = (addr - 0x2000) % 0x1000
   val table = address / 0x0400
   val offset = address % 0x0400

@@ -23,12 +23,13 @@ class Director(
     while (true) {
       totalCycles += console.step()
       if (totalCycles >= step) {
-        val msSpent = currentTimeMs() - startTime
+        val currentTime = currentTimeMs()
+        val msSpent = currentTime - startTime
         val clock = (totalCycles * 1000) / msSpent
         val speed = clock / FREQUENCY.toFloat()
-        println("Clock=${clock}Hz (${speed}x)")
+        println("Clock=" + clock + "Hz (" + speed + "x)")
         totalCycles = 0
-        startTime = currentTimeMs()
+        startTime = currentTime
       }
     }
   }

@@ -1,4 +1,4 @@
-@file:Suppress("UNUSED_PARAMETER")
+@file:Suppress("UNUSED_PARAMETER", "NOTHING_TO_INLINE")
 
 package com.felipecsl.knes
 
@@ -115,7 +115,407 @@ internal class CPU(
     else if (interrupt == Interrupt.IRQ)
       irq()
     interrupt = Interrupt.NONE
-    executeNextInstruction()
+    val opcode = read(PC)
+    val mode = instructionModes[opcode]
+    val addressingMode = addressingModes[mode]
+    val address = addressForMode(addressingMode)
+    val pageCrossed = isPageCrossed(addressingMode, address)
+    PC += instructionSizes[opcode]
+    cycles += instructionCycles[opcode]
+    if (pageCrossed) {
+      cycles += instructionPageCycles[opcode]
+    }
+    stepAddress = address
+    stepPC = PC
+    stepMode = mode
+    when (opcode) {
+      0 -> {
+        // brk
+        push16(PC)
+        php(stepAddress, stepPC, stepMode)
+        sei(stepAddress, stepPC, stepMode)
+        PC = read16(0xFFFE)
+      }
+      1, 5, 9, 13, 17, 21, 25, 29 -> {
+        // ora
+        A = A or (read(stepAddress) and 0xFF)
+        setZN(A)
+      }
+      2, 18, 34, 50, 66, 82, 98, 114, 146, 178, 210, 242 -> {
+        // kil
+      }
+      3, 7, 15, 19, 23, 27, 31 -> {
+        // slo
+      }
+      4, 12, 20, 26, 28, 52, 58, 60, 68, 84, 90, 92, 100, 116, 122, 124, 128, 130, 137, 194, 212,
+      218, 220, 226, 234, 244, 250, 252 -> {
+        // nop
+      }
+      6, 10, 14, 22, 30 -> {
+        // asl
+        if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
+          C = (A shr 7) and 1
+          A = A shl 1
+          setZN(A)
+        } else {
+          var value = read(stepAddress)
+          C = (value shr 7) and 1
+          value = value shl 1
+          write(stepAddress, value)
+          setZN(value)
+        }
+      }
+      8 -> php(stepAddress, stepPC, stepMode)
+      11, 43 -> {
+        // anc
+      }
+      16 -> {
+        // bpl
+        if (N == 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      24 -> {
+        // clc
+        C = 0
+      }
+      32 -> {
+        // jsr
+        push16(PC - 1)
+        PC = stepAddress
+      }
+      33, 37, 41, 45, 49, 53, 57, 61 -> {
+        // and
+        A = A and read(stepAddress)
+        setZN(A)
+      }
+      35, 39, 47, 51, 55, 59, 63 -> {
+        // rla
+      }
+      36, 44 -> {
+        // bit
+        val value = read(stepAddress)
+        V = (value shr 6) and 1
+        setZFlag(value and A)
+        setNFlag(value)
+      }
+      38, 42, 46, 54, 62 -> {
+        // rol
+        if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
+          val c = C
+          C = (A shr 7) and 1
+          A = (A shl 1) or c
+          setZN(A)
+        } else {
+          val c = C
+          var value = read(stepAddress)
+          C = (value shr 7) and 1
+          value = (value shl 1) or c
+          write(stepAddress, value)
+          setZN(value and 0xFF)
+        }
+      }
+      40 -> {
+        // plp
+        setFlags(pull() and 0xEF or 0x20)
+      }
+      48 -> {
+        // bmi
+        if (N != 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      56 -> {
+        // sec
+        C = 1
+      }
+      64 -> {
+        // rti
+        setFlags(pull() and 0xEF or 0x20)
+        PC = pull16()
+      }
+      65, 69, 73, 77, 81, 85, 89, 93 -> {
+        // eor
+        A = A xor read(stepAddress)
+        setZN(A)
+      }
+      67, 71, 79, 83, 87, 91, 95 -> {
+        // sre
+      }
+      70, 74, 78, 86, 94 -> {
+        // lsr
+        if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
+          C = A and 1
+          A = A shr 1
+          setZN(A)
+        } else {
+          var value = read(stepAddress)
+          C = value and 1
+          value = value shr 1
+          write(stepAddress, value)
+          setZN(value)
+        }
+      }
+      72 -> {
+        // pha
+        push(A)
+      }
+      75 -> {
+        // alr
+      }
+      76, 108 -> {
+        // jmp
+        PC = stepAddress
+      }
+      80 -> {
+        // bvc
+        if (V == 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      88 -> {
+        // cli
+        I = 0
+      }
+      96 -> {
+        // rts
+        PC = pull16() + 1
+      }
+      97, 101, 105, 109, 113, 117, 121, 125 -> {
+        // adc
+        val a = A
+        val b = read(stepAddress)
+        val c = C
+        A = (a + b + c) and 0xFF
+        setZN(A)
+        C = if (a + b + c > 0xFF) 1 else 0
+        V = if ((a xor b) and 0x80 == 0 && (a xor A) and 0x80 != 0) 1 else 0
+      }
+      99, 103, 111, 115, 119, 123, 127 -> {
+        // rra
+      }
+      102, 106, 110, 118, 126 -> {
+        // ror
+        if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
+          val c = C
+          C = A and 1
+          A = (A shr 1) or (c shl 7)
+          setZN(A)
+        } else {
+          val c = C
+          var value = read(stepAddress)
+          C = value and 1
+          value = (value shr 1) or (c shl 7)
+          write(stepAddress, value)
+          setZN(value)
+        }
+      }
+      104 -> {
+        // pla
+        A = pull()
+        setZN(A)
+      }
+      107 -> {
+        // arr
+      }
+      112 -> {
+        // bvs
+        if (V != 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      120 -> sei(stepAddress, stepPC, stepMode)
+      129, 133, 141, 145, 149, 153, 157 -> {
+        // sta
+        write(stepAddress, A)
+      }
+      131, 135, 143, 151 -> {
+        // sax
+      }
+      132, 140, 148 -> {
+        // sty
+        write(stepAddress, Y)
+      }
+      134, 142, 150 -> {
+        // stx
+        write(stepAddress, X)
+      }
+      136 -> {
+        // dey
+        Y = (Y - 1) and 0xFF
+        setZN(Y)
+      }
+      138 -> {
+        // txa
+        A = X
+        setZN(A)
+      }
+      139 -> {
+        // xaa
+      }
+      144 -> {
+        // bcc
+        if (C == 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      147, 159 -> {
+        // ahx
+      }
+      152 -> {
+        // tya
+        A = Y
+        setZN(A)
+      }
+      154 -> {
+        // txs
+        SP = X
+      }
+      155 -> {
+        // tas
+      }
+      156 -> {
+        // shy
+      }
+      158 -> {
+        // shx
+      }
+      160, 164, 172, 180, 188 -> {
+        // ldy
+        Y = read(stepAddress) and 0xFF
+        setZN(Y)
+      }
+      161, 165, 169, 173, 177, 181, 185, 189 -> {
+        // lda
+        A = read(stepAddress) and 0xFF
+        setZN(A)
+      }
+      162, 166, 174, 182, 190 -> {
+        // ldx
+        X = read(stepAddress) and 0xFF
+        setZN(X)
+      }
+      163, 167, 171, 175, 179, 183, 191 -> {
+        // lax
+      }
+      168 -> {
+        // tay
+        Y = A
+        setZN(Y)
+      }
+      170 -> {
+        // tax
+        X = A
+        setZN(X)
+      }
+      176 -> {
+        // bcs
+        if (C != 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      184 -> {
+        // clv
+        V = 0
+      }
+      186 -> {
+        // tsx
+        X = SP
+        setZN(X)
+      }
+      187 -> {
+        // las
+      }
+      192, 196, 204 -> {
+        // cpy
+        val value = read(stepAddress) and 0xFF
+        compare(Y, value)
+      }
+      193, 197, 201, 205, 209, 213, 217, 221 -> {
+        // cmp
+        val value = read(stepAddress) and 0xFF
+        compare(A, value)
+      }
+      195, 199, 207, 211, 215, 219, 223 -> {
+        // dcp
+      }
+      198, 206, 214, 222 -> {
+        // dec
+        val value = read(stepAddress) - 1
+        write(stepAddress, value)
+        setZN(value)
+      }
+      200 -> {
+        // iny
+        Y = (Y + 1) and 0xFF
+        setZN(Y)
+      }
+      202 -> {
+        // dex
+        X = (X - 1) and 0xFF
+        setZN(X)
+      }
+      203 -> {
+        // axs
+      }
+      208 -> {
+        // bne
+        if (Z == 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      216 -> {
+        // cld
+        D = 0
+      }
+      224, 228, 236 -> {
+        // cpx
+        val value = read(stepAddress) and 0xFF
+        compare(X, value)
+      }
+      225, 229, 233, 235, 237, 241, 245, 249, 253 -> {
+        // sbc
+        val a = A
+        val b = read(stepAddress)
+        val c = C
+        A = (a - b - ((1 - c) and 0xFF)) and 0xFF
+        setZN(A)
+        C = if (a - b - ((1 - c) and 0xFF) >= 0) 1 else 0
+        V = if ((a xor b) and 0x80 != 0 && (a xor A) and 0x80 != 0) 1 else 0
+      }
+      227, 231, 239, 243, 247, 251, 255 -> {
+        // isc
+      }
+      230, 238, 246, 254 -> {
+        // inc
+        val value = (read(stepAddress) + 1) and 0xFF
+        write(stepAddress, value)
+        setZN(value)
+      }
+      232 -> {
+        // inx
+        X = (X + 1) and 0xFF
+        setZN(X)
+      }
+      240 -> {
+        // beq
+        if (Z != 0) {
+          PC = stepAddress
+          addBranchCycles(stepAddress, stepPC, stepMode)
+        }
+      }
+      248 -> {
+        // sed
+        D = 1
+      }
+    }
     return cycles - currCycles
   }
 
@@ -141,99 +541,6 @@ internal class CPU(
     cycles += 7
   }
 
-  private fun executeNextInstruction() {
-    val opcode = read(PC)
-    val mode = instructionModes[opcode]
-    val addressingMode = addressingModes[mode]
-    val address = addressForMode(addressingMode)
-    val pageCrossed = isPageCrossed(addressingMode, address)
-    PC += instructionSizes[opcode]
-    cycles += instructionCycles[opcode]
-    if (pageCrossed) {
-      cycles += instructionPageCycles[opcode]
-    }
-    stepAddress = address
-    stepPC = PC
-    stepMode = mode
-    when (opcode) {
-      0 -> brk(stepAddress, stepPC, stepMode)
-      1, 5, 9, 13, 17, 21, 25, 29 -> ora(stepAddress, stepPC, stepMode)
-      2, 18, 34, 50, 66, 82, 98, 114, 146, 178, 210, 242 -> kil(stepAddress, stepPC, stepMode)
-      3, 7, 15, 19, 23, 27, 31 -> slo(stepAddress, stepPC, stepMode)
-      4, 12, 20, 26, 28, 52, 58, 60, 68, 84, 90, 92, 100, 116, 122, 124, 128, 130, 137, 194, 212, 218, 220, 226, 234, 244, 250, 252 -> nop(stepAddress, stepPC, stepMode)
-      6, 10, 14, 22, 30 -> asl(stepAddress, stepPC, stepMode)
-      8 -> php(stepAddress, stepPC, stepMode)
-      11, 43 -> anc(stepAddress, stepPC, stepMode)
-      16 -> bpl(stepAddress, stepPC, stepMode)
-      24 -> clc(stepAddress, stepPC, stepMode)
-      32 -> jsr(stepAddress, stepPC, stepMode)
-      33, 37, 41, 45, 49, 53, 57, 61 -> and(stepAddress, stepPC, stepMode)
-      35, 39, 47, 51, 55, 59, 63 -> rla(stepAddress, stepPC, stepMode)
-      36, 44 -> bit(stepAddress, stepPC, stepMode)
-      38, 42, 46, 54, 62 -> rol(stepAddress, stepPC, stepMode)
-      40 -> plp(stepAddress, stepPC, stepMode)
-      48 -> bmi(stepAddress, stepPC, stepMode)
-      56 -> sec(stepAddress, stepPC, stepMode)
-      64 -> rti(stepAddress, stepPC, stepMode)
-      65, 69, 73, 77, 81, 85, 89, 93 -> eor(stepAddress, stepPC, stepMode)
-      67, 71, 79, 83, 87, 91, 95 -> sre(stepAddress, stepPC, stepMode)
-      70, 74, 78, 86, 94 -> lsr(stepAddress, stepPC, stepMode)
-      72 -> pha(stepAddress, stepPC, stepMode)
-      75 -> alr(stepAddress, stepPC, stepMode)
-      76, 108 -> jmp(stepAddress, stepPC, stepMode)
-      80 -> bvc(stepAddress, stepPC, stepMode)
-      88 -> cli(stepAddress, stepPC, stepMode)
-      96 -> rts(stepAddress, stepPC, stepMode)
-      97, 101, 105, 109, 113, 117, 121, 125 -> adc(stepAddress, stepPC, stepMode)
-      99, 103, 111, 115, 119, 123, 127 -> rra(stepAddress, stepPC, stepMode)
-      102, 106, 110, 118, 126 -> ror(stepAddress, stepPC, stepMode)
-      104 -> pla(stepAddress, stepPC, stepMode)
-      107 -> arr(stepAddress, stepPC, stepMode)
-      112 -> bvs(stepAddress, stepPC, stepMode)
-      120 -> sei(stepAddress, stepPC, stepMode)
-      129, 133, 141, 145, 149, 153, 157 -> sta(stepAddress, stepPC, stepMode)
-      131, 135, 143, 151 -> sax(stepAddress, stepPC, stepMode)
-      132, 140, 148 -> sty(stepAddress, stepPC, stepMode)
-      134, 142, 150 -> stx(stepAddress, stepPC, stepMode)
-      136 -> dey(stepAddress, stepPC, stepMode)
-      138 -> txa(stepAddress, stepPC, stepMode)
-      139 -> xaa(stepAddress, stepPC, stepMode)
-      144 -> bcc(stepAddress, stepPC, stepMode)
-      147, 159 -> ahx(stepAddress, stepPC, stepMode)
-      152 -> tya(stepAddress, stepPC, stepMode)
-      154 -> txs(stepAddress, stepPC, stepMode)
-      155 -> tas(stepAddress, stepPC, stepMode)
-      156 -> shy(stepAddress, stepPC, stepMode)
-      158 -> shx(stepAddress, stepPC, stepMode)
-      160, 164, 172, 180, 188 -> ldy(stepAddress, stepPC, stepMode)
-      161, 165, 169, 173, 177, 181, 185, 189 -> lda(stepAddress, stepPC, stepMode)
-      162, 166, 174, 182, 190 -> ldx(stepAddress, stepPC, stepMode)
-      163, 167, 171, 175, 179, 183, 191 -> lax(stepAddress, stepPC, stepMode)
-      168 -> tay(stepAddress, stepPC, stepMode)
-      170 -> tax(stepAddress, stepPC, stepMode)
-      176 -> bcs(stepAddress, stepPC, stepMode)
-      184 -> clv(stepAddress, stepPC, stepMode)
-      186 -> tsx(stepAddress, stepPC, stepMode)
-      187 -> las(stepAddress, stepPC, stepMode)
-      192, 196, 204 -> cpy(stepAddress, stepPC, stepMode)
-      193, 197, 201, 205, 209, 213, 217, 221 -> cmp(stepAddress, stepPC, stepMode)
-      195, 199, 207, 211, 215, 219, 223 -> dcp(stepAddress, stepPC, stepMode)
-      198, 206, 214, 222 -> dec(stepAddress, stepPC, stepMode)
-      200 -> iny(stepAddress, stepPC, stepMode)
-      202 -> dex(stepAddress, stepPC, stepMode)
-      203 -> axs(stepAddress, stepPC, stepMode)
-      208 -> bne(stepAddress, stepPC, stepMode)
-      216 -> cld(stepAddress, stepPC, stepMode)
-      224, 228, 236 -> cpx(stepAddress, stepPC, stepMode)
-      225, 229, 233, 235, 237, 241, 245, 249, 253 -> sbc(stepAddress, stepPC, stepMode)
-      227, 231, 239, 243, 247, 251, 255 -> isc(stepAddress, stepPC, stepMode)
-      230, 238, 246, 254 -> inc(stepAddress, stepPC, stepMode)
-      232 -> inx(stepAddress, stepPC, stepMode)
-      240 -> beq(stepAddress, stepPC, stepMode)
-      248 -> sed(stepAddress, stepPC, stepMode)
-    }
-  }
-
   private fun isPageCrossed(mode: Int, address: Int) =
       when (mode) {
         AddressingMode.MODE_ABSOLUTE -> false
@@ -252,10 +559,10 @@ internal class CPU(
         else -> throw RuntimeException("Invalid addressing mode $mode")
       }
 
-  private fun pagesDiffer(a: Int, b: Int) =
+  private inline fun pagesDiffer(a: Int, b: Int) =
       a and 0xFF00 != b and 0xFF00
 
-  private fun addressForMode(mode: Int) =
+  private inline fun addressForMode(mode: Int) =
       when (mode) {
         AddressingMode.MODE_ABSOLUTE -> read16(PC + 1)
         AddressingMode.MODE_ABSOLUTEX -> read16(PC + 1) + X
@@ -344,17 +651,17 @@ internal class CPU(
     interrupt = Interrupt.NMI
   }
 
-  private fun setZN(value: Int) {
+  private inline fun setZN(value: Int) {
     setZFlag(value)
     setNFlag(value)
   }
 
-  private fun setZFlag(value: Int) {
+  private inline fun setZFlag(value: Int) {
     Z = if (value == 0) 1 else 0
   }
 
   // setN sets the negative flag if the argument is negative (high bit is set)
-  private fun setNFlag(value: Int) {
+  private inline fun setNFlag(value: Int) {
     N = if (value and 0x80 != 0) 1 else 0
   }
 
@@ -363,7 +670,7 @@ internal class CPU(
     C = if (a >= b) 1 else 0
   }
 
-  private fun setFlags(flags: Int) {
+  private inline fun setFlags(flags: Int) {
     C = (flags shr 0) and 1
     Z = (flags shr 1) and 1
     I = (flags shr 2) and 1
@@ -374,455 +681,14 @@ internal class CPU(
     N = (flags shr 7) and 1
   }
 
-  /**
-   * Instructions below
-   */
-  // ADC - Add with Carry
-  private fun adc(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val a = A
-    val b = read(stepAddress)
-    val c = C
-    A = (a + b + c) and 0xFF
-    setZN(A)
-    C = if (a + b + c > 0xFF) 1 else 0
-    V = if ((a xor b) and 0x80 == 0 && (a xor A) and 0x80 != 0) 1 else 0
-  }
-
-  // AND - Logical AND
-  private fun and(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = A and read(stepAddress)
-    setZN(A)
-  }
-
-  // ASL - Arithmetic Shift Left
-  private fun asl(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
-      C = (A shr 7) and 1
-      A = A shl 1
-      setZN(A)
-    } else {
-      var value = read(stepAddress)
-      C = (value shr 7) and 1
-      value = value shl 1
-      write(stepAddress, value)
-      setZN(value)
-    }
-  }
-
-  // BCC - Branch if Carry Clear
-  private fun bcc(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (C == 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BCS - Branch if Carry Set
-  private fun bcs(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (C != 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BEQ - Branch if Equal
-  private fun beq(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (Z != 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BIT - Bit Test
-  private fun bit(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = read(stepAddress)
-    V = (value shr 6) and 1
-    setZFlag(value and A)
-    setNFlag(value)
-  }
-
-  // BMI - Branch if Minus
-  private fun bmi(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (N != 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BNE - Branch if Not Equal
-  private fun bne(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (Z == 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BPL - Branch if Positive
-  private fun bpl(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (N == 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BRK - Force Interrupt
-  private fun brk(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    push16(PC)
-    php(stepAddress, stepPC, stepMode)
-    sei(stepAddress, stepPC, stepMode)
-    PC = read16(0xFFFE)
-  }
-
-  // BVC - Branch if Overflow Clear
-  private fun bvc(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (V == 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // BVS - Branch if Overflow Set
-  private fun bvs(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (V != 0) {
-      PC = stepAddress
-      addBranchCycles(stepAddress, stepPC, stepMode)
-    }
-  }
-
-  // CLC - Clear Carry Flag
-  private fun clc(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    C = 0
-  }
-
-  // CLD - Clear Decimal Mode
-  private fun cld(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    D = 0
-  }
-
-  // CLI - Clear Interrupt Disable
-  private fun cli(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    I = 0
-  }
-
-  // CLV - Clear Overflow Flag
-  private fun clv(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    V = 0
-  }
-
-  // CMP - Compare
-  private fun cmp(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = read(stepAddress) and 0xFF
-    compare(A, value)
-  }
-
-  // CPX - Compare X Register
-  private fun cpx(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = read(stepAddress) and 0xFF
-    compare(X, value)
-  }
-
-  // CPY - Compare Y Register
-  private fun cpy(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = read(stepAddress) and 0xFF
-    compare(Y, value)
-  }
-
-  // DEC - Decrement Memory
-  private fun dec(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = read(stepAddress) - 1
-    write(stepAddress, value)
-    setZN(value)
-  }
-
-  // DEX - Decrement X Register
-  private fun dex(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    X = (X - 1) and 0xFF
-    setZN(X)
-  }
-
-  // DEY - Decrement Y Register
-  private fun dey(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    Y = (Y - 1) and 0xFF
-    setZN(Y)
-  }
-
-  // EOR - Exclusive OR
-  private fun eor(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = A xor read(stepAddress)
-    setZN(A)
-  }
-
-  // INC - Increment Memory
-  private fun inc(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val value = (read(stepAddress) + 1) and 0xFF
-    write(stepAddress, value)
-    setZN(value)
-  }
-
-  // INX - Increment X Register
-  private fun inx(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    X = (X + 1) and 0xFF
-    setZN(X)
-  }
-
-  // INY - Increment Y Register
-  private fun iny(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    Y = (Y + 1) and 0xFF
-    setZN(Y)
-  }
-
-  // JMP - Jump
-  private fun jmp(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    PC = stepAddress
-  }
-
-  // JSR - Jump to Subroutine
-  private fun jsr(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    push16(PC - 1)
-    PC = stepAddress
-  }
-
-  // LDA - Load Accumulator
-  private fun lda(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = read(stepAddress) and 0xFF
-    setZN(A)
-  }
-
-  // LDX - Load X Register
-  private fun ldx(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    X = read(stepAddress) and 0xFF
-    setZN(X)
-  }
-
-  // LDY - Load Y Register
-  private fun ldy(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    Y = read(stepAddress) and 0xFF
-    setZN(Y)
-  }
-
-  // LSR - Logical Shift Right
-  private fun lsr(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
-      C = A and 1
-      A = A shr 1
-      setZN(A)
-    } else {
-      var value = read(stepAddress)
-      C = value and 1
-      value = value shr 1
-      write(stepAddress, value)
-      setZN(value)
-    }
-  }
-
-  // NOP - No Operation
-  private fun nop(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  // ORA - Logical Inclusive OR
-  private fun ora(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = A or (read(stepAddress) and 0xFF)
-    setZN(A)
-  }
-
-  // PHA - Push Accumulator
-  private fun pha(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    push(A)
-  }
-
   // PHP - Push Processor Status
-  private fun php(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
+  private inline fun php(stepAddress: Int, stepPC: Int, stepMode: Int) {
     push(flags() or 0x10)
   }
 
-  // PLA - Pull Accumulator
-  private fun pla(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = pull()
-    setZN(A)
-  }
-
-  // PLP - Pull Processor Status
-  private fun plp(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    setFlags(pull() and 0xEF or 0x20)
-  }
-
-  // ROL - Rotate Left
-  private fun rol(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
-      val c = C
-      C = (A shr 7) and 1
-      A = (A shl 1) or c
-      setZN(A)
-    } else {
-      val c = C
-      var value = read(stepAddress)
-      C = (value shr 7) and 1
-      value = (value shl 1) or c
-      write(stepAddress, value)
-      setZN(value and 0xFF)
-    }
-  }
-
-  // ROR - Rotate Right
-  private fun ror(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
-      val c = C
-      C = A and 1
-      A = (A shr 1) or (c shl 7)
-      setZN(A)
-    } else {
-      val c = C
-      var value = read(stepAddress)
-      C = value and 1
-      value = (value shr 1) or (c shl 7)
-      write(stepAddress, value)
-      setZN(value)
-    }
-  }
-
-  // RTI - Return from Interrupt
-  private fun rti(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    setFlags(pull() and 0xEF or 0x20)
-    PC = pull16()
-  }
-
-  // RTS - Return from Subroutine
-  private fun rts(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    PC = pull16() + 1
-  }
-
-  // SBC - Subtract with Carry
-  private fun sbc(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    val a = A
-    val b = read(stepAddress)
-    val c = C
-    A = (a - b - ((1 - c) and 0xFF)) and 0xFF
-    setZN(A)
-    C = if (a - b - ((1 - c) and 0xFF) >= 0) 1 else 0
-    V = if ((a xor b) and 0x80 != 0 && (a xor A) and 0x80 != 0) 1 else 0
-  }
-
-  // SEC - Set Carry Flag
-  private fun sec(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    C = 1
-  }
-
-  // SED - Set Decimal Flag
-  private fun sed(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    D = 1
-  }
-
   // SEI - Set Interrupt Disable
-  private fun sei(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
+  private inline fun sei(stepAddress: Int, stepPC: Int, stepMode: Int) {
     I = 1
-  }
-
-  // STA - Store Accumulator
-  private fun sta(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    write(stepAddress, A)
-  }
-
-  // STX - Store X Register
-  private fun stx(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    write(stepAddress, X)
-  }
-
-  // STY - Store Y Register
-  private fun sty(stepAddress: Int, stepPC: Int, stepMode: Int) {
-    write(stepAddress, Y)
-  }
-
-  // TAX - Transfer Accumulator to X
-  private fun tax(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    X = A
-    setZN(X)
-  }
-
-  // TAY - Transfer Accumulator to Y
-  private fun tay(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    Y = A
-    setZN(Y)
-  }
-
-  // TSX - Transfer Stack Pointer to X
-  private fun tsx(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    X = SP
-    setZN(X)
-  }
-
-  // TXA - Transfer X to Accumulator
-  private fun txa(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = X
-    setZN(A)
-  }
-
-  // TXS - Transfer X to Stack Pointer
-  private fun txs(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    SP = X
-  }
-
-  // TYA - Transfer Y to Accumulator
-  private fun tya(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-    A = Y
-    setZN(A)
-  }
-
-  // illegal opcodes below
-  private fun ahx(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun alr(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun anc(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun arr(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun axs(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun dcp(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun isc(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun kil(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun las(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun lax(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun rla(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun rra(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun sax(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun shx(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun shy(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun slo(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun sre(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun tas(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
-  }
-
-  private fun xaa(@Suppress("UNUSED_PARAMETER") stepAddress: Int, stepPC: Int, stepMode: Int) {
   }
 
   companion object {

@@ -47,7 +47,7 @@ internal class CPU(
   )
   var interrupt: Interrupt = Interrupt.NOT_SET
 
-  private fun read16(address: Int): Int {
+  private inline fun read16(address: Int): Int {
     return (read(address + 1) shl 8) or read(address)
   }
 
@@ -152,7 +152,22 @@ internal class CPU(
       AddressingMode.MODE_ZEROPAGEY -> (read(PC + 1) + Y) and 0xff
       else -> throw RuntimeException("Invalid addressing mode $addressingMode")
     }
-    val pageCrossed = isPageCrossed(addressingMode, address)
+    val pageCrossed = when (addressingMode) {
+      AddressingMode.MODE_ABSOLUTE -> false
+      AddressingMode.MODE_ABSOLUTEX -> pagesDiffer(address - X, address)
+      AddressingMode.MODE_ABSOLUTEY -> pagesDiffer(address - Y, address)
+      AddressingMode.MODE_ACCUMULATOR -> false
+      AddressingMode.MODE_IMMEDIATE -> false
+      AddressingMode.MODE_IMPLIED -> false
+      AddressingMode.MODE_INDEXEDINDIRECT -> false
+      AddressingMode.MODE_INDIRECT -> false
+      AddressingMode.MODE_INDIRECTINDEXED -> pagesDiffer(address - Y, address)
+      AddressingMode.MODE_RELATIVE -> false
+      AddressingMode.MODE_ZEROPAGE -> false
+      AddressingMode.MODE_ZEROPAGEX -> false
+      AddressingMode.MODE_ZEROPAGEY -> false
+      else -> throw RuntimeException("Invalid addressing mode $addressingMode")
+    }
     PC += instructionSizes[opcode]
     cycles += instructionCycles[opcode]
     if (pageCrossed) {
@@ -361,7 +376,9 @@ internal class CPU(
           addBranchCycles(stepAddress, stepPC, stepMode)
         }
       }
-      120 -> sei(stepAddress, stepPC, stepMode)
+      120 -> {
+        sei(stepAddress, stepPC, stepMode)
+      }
       129, 133, 141, 145, 149, 153, 157 -> {
         // sta
         write(stepAddress, A)
@@ -510,8 +527,7 @@ internal class CPU(
       }
       224, 228, 236 -> {
         // cpx
-        val value = read(stepAddress) and 0xFF
-        compare(X, value)
+        compare(X, read(stepAddress) and 0xFF)
       }
       225, 229, 233, 235, 237, 241, 245, 249, 253 -> {
         // sbc
@@ -551,24 +567,6 @@ internal class CPU(
     }
     return cycles - currCycles
   }
-
-  private fun isPageCrossed(mode: Int, address: Int) =
-      when (mode) {
-        AddressingMode.MODE_ABSOLUTE -> false
-        AddressingMode.MODE_ABSOLUTEX -> pagesDiffer(address - X, address)
-        AddressingMode.MODE_ABSOLUTEY -> pagesDiffer(address - Y, address)
-        AddressingMode.MODE_ACCUMULATOR -> false
-        AddressingMode.MODE_IMMEDIATE -> false
-        AddressingMode.MODE_IMPLIED -> false
-        AddressingMode.MODE_INDEXEDINDIRECT -> false
-        AddressingMode.MODE_INDIRECT -> false
-        AddressingMode.MODE_INDIRECTINDEXED -> pagesDiffer(address - Y, address)
-        AddressingMode.MODE_RELATIVE -> false
-        AddressingMode.MODE_ZEROPAGE -> false
-        AddressingMode.MODE_ZEROPAGEX -> false
-        AddressingMode.MODE_ZEROPAGEY -> false
-        else -> throw RuntimeException("Invalid addressing mode $mode")
-      }
 
   private inline fun pagesDiffer(a: Int, b: Int) =
       a and 0xFF00 != b and 0xFF00

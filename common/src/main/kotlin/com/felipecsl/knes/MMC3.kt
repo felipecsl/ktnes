@@ -127,7 +127,7 @@ internal class MMC3(
     }
   }
 
-  private fun chrBankOffset(index: Int): Int {
+  private inline fun chrBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100
@@ -141,7 +141,7 @@ internal class MMC3(
     return offset
   }
 
-  private fun prgBankOffset(index: Int): Int {
+  private inline fun prgBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100

@@ -1,7 +1,7 @@
 package com.felipecsl.knes
 
 internal class PPU(
-    private val cartridge: Cartridge,
+    cartridge: Cartridge,
     val bitmapFactory: (Int, Int) -> Bitmap,
     val stepCallback: PPUStepCallback? = null,
     var cycle: Int = 0,            // 0-340
@@ -74,7 +74,8 @@ internal class PPU(
 
     private val zeroTo255: IntRange = 0..255,
     private val zeroTo63: IntRange = 0..63,
-    private val zeroTo7: IntRange = 0..7
+    private val zeroTo7: IntRange = 0..7,
+    private val mirror: Int = cartridge.mirror
 ) {
   lateinit var cpu: CPU
   lateinit var mapper: Mapper
@@ -445,7 +446,11 @@ internal class PPU(
         mapper.read(address)
       }
       address < 0x3F00 -> {
-        nameTableData[mirrorAddress(cartridge.mirror, address) % 2048]
+        // mirror address
+        val newAddress = (address - 0x2000) % 0x1000
+        val mirrorAddr =
+            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+        nameTableData[mirrorAddr % 2048]
       }
       address < 0x4000 -> readPalette(address % 32)
       else -> throw RuntimeException("unhandled PPU memory read at address: $address")
@@ -463,8 +468,11 @@ internal class PPU(
         mapper.write(address, value)
       }
       address < 0x3F00 -> {
-        val mode = cartridge.mirror
-        nameTableData[mirrorAddress(mode, address) % 2048] = value
+        // mirror address
+        val newAddress = (address - 0x2000) % 0x1000
+        val mirrorAddr =
+            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+        nameTableData[mirrorAddr % 2048] = value
       }
       address < 0x4000 -> {
         val address1 = address % 32
@@ -498,6 +506,7 @@ internal class PPU(
     }
   }
 
+
   private fun tick() {
     if (nmiDelay > 0) {
       nmiDelay--
@@ -506,7 +515,6 @@ internal class PPU(
         cpu.interrupt = Interrupt.NMI
       }
     }
-
     if (flagShowBackground != 0 || flagShowSprites != 0) {
       if (f == 1 && scanLine == 261 && cycle == 339) {
         cycle = 0
@@ -575,7 +583,7 @@ internal class PPU(
   companion object {
     const val IMG_WIDTH = 256
     const val IMG_HEIGHT = 240
-    val PALETTE = arrayOf(
+    private val PALETTE = arrayOf(
         0x666666, 0x002A88, 0x1412A7, 0x3B00A4, 0x5C007E, 0x6E0040, 0x6C0600, 0x561D00,
         0x333500, 0x0B4800, 0x005200, 0x004F08, 0x00404D, 0x000000, 0x000000, 0x000000,
         0xADADAD, 0x155FD9, 0x4240FF, 0x7527FE, 0xA01ACC, 0xB71E7B, 0xB53120, 0x994E00,
@@ -584,6 +592,13 @@ internal class PPU(
         0xBCBE00, 0x88D800, 0x5CE430, 0x45E082, 0x48CDDE, 0x4F4F4F, 0x000000, 0x000000,
         0xFFFEFF, 0xC0DFFF, 0xD3D2FF, 0xE8C8FF, 0xFBC2FF, 0xFEC4EA, 0xFECCC5, 0xF7D8A5,
         0xE4E594, 0xCFEF96, 0xBDF4AB, 0xB3F3CC, 0xB5EBF2, 0xB8B8B8, 0x000000, 0x000000
+    )
+    private val MIRROR_LOOKUP = arrayOf(
+        arrayOf(0, 0, 1, 1),
+        arrayOf(0, 1, 0, 1),
+        arrayOf(0, 0, 0, 0),
+        arrayOf(1, 1, 1, 1),
+        arrayOf(0, 1, 2, 3)
     )
   }
 }

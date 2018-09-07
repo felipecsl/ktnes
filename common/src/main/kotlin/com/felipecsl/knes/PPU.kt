@@ -190,11 +190,44 @@ internal class PPU(
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
         when (cycle % 8) {
-          1 -> fetchNameTableByte()
-          3 -> fetchAttributeTableByte()
-          5 -> fetchLowTileByte()
-          7 -> fetchHighTileByte()
-          0 -> storeTileData()
+          1 -> {
+            // fetch name table byte
+            nameTableByte = read(0x2000 or (v and 0x0FFF))
+          }
+          3 -> {
+            // fetch attribute table byte
+            val v1 = v
+            val address = 0x23C0 or (v1 and 0x0C00) or ((v1 shr 4) and 0x38) or ((v1 shr 2) and 0x07)
+            val shift = ((v1 shr 4) and 4) or (v1 and 2)
+            attributeTableByte = ((read(address) shr shift) and 3) shl 2
+          }
+          5 -> {
+            // fetch low tile byte
+            val fineY = (v shr 12) and 7
+            val table = flagBackgroundTable
+            val tile = nameTableByte
+            val address = 0x1000 * table + tile * 16 + fineY
+            lowTileByte = read(address)
+          }
+          7 -> {
+            // fetch high tile byte
+            highTileByte = read(
+                0x1000 * flagBackgroundTable + nameTableByte * 16 + ((v shr 12) and 7) + 8)
+          }
+          0 -> {
+            // store tile data
+            var data = 0
+            for (i in zeroTo7) {
+              val a = attributeTableByte
+              val p1 = (lowTileByte and 0x80) shr 7
+              val p2 = (highTileByte and 0x80) shr 6
+              lowTileByte = lowTileByte shl 1
+              highTileByte = highTileByte shl 1
+              data = data shl 4
+              data = data or (a or p1 or p2)
+            }
+            tileData = tileData or data
+          }
         }
       }
       if (preLine && cycle >= 280 && cycle <= 304) {
@@ -283,30 +316,24 @@ internal class PPU(
 
     // vblank logic
     if (scanLine == 241 && cycle == 1) {
-      setVerticalBlank()
+      // set vertical blank
+      val front1 = front
+      val back1 = back
+      this.front = back1
+      this.back = front1
+      nmiOccurred = true
+      nmiChange()
     }
     if (preLine && cycle == 1) {
-      clearVerticalBlank()
+      // clear vertical blank
+      nmiOccurred = false
+      nmiChange()
       flagSpriteZeroHit = 0
       flagSpriteOverflow = 0
     }
     // TODO: this *should* be 260
     // Returning false means we need to step the Mapper too
     return cycle != 280 || 240 <= scanLine && scanLine <= 260 || (flagShowBackground == 0 && flagShowSprites == 0)
-  }
-
-  private fun clearVerticalBlank() {
-    nmiOccurred = false
-    nmiChange()
-  }
-
-  private fun setVerticalBlank() {
-    val front = this.front
-    val back = this.back
-    this.front = back
-    this.back = front
-    nmiOccurred = true
-    nmiChange()
   }
 
   private fun fetchSpritePattern(i: Int, _row: Int): Int {
@@ -356,32 +383,6 @@ internal class PPU(
     return data
   }
 
-  private fun storeTileData() {
-    var data = 0
-    for (i in zeroTo7) {
-      val a = attributeTableByte
-      val p1 = (lowTileByte and 0x80) shr 7
-      val p2 = (highTileByte and 0x80) shr 6
-      lowTileByte = lowTileByte shl 1
-      highTileByte = highTileByte shl 1
-      data = data shl 4
-      data = data or (a or p1 or p2)
-    }
-    tileData = tileData or data
-  }
-
-  private fun fetchHighTileByte() {
-    highTileByte = read(0x1000 * flagBackgroundTable + nameTableByte * 16 + ((v shr 12) and 7) + 8)
-  }
-
-  private fun fetchLowTileByte() {
-    val fineY = (v shr 12) and 7
-    val table = flagBackgroundTable
-    val tile = nameTableByte
-    val address = 0x1000 * table + tile * 16 + fineY
-    lowTileByte = read(address)
-  }
-
   private fun read(_address: Int): Int {
     val address = _address % 0x4000
     return when {
@@ -399,10 +400,6 @@ internal class PPU(
     return paletteData[if (address >= 16 && address % 4 == 0) address - 16 else address]
   }
 
-  private fun writePalette(address: Int, value: Int) {
-    paletteData[if (address >= 16 && address % 4 == 0) address - 16 else address] = value
-  }
-
   private fun write(addr: Int, value: Int) {
     val address = addr % 0x4000
     when {
@@ -411,16 +408,12 @@ internal class PPU(
         val mode = cartridge.mirror
         nameTableData[mirrorAddress(mode, address) % 2048] = value
       }
-      address < 0x4000 -> writePalette(address % 32, value)
+      address < 0x4000 -> {
+        val address1 = address % 32
+        paletteData[if (address1 >= 16 && address1 % 4 == 0) address1 - 16 else address1] = value
+      }
       else -> throw RuntimeException("unhandled ppu memory write at address: $address")
     }
-  }
-
-  private fun fetchAttributeTableByte() {
-    val v = v
-    val address = 0x23C0 or (v and 0x0C00) or ((v shr 4) and 0x38) or ((v shr 2) and 0x07)
-    val shift = ((v shr 4) and 4) or (v and 2)
-    attributeTableByte = ((read(address) shr shift) and 3) shl 2
   }
 
   private fun spritePixel() {
@@ -582,10 +575,6 @@ internal class PPU(
       nmiDelay = 15
     }
     nmiPrevious = nmi
-  }
-
-  private fun fetchNameTableByte() {
-    nameTableByte = read(0x2000 or (v and 0x0FFF))
   }
 
   private fun reset() {

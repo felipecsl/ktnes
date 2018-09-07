@@ -502,7 +502,8 @@ internal class PPU(
     if (nmiDelay > 0) {
       nmiDelay--
       if (nmiDelay == 0 && nmiOutput && nmiOccurred) {
-        cpu.triggerNMI()
+        // trigger NMI causes a non-maskable interrupt to occur on the next cycle
+        cpu.interrupt = Interrupt.NMI
       }
     }
 

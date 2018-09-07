@@ -1,7 +1,6 @@
 package com.felipecsl.knes
 
 import android.opengl.GLES11Ext
-import android.opengl.GLES30
 import android.opengl.GLES30.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -40,80 +39,71 @@ class GLSprite {
   }
 
   private fun createProgramIfNeeded() {
-    if (context != null) {
-      return
-    }
-    val vertexShader = loadShader(GLES30.GL_VERTEX_SHADER, VERTEX_SHADER)
-    if (vertexShader == 0) {
-      throw RuntimeException("Failed to create vertex shader")
-    }
-    val pixelShader = loadShader(GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
-    if (pixelShader == 0) {
-      throw RuntimeException("Failed to create pixel shader")
-    }
-    val program = GLES30.glCreateProgram()
-    if (program != 0) {
-      GLES30.glAttachShader(program, vertexShader)
-      GLES30.glAttachShader(program, pixelShader)
-      GLES30.glLinkProgram(program)
-      val linkStatus = IntArray(1)
-      GLES30.glGetProgramiv(program, GLES30.GL_LINK_STATUS, linkStatus, 0)
-      if (linkStatus[0] != GLES30.GL_TRUE) {
-        val info = GLES30.glGetProgramInfoLog(program)
-        GLES30.glDeleteProgram(program)
-        throw RuntimeException("Could not link program: $info")
+    if (context == null) {
+      val vertexShader = loadShader(GL_VERTEX_SHADER, VERTEX_SHADER)
+      if (vertexShader == 0) {
+        throw RuntimeException("Failed to create vertex shader")
       }
+      val pixelShader = loadShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
+      if (pixelShader == 0) {
+        throw RuntimeException("Failed to create pixel shader")
+      }
+      val program = glCreateProgram()
+      if (program != 0) {
+        glAttachShader(program, vertexShader)
+        glAttachShader(program, pixelShader)
+        glLinkProgram(program)
+        val linkStatus = IntArray(1)
+        glGetProgramiv(program, GL_LINK_STATUS, linkStatus, 0)
+        if (linkStatus[0] != GL_TRUE) {
+          val info = glGetProgramInfoLog(program)
+          glDeleteProgram(program)
+          throw RuntimeException("Could not link program: $info")
+        }
+      }
+      // Bind attributes and uniforms
+      context = RenderContext(
+          texSamplerHandle = glGetUniformLocation(program, "tex_sampler"),
+          texCoordHandle = glGetAttribLocation(program, "a_texcoord"),
+          posCoordHandle = glGetAttribLocation(program, "a_position"),
+          texVertices = createVerticesBuffer(TEX_VERTICES),
+          posVertices = createVerticesBuffer(POS_VERTICES),
+          shaderProgram = program
+      )
     }
-    // Bind attributes and uniforms
-    context = RenderContext(
-        texSamplerHandle = GLES30.glGetUniformLocation(program, "tex_sampler"),
-        texCoordHandle = GLES30.glGetAttribLocation(program, "a_texcoord"),
-        posCoordHandle = GLES30.glGetAttribLocation(program, "a_position"),
-        texVertices = createVerticesBuffer(TEX_VERTICES),
-        posVertices = createVerticesBuffer(POS_VERTICES),
-        shaderProgram = program
-    )
   }
 
   private fun createTexture(image: Bitmap) {
     buffer = IntBuffer.wrap(image.pixels)
-    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture!!)
-    GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, image.width, image.height, 0,
-        GLES11Ext.GL_BGRA, GLES30.GL_UNSIGNED_BYTE, buffer)
-    GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST)
-    GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST)
-    GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
-    GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
+    glTexImage2D(GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, image.width, image.height, 0,
+        GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, buffer)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
     // Use our shader program
     val context = context!!
-    GLES30.glUseProgram(context.shaderProgram)
+    glUseProgram(context.shaderProgram)
     // Disable blending
-    GLES30.glDisable(GLES30.GL_BLEND)
+    glDisable(GL_BLEND)
     // Set the vertex attributes
-    GLES30.glVertexAttribPointer(context.texCoordHandle, 2, GLES30.GL_FLOAT, false, 0,
-        context.texVertices)
-    GLES30.glEnableVertexAttribArray(context.texCoordHandle)
-    GLES30.glVertexAttribPointer(context.posCoordHandle, 2, GLES30.GL_FLOAT, false, 0,
-        context.posVertices)
-    GLES30.glEnableVertexAttribArray(context.posCoordHandle)
+    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
+    glEnableVertexAttribArray(context.texCoordHandle)
+    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
+    glEnableVertexAttribArray(context.posCoordHandle)
   }
 
   private fun updateTexture(image: Bitmap) {
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
     if (buffer == null) {
       createTexture(image)
-    } else {
-      buffer = IntBuffer.wrap(image.pixels)
     }
-    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture!!)
-    GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, image.width, image.height,
-        GLES11Ext.GL_BGRA, GLES30.GL_UNSIGNED_BYTE, buffer)
-    // Set the input texture
-//    GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
-//    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture!!)
-//    GLES30.glUniform1i(context!!.texSamplerHandle, 0)
+    glBindTexture(GL_TEXTURE_2D, texture!!)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.width, image.height,
+        GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, buffer)
     // Draw!
-    GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4)
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
   }
 
   private fun createVerticesBuffer(vertices: FloatArray): FloatBuffer {
@@ -128,15 +118,15 @@ class GLSprite {
   }
 
   private fun loadShader(shaderType: Int, source: String): Int {
-    val shader = GLES30.glCreateShader(shaderType)
+    val shader = glCreateShader(shaderType)
     if (shader != 0) {
-      GLES30.glShaderSource(shader, source)
-      GLES30.glCompileShader(shader)
+      glShaderSource(shader, source)
+      glCompileShader(shader)
       val compiled = IntArray(1)
-      GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compiled, 0)
+      glGetShaderiv(shader, GL_COMPILE_STATUS, compiled, 0)
       if (compiled[0] == 0) {
-        val info = GLES30.glGetShaderInfoLog(shader)
-        GLES30.glDeleteShader(shader)
+        val info = glGetShaderInfoLog(shader)
+        glDeleteShader(shader)
         throw RuntimeException("Could not compile shader $shaderType:$info")
       }
     }

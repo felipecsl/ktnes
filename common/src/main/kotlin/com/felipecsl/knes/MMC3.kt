@@ -127,7 +127,7 @@ internal class MMC3(
     }
   }
 
-  private inline fun chrBankOffset(index: Int): Int {
+  private fun chrBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100
@@ -141,7 +141,7 @@ internal class MMC3(
     return offset
   }
 
-  private inline fun prgBankOffset(index: Int): Int {
+  private fun prgBankOffset(index: Int): Int {
     var idx = index
     if (idx >= 0x80) {
       idx -= 0x100
@@ -163,7 +163,10 @@ internal class MMC3(
     } else {
       counter = (counter - 1) and 0xFF
       if (counter == 0 && irqEnable) {
-        cpu.triggerIRQ()
+        // trigger IRQ causes an IRQ interrupt to occur on the next cycle
+        if (cpu.I == 0) {
+          cpu.interrupt = Interrupt.IRQ
+        }
       }
     }
   }

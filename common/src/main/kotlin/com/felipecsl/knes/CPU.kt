@@ -45,7 +45,7 @@ internal class CPU(
       AddressingMode.MODE_ZEROPAGEX,
       AddressingMode.MODE_ZEROPAGEY
   )
-  private var interrupt: Interrupt = Interrupt.NOT_SET
+  var interrupt: Interrupt = Interrupt.NOT_SET
 
   private fun read16(address: Int): Int {
     return (read(address + 1) shl 8) or read(address)
@@ -118,8 +118,7 @@ internal class CPU(
       PC = read16(0xfffa)
       I = 1
       cycles += 7
-    }
-    else if (interrupt == Interrupt.IRQ) {
+    } else if (interrupt == Interrupt.IRQ) {
       // irq
       push16(PC)
       stepAddress = 0
@@ -134,7 +133,25 @@ internal class CPU(
     val opcode = read(PC)
     val mode = instructionModes[opcode]
     val addressingMode = addressingModes[mode]
-    val address = addressForMode(addressingMode)
+    val address = when (addressingMode) {
+      AddressingMode.MODE_ABSOLUTE -> read16(PC + 1)
+      AddressingMode.MODE_ABSOLUTEX -> read16(PC + 1) + X
+      AddressingMode.MODE_ABSOLUTEY -> read16(PC + 1) + Y
+      AddressingMode.MODE_ACCUMULATOR -> 0
+      AddressingMode.MODE_IMMEDIATE -> PC + 1
+      AddressingMode.MODE_IMPLIED -> 0
+      AddressingMode.MODE_INDEXEDINDIRECT -> read16bug(read(PC + 1) + X)
+      AddressingMode.MODE_INDIRECT -> read16bug(read16(PC + 1))
+      AddressingMode.MODE_INDIRECTINDEXED -> read16bug(read(PC + 1)) + Y
+      AddressingMode.MODE_RELATIVE -> {
+        val offset = read(PC + 1)
+        if (offset < 0x80) PC + 2 + offset else PC + 2 + offset - 0x100
+      }
+      AddressingMode.MODE_ZEROPAGE -> read(PC + 1)
+      AddressingMode.MODE_ZEROPAGEX -> (read(PC + 1) + X) and 0xff
+      AddressingMode.MODE_ZEROPAGEY -> (read(PC + 1) + Y) and 0xff
+      else -> throw RuntimeException("Invalid addressing mode $addressingMode")
+    }
     val pageCrossed = isPageCrossed(addressingMode, address)
     PC += instructionSizes[opcode]
     cycles += instructionCycles[opcode]
@@ -556,27 +573,6 @@ internal class CPU(
   private inline fun pagesDiffer(a: Int, b: Int) =
       a and 0xFF00 != b and 0xFF00
 
-  private inline fun addressForMode(mode: Int) =
-      when (mode) {
-        AddressingMode.MODE_ABSOLUTE -> read16(PC + 1)
-        AddressingMode.MODE_ABSOLUTEX -> read16(PC + 1) + X
-        AddressingMode.MODE_ABSOLUTEY -> read16(PC + 1) + Y
-        AddressingMode.MODE_ACCUMULATOR -> 0
-        AddressingMode.MODE_IMMEDIATE -> PC + 1
-        AddressingMode.MODE_IMPLIED -> 0
-        AddressingMode.MODE_INDEXEDINDIRECT -> read16bug(read(PC + 1) + X)
-        AddressingMode.MODE_INDIRECT -> read16bug(read16(PC + 1))
-        AddressingMode.MODE_INDIRECTINDEXED -> read16bug(read(PC + 1)) + Y
-        AddressingMode.MODE_RELATIVE -> {
-          val offset = read(PC + 1)
-          if (offset < 0x80) PC + 2 + offset else PC + 2 + offset - 0x100
-        }
-        AddressingMode.MODE_ZEROPAGE -> read(PC + 1)
-        AddressingMode.MODE_ZEROPAGEX -> (read(PC + 1) + X) and 0xff
-        AddressingMode.MODE_ZEROPAGEY -> (read(PC + 1) + Y) and 0xff
-        else -> throw RuntimeException("Invalid addressing mode $mode")
-      }
-
   private fun stop() {
     TODO()
   }
@@ -631,18 +627,6 @@ internal class CPU(
     flags = flags or (V shl 6)
     flags = flags or (N shl 7)
     return flags
-  }
-
-  // triggerIRQ causes an IRQ interrupt to occur on the next cycle
-  fun triggerIRQ() {
-    if (I == 0) {
-      interrupt = Interrupt.IRQ
-    }
-  }
-
-  // triggerNMI causes a non-maskable interrupt to occur on the next cycle
-  fun triggerNMI() {
-    interrupt = Interrupt.NMI
   }
 
   private inline fun setZN(value: Int) {

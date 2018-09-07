@@ -4,8 +4,10 @@ import konan.internal.CName
 import kotlinx.cinterop.*
 import platform.android.*
 
-@CName(fullName = "Java_com_felipecsl_knes_JniKt_startConsole")
-fun startConsole(
+var director: Director? = null
+
+@CName(fullName = "Java_com_felipecsl_knes_JniKt_nativeStartConsole")
+fun nativeStartConsole(
     env: CPointer<JNIEnvVar>,
     self: jobject,
     cartridgeData: jbyteArray
@@ -14,9 +16,14 @@ fun startConsole(
   val len = jni.GetArrayLength!!.invoke(env, cartridgeData)
   memScoped {
     val buffer = ByteArray(len)
-    val sprite = Sprite()
     val bufferPointer = buffer.refTo(0).getPointer(memScope)
     jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
-    Director(buffer, sprite).startConsole()
+    director = Director(buffer)
+    director!!.run()
   }
+}
+
+@CName(fullName = "Java_com_felipecsl_knes_JniKt_nativeGetConsoleBuffer")
+fun nativeGetConsoleBuffer(): Bitmap? {
+  return director?.buffer()
 }

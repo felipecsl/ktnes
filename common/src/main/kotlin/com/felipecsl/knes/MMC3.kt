@@ -3,9 +3,10 @@ package com.felipecsl.knes
 // http://wiki.nesdev.com/w/index.php/MMC3
 internal class MMC3(
     private val cartridge: Cartridge,
-    private val cpu: CPU,
     private val stepCallback: MapperStepCallback? = null
 ) : Mapper {
+  override lateinit var cpu: CPU
+
   private var register: Int = 0
   private var registers = IntArray(8)
   private var prgMode: Int = 0
@@ -15,6 +16,9 @@ internal class MMC3(
   private var reload: Int = 0
   private var counter: Int = 0
   private var irqEnable: Boolean = false
+  private val chr = cartridge.chr
+  private val prg = cartridge.prg
+  private val sram = cartridge.sram
 
   init {
     prgOffsets[0] = prgBankOffset(0)
@@ -28,16 +32,16 @@ internal class MMC3(
       address < 0x2000 -> {
         val bank = address / 0x0400
         val offset = address % 0x0400
-        cartridge.chr[chrOffsets[bank] + offset]
+        chr[chrOffsets[bank] + offset]
       }
       address >= 0x8000 -> {
         val addr = address - 0x8000
         val bank = addr / 0x2000
         val offset = addr % 0x2000
-        cartridge.prg[prgOffsets[bank] + offset]
+        prg[prgOffsets[bank] + offset]
       }
       address >= 0x6000 -> {
-        return cartridge.sram[address - 0x6000]
+        return sram[address - 0x6000]
       }
       else -> throw RuntimeException("unhandled mapper4 read at address: $address")
     }
@@ -48,42 +52,37 @@ internal class MMC3(
       address < 0x2000 -> {
         val bank = address / 0x0400
         val offset = address % 0x0400
-        cartridge.chr[chrOffsets[bank] + offset] = value
+        chr[chrOffsets[bank] + offset] = value
       }
       address >= 0x8000 -> {
         writeRegister(address, value)
       }
       address >= 0x6000 -> {
-        cartridge.sram[address - 0x6000] = value
+        sram[address - 0x6000] = value
       }
       else -> throw RuntimeException("unhandled mapper4 write at address $address")
     }
   }
 
   private fun writeRegister(address: Int, value: Int) {
-    if (address <= 0x9FFF && address % 2 == 0)
+    if (address <= 0x9FFF && address % 2 == 0) {
       writeBankSelect(value)
-    else if (address <= 0x9FFF && address % 2 == 1) {
+    } else if (address <= 0x9FFF && address % 2 == 1) {
       registers[register] = value
       updateOffsets()
-    }
-    else if (address <= 0xBFFF && address % 2 == 0) {
+    } else if (address <= 0xBFFF && address % 2 == 0) {
       when (value and 1) {
-          0 -> cartridge.mirror = MirrorVertical
-          1 -> cartridge.mirror = MirrorHorizontal
-        }
-    }
-    else if (address <= 0xBFFF && address % 2 == 1)
-    else if (address <= 0xDFFF && address % 2 == 0) {
+        0 -> cartridge.mirror = MirrorVertical
+        1 -> cartridge.mirror = MirrorHorizontal
+      }
+    } else if (address <= 0xBFFF && address % 2 == 1) {
+    } else if (address <= 0xDFFF && address % 2 == 0) {
       reload = value
-    }
-    else if (address <= 0xDFFF && address % 2 == 1) {
+    } else if (address <= 0xDFFF && address % 2 == 1) {
       counter = 0
-    }
-    else if (address <= 0xFFFF && address % 2 == 0) {
+    } else if (address <= 0xFFFF && address % 2 == 0) {
       irqEnable = false
-    }
-    else if (address <= 0xFFFF && address % 2 == 1) {
+    } else if (address <= 0xFFFF && address % 2 == 1) {
       irqEnable = true
     }
   }
@@ -139,10 +138,11 @@ internal class MMC3(
     if (idx >= 0x80) {
       idx -= 0x100
     }
-    idx %= cartridge.chr.size / 0x0400
+    val size = chr.size
+    idx %= size / 0x0400
     var offset = idx * 0x0400
     if (offset < 0) {
-      offset += cartridge.chr.size
+      offset += size
     }
     return offset
   }
@@ -152,10 +152,11 @@ internal class MMC3(
     if (idx >= 0x80) {
       idx -= 0x100
     }
-    idx %= cartridge.prg.size / 0x2000
+    val size = prg.size
+    idx %= size / 0x2000
     var offset = idx * 0x2000
     if (offset < 0) {
-      offset += cartridge.prg.size
+      offset += size
     }
     return offset
   }

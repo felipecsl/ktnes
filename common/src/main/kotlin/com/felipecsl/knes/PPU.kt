@@ -1,6 +1,7 @@
 package com.felipecsl.knes
 
 internal class PPU(
+    private val cartridge: Cartridge,
     val bitmapFactory: (Int, Int) -> Bitmap,
     val stepCallback: PPUStepCallback? = null,
     var cycle: Int = 0,            // 0-340
@@ -69,14 +70,18 @@ internal class PPU(
     var oamAddress: Int = 0,
 
     // $2007 PPUDATA
-    var bufferedData: Int = 0 // for buffered reads
+    var bufferedData: Int = 0, // for buffered reads
+
+    private val zeroTo255: IntRange = 0..255,
+    private val zeroTo63: IntRange = 0..63,
+    private val zeroTo7: IntRange = 0..7
 ) {
+  lateinit var cpu: CPU
+  lateinit var mapper: Mapper
 
   init {
     reset()
   }
-
-  lateinit var console: Console
 
   fun readRegister(address: Int): Int {
     return when (address) {
@@ -116,9 +121,8 @@ internal class PPU(
   }
 
   private fun writeDMA(value: Int) {
-    val cpu = console.cpu
     var address = value shl 8
-    (0..255).forEach {
+    for (it in zeroTo255) {
       oamData[oamAddress] = cpu.read(address)
       oamAddress = (oamAddress + 1) and 0xFF
       address++
@@ -143,8 +147,8 @@ internal class PPU(
     val visibleLine = scanLine < 240
     // postLine = scanLine == 240
     val renderLine = preLine || visibleLine
-    val preFetchCycle = cycle in 321..336
-    val visibleCycle = cycle in 1..256
+    val preFetchCycle = 321 <= cycle && cycle <= 336
+    val visibleCycle = 1 <= cycle && cycle <= 256
     val fetchCycle = preFetchCycle || visibleCycle
     if (renderingEnabled) {
       if (visibleLine && visibleCycle) {
@@ -232,7 +236,7 @@ internal class PPU(
     }
     // TODO: this *should* be 260
     // Returning false means we need to step the Mapper too
-    return cycle != 280 || scanLine in 240..260 || (flagShowBackground == 0 && flagShowSprites == 0)
+    return cycle != 280 || 240 <= scanLine && scanLine <= 260 || (flagShowBackground == 0 && flagShowSprites == 0)
   }
 
   private fun clearVerticalBlank() {
@@ -252,7 +256,7 @@ internal class PPU(
   private fun evaluateSprites() {
     val h = if (flagSpriteSize == 0) 8 else 16
     var count = 0
-    for (i in 0..63) {
+    for (i in zeroTo63) {
       val y = oamData[i * 4 + 0] and 0xFF
       val a = oamData[i * 4 + 2] and 0xFF
       val x = oamData[i * 4 + 3] and 0xFF
@@ -302,7 +306,7 @@ internal class PPU(
     var lowTileByte = read(address)
     var highTileByte = read(address + 8)
     var data = 0
-    for (it in 0..7) {
+    for (it in zeroTo7) {
       val p1: Int
       val p2: Int
       if (attributes and 0x40 == 0x40) {
@@ -324,7 +328,7 @@ internal class PPU(
 
   private fun storeTileData() {
     var data = 0
-    for (i in 0..7) {
+    for (i in zeroTo7) {
       val a = attributeTableByte
       val p1 = (lowTileByte and 0x80) shr 7
       val p2 = (highTileByte and 0x80) shr 6
@@ -337,11 +341,7 @@ internal class PPU(
   }
 
   private fun fetchHighTileByte() {
-    val fineY = (v shr 12) and 7
-    val table = flagBackgroundTable
-    val tile = nameTableByte
-    val address = 0x1000 * table + tile * 16 + fineY
-    highTileByte = read(address + 8)
+    highTileByte = read(0x1000 * flagBackgroundTable + nameTableByte * 16 + ((v shr 12) and 7) + 8)
   }
 
   private fun fetchLowTileByte() {
@@ -355,9 +355,9 @@ internal class PPU(
   private fun read(_address: Int): Int {
     val address = _address % 0x4000
     return when {
-      address < 0x2000 -> console.mapper.read(address)
+      address < 0x2000 -> mapper.read(address)
       address < 0x3F00 -> {
-        val mode = console.cartridge.mirror
+        val mode = cartridge.mirror
         nameTableData[mirrorAddress(mode, address) % 2048]
       }
       address < 0x4000 -> readPalette(address % 32)
@@ -376,9 +376,9 @@ internal class PPU(
   private fun write(addr: Int, value: Int) {
     val address = addr % 0x4000
     when {
-      address < 0x2000 -> console.mapper.write(address, value)
+      address < 0x2000 -> mapper.write(address, value)
       address < 0x3F00 -> {
-        val mode = console.cartridge.mirror
+        val mode = cartridge.mirror
         nameTableData[mirrorAddress(mode, address) % 2048] = value
       }
       address < 0x4000 -> writePalette(address % 32, value)
@@ -457,7 +457,7 @@ internal class PPU(
     if (nmiDelay > 0) {
       nmiDelay--
       if (nmiDelay == 0 && nmiOutput && nmiOccurred) {
-        console.cpu.triggerNMI()
+        cpu.triggerNMI()
       }
     }
 
@@ -580,7 +580,7 @@ internal class PPU(
     t = (t and 0xF3FF) or ((value and 0x03) shl 10)
   }
 
-  private fun nmiChange() {
+  private inline fun nmiChange() {
     val nmi = nmiOutput && nmiOccurred
     if (nmi && !nmiPrevious) {
       // TODO: this fixes some games but the delay shouldn't have to be so

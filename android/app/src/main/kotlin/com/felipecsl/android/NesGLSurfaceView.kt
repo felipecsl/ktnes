@@ -3,7 +3,7 @@ package com.felipecsl.android
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
-import com.felipecsl.knes.Sprite
+import com.felipecsl.knes.GLSprite
 
 class NesGLSurfaceView(
     context: Context,
@@ -11,7 +11,7 @@ class NesGLSurfaceView(
 ) : GLSurfaceView(context, attributeSet) {
   private lateinit var renderer: NesGLRenderer
 
-  fun setSprite(sprite: Sprite) {
+  fun setSprite(sprite: GLSprite) {
     // Create an OpenGL ES 2.0 context
     setEGLContextClientVersion(3)
     // Set the Renderer for drawing on the GLSurfaceView

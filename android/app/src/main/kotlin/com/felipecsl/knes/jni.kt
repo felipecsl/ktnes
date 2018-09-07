@@ -1,3 +1,4 @@
 package com.felipecsl.knes
 
-external fun startConsole(cartridgeData: ByteArray)
+external fun nativeStartConsole(cartridgeData: ByteArray)
+external fun nativeGetConsoleBuffer(): Bitmap?

@@ -3,17 +3,16 @@ package com.felipecsl.knes
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.GLES30.*
-import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class GLSprite : SpriteFacade {
-  private var image: Bitmap? = null
+class GLSprite {
   private var context: RenderContext? = null
   private var texture: Int? = null
   private var buffer: IntBuffer? = null
+  var director: Director? = null
 
   data class RenderContext(
       val shaderProgram: Int = 0,
@@ -24,19 +23,20 @@ class GLSprite : SpriteFacade {
       val posVertices: FloatBuffer? = null
   )
 
-  override fun setTexture(texture: Int) {
+  fun setTexture(texture: Int) {
     this.texture = texture
   }
 
-  override fun draw() {
+  fun draw() {
+    val image = if (director != null) {
+      director!!.buffer()
+    } else {
+      nativeGetConsoleBuffer()
+    }
     if (image != null) {
       createProgramIfNeeded()
-      updateTexture()
+      updateTexture(image)
     }
-  }
-
-  override fun setImage(image: Bitmap) {
-    this.image = image
   }
 
   private fun createProgramIfNeeded() {
@@ -75,10 +75,10 @@ class GLSprite : SpriteFacade {
     )
   }
 
-  private fun createTexture(width: Int, height: Int) {
-    buffer = IntBuffer.wrap(image!!.pixels)
+  private fun createTexture(image: Bitmap) {
+    buffer = IntBuffer.wrap(image.pixels)
     GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture!!)
-    GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, width, height, 0,
+    GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, image.width, image.height, 0,
         GLES11Ext.GL_BGRA, GLES30.GL_UNSIGNED_BYTE, buffer)
     GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST)
     GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST)
@@ -98,16 +98,15 @@ class GLSprite : SpriteFacade {
     GLES30.glEnableVertexAttribArray(context.posCoordHandle)
   }
 
-  private fun updateTexture() {
+  private fun updateTexture(image: Bitmap) {
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
-    val bitmap = image!!
     if (buffer == null) {
-      createTexture(bitmap.width, bitmap.height)
+      createTexture(image)
     } else {
-      buffer = IntBuffer.wrap(image!!.pixels)
+      buffer = IntBuffer.wrap(image.pixels)
     }
     GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture!!)
-    GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, bitmap.width, bitmap.height,
+    GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, image.width, image.height,
         GLES11Ext.GL_BGRA, GLES30.GL_UNSIGNED_BYTE, buffer)
     // Set the input texture
 //    GLES30.glActiveTexture(GLES30.GL_TEXTURE0)

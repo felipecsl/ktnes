@@ -1,18 +1,15 @@
 package com.felipecsl.knes
 
 internal interface Mapper {
+  var cpu: CPU
   fun read(address: Int): Int
   fun write(address: Int, value: Int)
   fun step()
 
   companion object {
-    fun newMapper(
-        cartridge: Cartridge,
-        cpu: CPU,
-        stepCallback: MapperStepCallback?
-    ): Mapper =
+    fun newMapper(cartridge: Cartridge, stepCallback: MapperStepCallback?): Mapper =
         when (cartridge.mapper) {
-          4 -> MMC3(cartridge, cpu, stepCallback)
+          4 -> MMC3(cartridge, stepCallback)
           else -> throw NotImplementedError("Mapper ${cartridge.mapper} not implemented")
         }
   }

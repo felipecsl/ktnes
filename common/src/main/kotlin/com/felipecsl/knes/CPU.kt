@@ -2,9 +2,15 @@
 
 package com.felipecsl.knes
 
-internal class CPU(private val stepCallback: CPUStepCallback? = null) {
-  lateinit var console: Console
-
+internal class CPU(
+    private val mapper: Mapper,
+    private val ppu: PPU,
+    private val apu: APU,
+    private val controller1: Controller,
+    private val controller2: Controller,
+    private val ram: IntArray = IntArray(2048),
+    private val stepCallback: CPUStepCallback? = null
+) {
   private var stepAddress: Int = 0
   private var stepPC: Int = 0
   private var stepMode: Int = 0
@@ -58,14 +64,14 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
 
   fun read(address: Int): Int {
     return when {
-      address < 0x2000 -> console.ram[address % 0x0800]
-      address < 0x4000 -> console.ppu.readRegister(0x2000 + address % 8)
-      address == 0x4014 -> console.ppu.readRegister(address)
-      address == 0x4015 -> console.apu.readRegister(address)
-      address == 0x4016 -> console.controller1.read()
-      address == 0x4017 -> console.controller2.read()
+      address < 0x2000 -> ram[address % 0x0800]
+      address < 0x4000 -> ppu.readRegister(0x2000 + address % 8)
+      address == 0x4014 -> ppu.readRegister(address)
+      address == 0x4015 -> apu.readRegister(address)
+      address == 0x4016 -> controller1.read()
+      address == 0x4017 -> controller2.read()
       //address < 0x6000 -> TODO: I/O registers
-      address >= 0x6000 -> console.mapper.read(address)
+      address >= 0x6000 -> mapper.read(address)
       else -> throw RuntimeException("unhandled cpu memory read at address: $address")
     }
   }
@@ -73,23 +79,23 @@ internal class CPU(private val stepCallback: CPUStepCallback? = null) {
   private fun write(address: Int, value: Int) {
     when {
       address < 0x2000 ->
-        console.ram[address % 0x0800] = value
+        ram[address % 0x0800] = value
       address < 0x4000 ->
-        console.ppu.writeRegister(0x2000 + address % 8, value)
+        ppu.writeRegister(0x2000 + address % 8, value)
       address < 0x4014 ->
-        console.apu.writeRegister(address, value)
+        apu.writeRegister(address, value)
       address == 0x4014 ->
-        console.ppu.writeRegister(address, value)
+        ppu.writeRegister(address, value)
       address == 0x4015 ->
-        console.apu.writeRegister(address, value)
+        apu.writeRegister(address, value)
       address == 0x4016 ->
-        console.controller1.write(value)
+        controller1.write(value)
       address == 0x4017 ->
-        console.controller2.write(value)
+        controller2.write(value)
       //address < 0x6000 ->
       // TODO: I/O registers
       address >= 0x6000 ->
-        console.mapper.write(address, value)
+        mapper.write(address, value)
       else ->
         throw RuntimeException("unhandled cpu memory write at address: $address")
     }

@@ -2,13 +2,11 @@ package com.felipecsl.android
 
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
-import com.felipecsl.knes.Bitmap
-import com.felipecsl.knes.Sprite
-import java.util.logging.Logger
+import com.felipecsl.knes.GLSprite
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class NesGLRenderer(private val sprite: Sprite) : GLSurfaceView.Renderer {
+class NesGLRenderer(private val sprite: GLSprite) : GLSurfaceView.Renderer {
   override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
     // Set the background frame color
     GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)

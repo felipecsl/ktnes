@@ -1,15 +1,10 @@
 package com.felipecsl.knes
 
 internal class Console(
-    val cpu: CPU,
-    val apu: APU,
-    val ppu: PPU,
-    val cartridge: Cartridge,
-    val controller1: Controller,
-    val controller2: Controller,
-    val mapper: Mapper,
-    val sprite: Sprite,
-    val ram: IntArray = IntArray(2048)
+    private val cpu: CPU,
+    private val apu: APU,
+    private val ppu: PPU,
+    private val mapper: Mapper
 ) {
   fun step(): Long {
     val cpuCycles = cpu.step()
@@ -21,8 +16,11 @@ internal class Console(
     for (it in 0 until cpuCycles) {
       apu.step()
     }
-    sprite.setImage(ppu.front)
     return cpuCycles
+  }
+
+  fun buffer(): Bitmap {
+    return ppu.front
   }
 
   fun reset() {
@@ -32,19 +30,21 @@ internal class Console(
   companion object {
     fun newConsole(
         cartridge: Cartridge,
-        sprite: Sprite,
         bitmapFactory: (Int, Int) -> Bitmap,
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
         ppuCallback: PPUStepCallback? = null,
-        ppu: PPU = PPU(bitmapFactory, ppuCallback),
+        ppu: PPU = PPU(cartridge, bitmapFactory, ppuCallback),
+        controller1: Controller = Controller(),
+        controller2: Controller = Controller(),
         apu: APU = APU(),
-        cpu: CPU = CPU(cpuCallback),
-        mapper: Mapper = Mapper.newMapper(cartridge, cpu, mapperCallback)
+        mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
+        cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {
-      val console = Console(cpu, apu, ppu, cartridge, Controller(), Controller(), mapper, sprite)
-      ppu.console = console
-      cpu.console = console
+      val console = Console(cpu, apu, ppu, mapper)
+      ppu.cpu = cpu
+      ppu.mapper = mapper
+      mapper.cpu = cpu
       return console
     }
   }

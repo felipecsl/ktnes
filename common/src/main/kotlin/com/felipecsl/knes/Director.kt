@@ -1,36 +1,43 @@
 package com.felipecsl.knes
 
 import com.felipecsl.knes.CPU.Companion.FREQUENCY
-import kotlin.math.roundToInt
 
 class Director(
       cartridgeData: ByteArray,
-      sprite: Sprite,
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null
   ) {
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
   private val console = Console.newConsole(
-      cartridge, sprite, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
+      cartridge, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
 
   init {
     console.reset()
   }
 
-  fun startConsole() {
-    var totalCycles = 0L
+  fun run() {
     var startTime = currentTimeMs()
+    var totalCycles = 0L
+    val step = FREQUENCY
     while (true) {
       totalCycles += console.step()
-      if (totalCycles >= FREQUENCY) {
-        val secondsSpent = (currentTimeMs() - startTime) / 1000L
-        val clock = totalCycles / secondsSpent
-        val speed = (clock / FREQUENCY.toFloat()) * 100F
-        println("Clock=${clock}Hz (${speed.roundToInt()}% speed)")
+      if (totalCycles >= step) {
+        val msSpent = currentTimeMs() - startTime
+        val clock = (totalCycles * 1000) / msSpent
+        val speed = clock / FREQUENCY.toFloat()
+        println("Clock=${clock}Hz (${speed}x)")
         totalCycles = 0
         startTime = currentTimeMs()
       }
     }
+  }
+
+  fun reset() {
+    console.reset()
+  }
+
+  fun buffer(): Bitmap {
+    return console.buffer()
   }
 }

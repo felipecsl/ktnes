@@ -60,7 +60,7 @@ internal class CPU(
     return (hi shl 8) or lo
   }
 
-  fun read(address: Int): Int {
+  fun read(address: Int): Int /** Byte */ {
     return when {
       address < 0x2000 -> ram[address % 0x0800]
       address < 0x4000 -> ppu.readRegister(0x2000 + address % 8)
@@ -101,7 +101,7 @@ internal class CPU(
 
   fun step(): Long {
 //    stepCallback?.onStep(
-//        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt.ordinal, stall, null)
+//        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall, null)
     if (stall > 0) {
       stall--
       return 1
@@ -203,12 +203,12 @@ internal class CPU(
         // asl
         if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
           C = (A shr 7) and 1
-          A = A shl 1
+          A = A shl 1 and 0xFF
           setZN(A)
         } else {
           var value = read(stepAddress)
           C = (value shr 7) and 1
-          value = value shl 1
+          value = value shl 1 and 0xFF
           write(stepAddress, value)
           setZN(value)
         }
@@ -259,7 +259,7 @@ internal class CPU(
           val c = C
           var value = read(stepAddress)
           C = (value shr 7) and 1
-          value = (value shl 1) or c
+          value = (value shl 1) or c and 0xFF
           write(stepAddress, value)
           setZN(value and 0xFF)
         }
@@ -497,7 +497,7 @@ internal class CPU(
       }
       198, 206, 214, 222 -> {
         // dec
-        val value = read(stepAddress) - 1
+        val value = read(stepAddress) - 1 and 0xFF
         write(stepAddress, value)
         setZN(value)
       }

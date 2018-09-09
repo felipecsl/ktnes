@@ -136,17 +136,17 @@ class CPUTest {
           )
           assertStateIsValid("PPU", expectedPPUState, propsMap)
         } else {
-          println("No more PPU data")
+//          println("No more PPU data")
         }
       }
     }
     val cartridge = classLoader.getResourceAsStream("smb3.nes").readBytes()
-    Director.startConsole(
+    Director(
         cartridge,
         mapperCallback,
         cpuCallback,
         ppuCallback
-    )
+    ).run()
   }
 
   private fun assertStateIsValid(

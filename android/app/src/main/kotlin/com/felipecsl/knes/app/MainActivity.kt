@@ -1,6 +1,8 @@
 package com.felipecsl.knes.app
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Switch
@@ -15,13 +17,20 @@ import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity() {
-  private val executor = Executors.newSingleThreadExecutor()
+class MainActivity : AppCompatActivity(), Runnable {
   private val nesGlSurfaceView by lazy { findViewById<NesGLSurfaceView>(R.id.nes_gl_surface_view) }
   private val fabRun by lazy { findViewById<FloatingActionButton>(R.id.fabRun) }
   private val btnReset by lazy { findViewById<AppCompatButton>(R.id.btnReset) }
   private val toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
   private val implSwitch by lazy { findViewById<Switch>(R.id.implementation_switch) }
+  private val handlerThread = HandlerThread("Console Thread")
+  private var handler: Handler
+  private lateinit var director: Director
+
+  init {
+    handlerThread.start()
+    handler = Handler(handlerThread.looper)
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -40,12 +49,16 @@ class MainActivity : AppCompatActivity() {
       } else {
         Snackbar.make(implSwitch, "Using JVM implementation",
             BaseTransientBottomBar.LENGTH_SHORT).show()
-        val director = Director(cartridgeData)
+        director = Director(cartridgeData)
         glSprite.director = director
-        executor.submit(director::run)
+        handler.post(this)
       }
     }
 //    btnReset.setOnClickListener { director.reset() }
+  }
+
+  override fun run() {
+    director.run()
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {

@@ -9,7 +9,7 @@ internal class PPU(
 
     // storage variables
     var paletteData: IntArray = IntArray(32),
-    var nameTableData: IntArray = IntArray(2048),
+    var nameTableData: IntArray = IntArray(2048), // ByteArray
     var oamData: IntArray = IntArray(256),
     var front: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
     var back: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
@@ -28,20 +28,21 @@ internal class PPU(
     var nmiDelay: Int = 0,
 
     // background temporary variables
-    var nameTableByte: Int = 0,
-    var attributeTableByte: Int = 0,
-    var lowTileByte: Int = 0,
-    var highTileByte: Int = 0,
-    var tileData: Int = 0,
+    var nameTableByte: Int = 0,       // Byte
+    var attributeTableByte: Int = 0,  // Byte
+    var lowTileByte: Int = 0,         // Byte
+    var highTileByte: Int = 0,        // Byte
+    var tileData: Long = 0,           // uint64
+
     var spritePixelI: Int = 0,
-    var spritePixelSprite: Int = 0,
+    var spritePixelSprite: Int = 0, // Byte
 
     // sprite temporary variables
     private var spriteCount: Int = 0,
     var spritePatterns: IntArray = IntArray(8),
-    var spritePositions: IntArray = IntArray(8),
-    var spritePriorities: IntArray = IntArray(8),
-    var spriteIndexes: IntArray = IntArray(8),
+    var spritePositions: IntArray = IntArray(8),  // ByteArray
+    var spritePriorities: IntArray = IntArray(8), // ByteArray
+    var spriteIndexes: IntArray = IntArray(8),    // ByteArray
 
     // $2000 PPUCTRL
     var flagNameTable: Int = 0, // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
@@ -213,7 +214,7 @@ internal class PPU(
         var background = if (flagShowBackground == 0) {
           0
         } else {
-          ((tileData shr 32) shr ((7 - this.x) * 4)) and 0x0F
+          ((tileData.toInt() shr 32) shr ((7 - this.x) * 4)) and 0x0F
         }
         spritePixel()
         if (x1 < 8 && flagShowLeftBackground == 0) {
@@ -247,13 +248,12 @@ internal class PPU(
         when (cycle % 8) {
           1 -> {
             // fetch name table byte
-            nameTableByte = read(0x2000 or (v and 0x0FFF))
+            nameTableByte = (read(0x2000 or (v and 0x0FFF))) and 0xFF
           }
           3 -> {
             // fetch attribute table byte
-            val v1 = v
-            val address = 0x23C0 or (v1 and 0x0C00) or ((v1 shr 4) and 0x38) or ((v1 shr 2) and 0x07)
-            val shift = ((v1 shr 4) and 4) or (v1 and 2)
+            val address = 0x23C0 or (v and 0x0C00) or ((v shr 4) and 0x38) or ((v shr 2) and 0x07)
+            val shift = ((v shr 4) and 4) or (v and 2)
             attributeTableByte = ((read(address) shr shift) and 3) shl 2
           }
           5 -> {
@@ -276,12 +276,12 @@ internal class PPU(
               val a = attributeTableByte
               val p1 = (lowTileByte and 0x80) shr 7
               val p2 = (highTileByte and 0x80) shr 6
-              lowTileByte = lowTileByte shl 1
-              highTileByte = highTileByte shl 1
+              lowTileByte = (lowTileByte shl 1) and 0xFF
+              highTileByte = (highTileByte shl 1) and 0xFF
               data = data shl 4
               data = data or (a or p1 or p2)
             }
-            tileData = tileData or data
+            tileData = tileData or data.toLong()
           }
         }
       }
@@ -413,10 +413,9 @@ internal class PPU(
     // vblank logic
     if (scanLine == 241 && cycle == 1) {
       // set vertical blank
-      val front1 = front
-      val back1 = back
-      this.front = back1
-      this.back = front1
+      val temp = front
+      this.front = back
+      this.back = temp
       nmiOccurred = true
       nmiChange()
     }
@@ -434,7 +433,7 @@ internal class PPU(
         || (flagShowBackground == 0 && flagShowSprites == 0)
   }
 
-  private fun read(_address: Int): Int {
+  private fun read(_address: Int): Int /* Byte */ {
     val address = _address % 0x4000
     return when {
       address < 0x2000 -> {
@@ -467,7 +466,7 @@ internal class PPU(
         val newAddress = (address - 0x2000) % 0x1000
         val mirrorAddr =
             0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
-        nameTableData[mirrorAddr % 2048] = value
+        nameTableData[mirrorAddr % 2048] = value and 0xFF
       }
       address < 0x4000 -> {
         val address1 = address % 32

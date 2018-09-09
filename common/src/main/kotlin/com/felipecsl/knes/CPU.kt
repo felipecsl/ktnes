@@ -45,7 +45,7 @@ internal class CPU(
       AddressingMode.MODE_ZEROPAGEX,
       AddressingMode.MODE_ZEROPAGEY
   )
-  var interrupt: Interrupt = Interrupt.NOT_SET
+  var interrupt: Int = Interrupt.NOT_SET
 
   private inline fun read16(address: Int): Int {
     return (read(address + 1) shl 8) or read(address)

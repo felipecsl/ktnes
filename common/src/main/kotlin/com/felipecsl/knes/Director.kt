@@ -9,8 +9,7 @@ class Director(
       ppuCallback: PPUStepCallback? = null
   ) {
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
-  private val console = Console.newConsole(
-      cartridge, ::Bitmap, mapperCallback, cpuCallback, ppuCallback)
+  private val console = Console.newConsole(cartridge, mapperCallback, cpuCallback, ppuCallback)
 
   init {
     console.reset()
@@ -38,7 +37,7 @@ class Director(
     console.reset()
   }
 
-  fun buffer(): Bitmap {
+  fun buffer(): IntArray {
     return console.buffer()
   }
 }

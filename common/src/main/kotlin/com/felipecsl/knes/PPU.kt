@@ -2,7 +2,6 @@ package com.felipecsl.knes
 
 internal class PPU(
     cartridge: Cartridge,
-    val bitmapFactory: (Int, Int) -> Bitmap,
     val stepCallback: PPUStepCallback? = null,
     var cycle: Int = 0,            // 0-340
     var scanLine: Int = 0,            // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
@@ -12,8 +11,8 @@ internal class PPU(
     var paletteData: IntArray = IntArray(32),
     var nameTableData: IntArray = IntArray(2048),
     var oamData: IntArray = IntArray(256),
-    var front: Bitmap = bitmapFactory(IMG_WIDTH, IMG_HEIGHT),
-    var back: Bitmap = bitmapFactory(IMG_WIDTH, IMG_HEIGHT),
+    var front: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
+    var back: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
 
     // PPU registers
     var v: Int = 0,            // current vram address (15 bit)
@@ -241,7 +240,7 @@ internal class PPU(
             background
           }
         }
-        back.setPixel(x1, y, PALETTE[readPalette(color) % 64])
+        back[y * IMG_WIDTH + x1] = PALETTE[readPalette(color) % 64]
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
@@ -344,18 +343,59 @@ internal class PPU(
           val h = if (flagSpriteSize == 0) 8 else 16
           var count = 0
           for (i in zeroTo63) {
-            val y = oamData[i * 4 + 0] and 0xFF
-            val a = oamData[i * 4 + 2] and 0xFF
-            val x = oamData[i * 4 + 3] and 0xFF
-            val row = scanLine - y
+            val y = oamData[i * 4 + 0]
+            val a = oamData[i * 4 + 2]
+            val x = oamData[i * 4 + 3]
+            var row = scanLine - y
             if (row < 0 || row >= h) {
               continue
             }
             if (count < 8) {
-              spritePatterns[count] = fetchSpritePattern(i, row)
+              var tile = oamData[i * 4 + 1]
+              val attributes: Int = oamData[i * 4 + 2] and 0xFF
+              val address: Int
+              if (flagSpriteSize == 0) {
+                if (attributes and 0x80 == 0x80) {
+                  row = 7 - row
+                }
+                address = 0x1000 * flagSpriteTable + tile * 16 + row
+              } else {
+                if (attributes and 0x80 == 0x80) {
+                  row = 15 - row
+                }
+                val table = tile and 1
+                tile = tile and 0xFE
+                if (row > 7) {
+                  tile++
+                  row -= 8
+                }
+                address = 0x1000 * table + tile * 16 + row
+              }
+              val a_ = (attributes and 3) shl 2
+              var lowTileByte = read(address)
+              var highTileByte = read(address + 8)
+              var data = 0
+              for (it in zeroTo7) {
+                val p1: Int
+                val p2: Int
+                if (attributes and 0x40 == 0x40) {
+                  p1 = ((lowTileByte and 1) shl 0)
+                  p2 = ((highTileByte and 1) shl 1)
+                  lowTileByte = lowTileByte shr 1
+                  highTileByte = highTileByte shr 1
+                } else {
+                  p1 = ((lowTileByte and 0x80) shr 7)
+                  p2 = ((highTileByte and 0x80) shr 6)
+                  lowTileByte = lowTileByte shl 1
+                  highTileByte = highTileByte shl 1
+                }
+                data = data shl 4
+                data = data or (a_ or p1 or p2)
+              }
+              spritePatterns[count] = data
               spritePositions[count] = x
               spritePriorities[count] = (a shr 5) and 1
-              spriteIndexes[count] = i
+              spriteIndexes[count] = i and 0xFF
             }
             count++
           }
@@ -388,55 +428,10 @@ internal class PPU(
       flagSpriteOverflow = 0
     }
     // TODO: this *should* be 260
-    // Returning false means we need to step the Mapper too
-    return cycle != 280 || 240 <= scanLine && scanLine <= 260 || (flagShowBackground == 0 && flagShowSprites == 0)
-  }
-
-  private fun fetchSpritePattern(i: Int, _row: Int): Int {
-    var tile = oamData[i * 4 + 1] and 0xFF
-    val attributes: Int = oamData[i * 4 + 2] and 0xFF
-    val address: Int
-    var row = _row
-    if (flagSpriteSize == 0) {
-      if (attributes and 0x80 == 0x80) {
-        row = 7 - row
-      }
-      val table = flagSpriteTable
-      address = 0x1000 * table + tile * 16 + row
-    } else {
-      if (attributes and 0x80 == 0x80) {
-        row = 15 - row
-      }
-      val table = tile and 1
-      tile = tile and 0xFE
-      if (row > 7) {
-        tile++
-        row -= 8
-      }
-      address = 0x1000 * table + tile * 16 + row
-    }
-    val a = (attributes and 3) shl 2
-    var lowTileByte = read(address)
-    var highTileByte = read(address + 8)
-    var data = 0
-    for (it in zeroTo7) {
-      val p1: Int
-      val p2: Int
-      if (attributes and 0x40 == 0x40) {
-        p1 = ((lowTileByte and 1) shl 0) and 0xFF
-        p2 = ((highTileByte and 1) shl 1) and 0xFF
-        lowTileByte = lowTileByte shr 1
-        highTileByte = highTileByte shr 1
-      } else {
-        p1 = ((lowTileByte and 0x80) shr 7) and 0xFF
-        p2 = ((highTileByte and 0x80) shr 6) and 0xFF
-        lowTileByte = lowTileByte shl 1
-        highTileByte = highTileByte shl 1
-      }
-      data = data shl 4
-      data = data or (a or p1 or p2)
-    }
-    return data
+    // Returning false means we need to step the Mapper too (TODO move this logic to the mapper)
+    return cycle != 280
+        || 240 <= scanLine && scanLine <= 260
+        || (flagShowBackground == 0 && flagShowSprites == 0)
   }
 
   private fun read(_address: Int): Int {
@@ -561,7 +556,7 @@ internal class PPU(
     t = (t and 0xF3FF) or ((value and 0x03) shl 10)
   }
 
-  private inline fun nmiChange() {
+  private fun nmiChange() {
     val nmi = nmiOutput && nmiOccurred
     if (nmi && !nmiPrevious) {
       // TODO: this fixes some games but the delay shouldn't have to be so

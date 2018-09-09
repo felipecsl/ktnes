@@ -19,7 +19,7 @@ internal class Console(
     return cpuCycles
   }
 
-  fun buffer(): Bitmap {
+  fun buffer(): IntArray {
     return ppu.front
   }
 
@@ -30,11 +30,10 @@ internal class Console(
   companion object {
     fun newConsole(
         cartridge: Cartridge,
-        bitmapFactory: (Int, Int) -> Bitmap,
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
         ppuCallback: PPUStepCallback? = null,
-        ppu: PPU = PPU(cartridge, bitmapFactory, ppuCallback),
+        ppu: PPU = PPU(cartridge, ppuCallback),
         controller1: Controller = Controller(),
         controller2: Controller = Controller(),
         apu: APU = APU(),

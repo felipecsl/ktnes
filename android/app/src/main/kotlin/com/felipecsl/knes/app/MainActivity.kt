@@ -33,18 +33,16 @@ class MainActivity : AppCompatActivity() {
     val glSprite = GLSprite()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
-      executor.submit {
-        if (implSwitch.isChecked) {
-          Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
-              BaseTransientBottomBar.LENGTH_SHORT).show()
-          nativeStartConsole(cartridgeData)
-        } else {
-          Snackbar.make(implSwitch, "Using JVM implementation",
-              BaseTransientBottomBar.LENGTH_SHORT).show()
-          val director = Director(cartridgeData)
-          glSprite.director = director
-          director.run()
-        }
+      if (implSwitch.isChecked) {
+        Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
+            BaseTransientBottomBar.LENGTH_SHORT).show()
+        nativeStartConsole(cartridgeData)
+      } else {
+        Snackbar.make(implSwitch, "Using JVM implementation",
+            BaseTransientBottomBar.LENGTH_SHORT).show()
+        val director = Director(cartridgeData)
+        glSprite.director = director
+        executor.submit(director::run)
       }
     }
 //    btnReset.setOnClickListener { director.reset() }

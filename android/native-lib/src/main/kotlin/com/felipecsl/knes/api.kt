@@ -24,6 +24,6 @@ fun nativeStartConsole(
 }
 
 @CName(fullName = "Java_com_felipecsl_knes_JniKt_nativeGetConsoleBuffer")
-fun nativeGetConsoleBuffer(): Bitmap? {
+fun nativeGetConsoleBuffer(): IntArray? {
   return director?.buffer()
 }

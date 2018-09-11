@@ -34,9 +34,6 @@ internal class PPU(
     var highTileByte: Int = 0,        // Byte
     var tileData: Long = 0,           // uint64
 
-    var spritePixelI: Int = 0,
-    var spritePixelSprite: Int = 0, // Byte
-
     // sprite temporary variables
     private var spriteCount: Int = 0,
     var spritePatterns: IntArray = IntArray(8),
@@ -245,7 +242,33 @@ internal class PPU(
         } else {
           tileData.ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
         }
-        spritePixel()
+        var spritePixelI = 0
+        var spritePixelSprite = 0
+        // sprite pixel
+        if (flagShowSprites == 0) {
+          spritePixelI = 0
+          spritePixelSprite = 0
+        } else {
+          var spritePixelDone = false
+          for (i in 0 until spriteCount) {
+            var offset = (cycle - 1) - spritePositions[i]
+            if (offset < 0 || offset > 7) {
+              continue
+            }
+            offset = 7 - offset
+            val color = (spritePatterns[i] ushr ((offset * 4) and 0xFF)) and 0x0F
+            if (color % 4 == 0) {
+              continue
+            }
+            spritePixelI = i
+            spritePixelSprite = color
+            spritePixelDone = true
+          }
+          if (!spritePixelDone) {
+            spritePixelI = 0
+            spritePixelSprite = 0
+          }
+        }
         if (x1 < 8 && flagShowLeftBackground == 0) {
           background = 0
         }
@@ -502,30 +525,6 @@ internal class PPU(
         paletteData[if (address1 >= 16 && address1 % 4 == 0) address1 - 16 else address1] = value
       }
       else -> throw RuntimeException("unhandled ppu memory write at address: $address")
-    }
-  }
-
-  private fun spritePixel() {
-    if (flagShowSprites == 0) {
-      spritePixelI = 0
-      spritePixelSprite = 0
-    } else {
-      for (i in 0 until spriteCount) {
-        var offset = (cycle - 1) - spritePositions[i]
-        if (offset < 0 || offset > 7) {
-          continue
-        }
-        offset = 7 - offset
-        val color = (spritePatterns[i] ushr ((offset * 4) and 0xFF)) and 0x0F
-        if (color % 4 == 0) {
-          continue
-        }
-        spritePixelI = i
-        spritePixelSprite = color
-        return
-      }
-      spritePixelI = 0
-      spritePixelSprite = 0
     }
   }
 

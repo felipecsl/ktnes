@@ -140,7 +140,7 @@ internal class PPU(
           // t: ........ ...HGFED = d: HGFED...
           // x:               CBA = d: .....CBA
           // w:                   = 1
-          t = (t and 0xFFE0) or (value shr 3)
+          t = (t and 0xFFE0) or (value ushr 3)
           x = value and 0x07
           w = 1
         } else {
@@ -211,10 +211,10 @@ internal class PPU(
         // render pixel
         val x1 = cycle - 1
         val y = scanLine
-        var background = if (flagShowBackground == 0) {
+        var background /* Byte */ = if (flagShowBackground == 0) {
           0
         } else {
-          ((tileData.toInt() shr 32) shr ((7 - this.x) * 4)) and 0x0F
+          tileData.ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
         }
         spritePixel()
         if (x1 < 8 && flagShowLeftBackground == 0) {
@@ -225,7 +225,7 @@ internal class PPU(
         }
         val b = background % 4 != 0
         val s = spritePixelSprite % 4 != 0
-        val color = if (!b && !s) {
+        val color: Int /* Byte */ = if (!b && !s) {
           0
         } else if (!b && s) {
           spritePixelSprite or 0x10
@@ -241,7 +241,8 @@ internal class PPU(
             background
           }
         }
-        back[y * IMG_WIDTH + x1] = PALETTE[readPalette(color) % 64]
+        val finalColor = PALETTE[readPalette(color) % 64]
+        back[y * IMG_WIDTH + x1] = finalColor
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
@@ -252,13 +253,13 @@ internal class PPU(
           }
           3 -> {
             // fetch attribute table byte
-            val address = 0x23C0 or (v and 0x0C00) or ((v shr 4) and 0x38) or ((v shr 2) and 0x07)
-            val shift = ((v shr 4) and 4) or (v and 2)
-            attributeTableByte = ((read(address) shr shift) and 3) shl 2
+            val address = 0x23C0 or (v and 0x0C00) or ((v ushr 4) and 0x38) or ((v ushr 2) and 0x07)
+            val shift = ((v ushr 4) and 4) or (v and 2)
+            attributeTableByte = ((read(address) ushr shift) and 3) shl 2
           }
           5 -> {
             // fetch low tile byte
-            val fineY = (v shr 12) and 7
+            val fineY = (v ushr 12) and 7
             val table = flagBackgroundTable
             val tile = nameTableByte
             val address = 0x1000 * table + tile * 16 + fineY
@@ -267,21 +268,21 @@ internal class PPU(
           7 -> {
             // fetch high tile byte
             highTileByte = read(
-                0x1000 * flagBackgroundTable + nameTableByte * 16 + ((v shr 12) and 7) + 8)
+                0x1000 * flagBackgroundTable + nameTableByte * 16 + ((v ushr 12) and 7) + 8)
           }
           0 -> {
             // store tile data
-            var data = 0
+            var data = 0L
             for (i in zeroTo7) {
               val a = attributeTableByte
-              val p1 = (lowTileByte and 0x80) shr 7
-              val p2 = (highTileByte and 0x80) shr 6
+              val p1 = (lowTileByte and 0x80) ushr 7
+              val p2 = (highTileByte and 0x80) ushr 6
               lowTileByte = (lowTileByte shl 1) and 0xFF
               highTileByte = (highTileByte shl 1) and 0xFF
               data = data shl 4
-              data = data or (a or p1 or p2)
+              data = data or (a or p1 or p2).toLong()
             }
-            tileData = tileData or data.toLong()
+            tileData = tileData or data
           }
         }
       }
@@ -311,7 +312,7 @@ internal class PPU(
             // fine Y = 0
             v = v and 0x8FFF
             // let y = coarse Y
-            var y = (v and 0x03E0) shr 5
+            var y = (v and 0x03E0) ushr 5
             when (y) {
               29 -> {
                 // coarse Y = 0
@@ -381,11 +382,11 @@ internal class PPU(
                 if (attributes and 0x40 == 0x40) {
                   p1 = ((lowTileByte and 1) shl 0)
                   p2 = ((highTileByte and 1) shl 1)
-                  lowTileByte = lowTileByte shr 1
-                  highTileByte = highTileByte shr 1
+                  lowTileByte = lowTileByte ushr 1
+                  highTileByte = highTileByte ushr 1
                 } else {
-                  p1 = ((lowTileByte and 0x80) shr 7)
-                  p2 = ((highTileByte and 0x80) shr 6)
+                  p1 = ((lowTileByte and 0x80) ushr 7)
+                  p2 = ((highTileByte and 0x80) ushr 6)
                   lowTileByte = lowTileByte shl 1
                   highTileByte = highTileByte shl 1
                 }
@@ -394,7 +395,7 @@ internal class PPU(
               }
               spritePatterns[count] = data
               spritePositions[count] = x
-              spritePriorities[count] = (a shr 5) and 1
+              spritePriorities[count] = (a ushr 5) and 1
               spriteIndexes[count] = i and 0xFF
             }
             count++
@@ -487,11 +488,11 @@ internal class PPU(
           continue
         }
         offset = 7 - offset
-        val color = (spritePatterns[i] shr ((offset * 4) and 0xFF)) and 0x0F
+        val color = (spritePatterns[i] ushr ((offset * 4) and 0xFF)) and 0x0F
         if (color % 4 == 0) {
           continue
         }
-        spritePixelI = i and 0xFF
+        spritePixelI = i
         spritePixelSprite = color
         return
       }
@@ -499,7 +500,6 @@ internal class PPU(
       spritePixelSprite = 0
     }
   }
-
 
   private fun tick() {
     if (nmiDelay > 0) {
@@ -531,25 +531,25 @@ internal class PPU(
   }
 
   private fun writeMask(value: Int) {
-    flagGrayscale = (value shr 0) and 1
-    flagShowLeftBackground = (value shr 1) and 1
-    flagShowLeftSprites = (value shr 2) and 1
-    flagShowBackground = (value shr 3) and 1
-    flagShowSprites = (value shr 4) and 1
-    flagRedTint = (value shr 5) and 1
-    flagGreenTint = (value shr 6) and 1
-    flagBlueTint = (value shr 7) and 1
+    flagGrayscale = (value ushr 0) and 1
+    flagShowLeftBackground = (value ushr 1) and 1
+    flagShowLeftSprites = (value ushr 2) and 1
+    flagShowBackground = (value ushr 3) and 1
+    flagShowSprites = (value ushr 4) and 1
+    flagRedTint = (value ushr 5) and 1
+    flagGreenTint = (value ushr 6) and 1
+    flagBlueTint = (value ushr 7) and 1
   }
 
   // $2000: PPUCTRL
   private fun writeControl(value: Int) {
-    flagNameTable = (value shr 0) and 3
-    flagIncrement = (value shr 2) and 1
-    flagSpriteTable = (value shr 3) and 1
-    flagBackgroundTable = (value shr 4) and 1
-    flagSpriteSize = (value shr 5) and 1
-    flagMasterSlave = (value shr 6) and 1
-    nmiOutput = (value shr 7) and 1 == 1
+    flagNameTable = (value ushr 0) and 3
+    flagIncrement = (value ushr 2) and 1
+    flagSpriteTable = (value ushr 3) and 1
+    flagBackgroundTable = (value ushr 4) and 1
+    flagSpriteSize = (value ushr 5) and 1
+    flagMasterSlave = (value ushr 6) and 1
+    nmiOutput = (value ushr 7) and 1 == 1
     nmiChange()
     // t: ....BA.. ........ = d: ......BA
     t = (t and 0xF3FF) or ((value and 0x03) shl 10)

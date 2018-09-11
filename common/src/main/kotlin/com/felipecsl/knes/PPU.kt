@@ -197,7 +197,36 @@ internal class PPU(
 //        flagSpriteSize, flagMasterSlave, flagGrayscale, flagShowLeftBackground, flagShowLeftSprites,
 //        flagShowBackground, flagShowSprites, flagRedTint, flagGreenTint, flagBlueTint,
 //        flagSpriteZeroHit, flagSpriteOverflow, oamAddress, bufferedData)
-    tick()
+    // tick()
+    var tickDone = false
+    if (nmiDelay > 0) {
+      nmiDelay--
+      if (nmiDelay == 0 && nmiOutput && nmiOccurred) {
+        // trigger NMI causes a non-maskable interrupt to occur on the next cycle
+        cpu.interrupt = Interrupt.NMI
+      }
+    }
+    if (flagShowBackground != 0 || flagShowSprites != 0) {
+      if (f == 1 && scanLine == 261 && cycle == 339) {
+        cycle = 0
+        scanLine = 0
+        frame++
+        f = f xor 1
+        tickDone = true
+      }
+    }
+    if (!tickDone) {
+      cycle++
+      if (cycle > 340) {
+        cycle = 0
+        scanLine++
+        if (scanLine > 261) {
+          scanLine = 0
+          frame++
+          f = f xor 1
+        }
+      }
+    }
     val renderingEnabled = flagShowBackground != 0 || flagShowSprites != 0
     val preLine = scanLine == 261
     val visibleLine = scanLine < 240
@@ -241,8 +270,7 @@ internal class PPU(
             background
           }
         }
-        val finalColor = PALETTE[readPalette(color) % 64]
-        back[y * IMG_WIDTH + x1] = finalColor
+        back[y * IMG_WIDTH + x1] = PALETTE[readPalette(color) % 64]
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
@@ -498,35 +526,6 @@ internal class PPU(
       }
       spritePixelI = 0
       spritePixelSprite = 0
-    }
-  }
-
-  private fun tick() {
-    if (nmiDelay > 0) {
-      nmiDelay--
-      if (nmiDelay == 0 && nmiOutput && nmiOccurred) {
-        // trigger NMI causes a non-maskable interrupt to occur on the next cycle
-        cpu.interrupt = Interrupt.NMI
-      }
-    }
-    if (flagShowBackground != 0 || flagShowSprites != 0) {
-      if (f == 1 && scanLine == 261 && cycle == 339) {
-        cycle = 0
-        scanLine = 0
-        frame++
-        f = f xor 1
-        return
-      }
-    }
-    cycle++
-    if (cycle > 340) {
-      cycle = 0
-      scanLine++
-      if (scanLine > 261) {
-        scanLine = 0
-        frame++
-        f = f xor 1
-      }
     }
   }
 

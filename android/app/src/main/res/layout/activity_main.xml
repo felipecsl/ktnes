@@ -69,13 +69,6 @@
             android:layout_marginBottom="5dp"
             android:orientation="horizontal">
 
-            <TextView
-              android:id="@+id/frequency"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:fontFamily="monospace"
-              android:text="Clock=0MHz" />
-
           </LinearLayout>
 
           <Switch

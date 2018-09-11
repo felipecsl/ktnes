@@ -7,12 +7,15 @@ Kotlin/Native.
 
 ## Demo
 
-TODO
+https://twitter.com/felipecsl/status/1039551746006110208
 
 ## Status
 
-Very early stage, still under heavy development , only Mapper 4 implemented, performance still not
-good enough.
+Still under active development.
+
+Supported mappers
+
+* Mapper 4
 
 ## License
 

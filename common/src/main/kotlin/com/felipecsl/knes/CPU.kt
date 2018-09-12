@@ -86,10 +86,12 @@ internal class CPU(
         ppu.writeRegister(address, value)
       address == 0x4015 ->
         apu.writeRegister(address, value)
-      address == 0x4016 ->
+      address == 0x4016 -> {
         controller1.write(value)
-      address == 0x4017 ->
         controller2.write(value)
+      }
+      address == 0x4017 ->
+        apu.writeRegister(address, value)
       //address < 0x6000 ->
       // TODO: I/O registers
       address >= 0x6000 ->

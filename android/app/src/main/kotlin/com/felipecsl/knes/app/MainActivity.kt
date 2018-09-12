@@ -59,9 +59,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
-    val glSprite = GLSprite {
-      buttons.copyOf()
-    }
+    val glSprite = GLSprite { buttons }
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       if (implSwitch.isChecked) {

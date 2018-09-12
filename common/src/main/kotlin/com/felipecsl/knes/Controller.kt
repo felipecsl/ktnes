@@ -10,14 +10,14 @@ internal class Controller {
     if (index < 8 && buttons?.get(index) == true) {
       value = 1
     }
-    index++
+    index = (index + 1) and 0xFF
     if (strobe and 1 == 1) {
       index = 0
     }
     return value
   }
 
-  fun write(value: Int) {
+  fun write(value: Int /* Byte */) {
     strobe = value
     if (strobe and 1 == 1) {
       index = 0

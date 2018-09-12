@@ -3,8 +3,10 @@ package com.felipecsl.knes.app
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Switch
 import androidx.appcompat.app.ActionBar
@@ -35,6 +37,15 @@ class MainActivity : AppCompatActivity(), Runnable {
   private var handler: Handler
   private lateinit var director: Director
   private val buttons = BooleanArray(8)
+  private val onButtonTouched = { i: Int ->
+    View.OnTouchListener { _, e ->
+      when (e.action) {
+        MotionEvent.ACTION_DOWN -> buttons[i] = true
+        MotionEvent.ACTION_UP -> buttons[i] = false
+      }
+      true
+    }
+  }
 
   init {
     handlerThread.start()
@@ -49,9 +60,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
     val glSprite = GLSprite {
-      val state = buttons.copyOf()
-      buttons.forEachIndexed { i, _ -> buttons[i] = false }
-      state
+      buttons.copyOf()
     }
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
@@ -68,46 +77,14 @@ class MainActivity : AppCompatActivity(), Runnable {
       }
     }
 
-    btnStart.setOnClickListener(this::onStart)
-    btnSelect.setOnClickListener(this::onSelect)
-    arrowUp.setOnClickListener(this::onArrowUp)
-    arrowDown.setOnClickListener(this::onArrowDown)
-    arrowLeft.setOnClickListener(this::onArrowLeft)
-    arrowRight.setOnClickListener(this::onArrowRight)
-    btnA.setOnClickListener(this::onBtnA)
-    btnB.setOnClickListener(this::onBtnB)
-  }
-
-  private fun onBtnA(v: View) {
-    buttons[0] = true
-  }
-
-  private fun onBtnB(v: View) {
-    buttons[1] = true
-  }
-
-  private fun onSelect(v: View) {
-    buttons[2] = true
-  }
-
-  private fun onStart(v: View) {
-    buttons[3] = true
-  }
-
-  private fun onArrowUp(v: View) {
-    buttons[4] = true
-  }
-
-  private fun onArrowDown(v: View) {
-    buttons[5] = true
-  }
-
-  private fun onArrowLeft(v: View) {
-    buttons[6] = true
-  }
-
-  private fun onArrowRight(v: View) {
-    buttons[7] = true
+    btnA.setOnTouchListener(onButtonTouched(0))
+    btnB.setOnTouchListener(onButtonTouched(1))
+    btnSelect.setOnTouchListener(onButtonTouched(2))
+    btnStart.setOnTouchListener(onButtonTouched(3))
+    arrowUp.setOnTouchListener(onButtonTouched(4))
+    arrowDown.setOnTouchListener(onButtonTouched(5))
+    arrowLeft.setOnTouchListener(onButtonTouched(6))
+    arrowRight.setOnTouchListener(onButtonTouched(7))
   }
 
   override fun run() {

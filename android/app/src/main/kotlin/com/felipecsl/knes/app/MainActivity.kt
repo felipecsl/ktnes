@@ -3,7 +3,6 @@ package com.felipecsl.knes.app
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
@@ -14,7 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
 import com.felipecsl.android.NesGLSurfaceView
-import com.felipecsl.knes.*
+import com.felipecsl.knes.Director
+import com.felipecsl.knes.GLSprite
+import com.felipecsl.knes.R
+import com.felipecsl.knes.nativeStartConsole
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar

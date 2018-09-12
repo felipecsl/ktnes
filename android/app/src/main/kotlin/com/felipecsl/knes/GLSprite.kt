@@ -7,7 +7,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class GLSprite(private val keysProvider: () -> BooleanArray) {
+class GLSprite(private val buttonsProvider: () -> BooleanArray) {
   private var context: RenderContext? = null
   private var texture: Int? = null
   var director: Director? = null
@@ -32,7 +32,7 @@ class GLSprite(private val keysProvider: () -> BooleanArray) {
       nativeGetConsoleBuffer()
     }
     if (image != null) {
-      director!!.setButtons1(keysProvider.invoke())
+      director!!.setButtons1(buttonsProvider.invoke())
       createProgramIfNeeded()
       updateTexture(image)
     }

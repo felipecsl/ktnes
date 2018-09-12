@@ -1,9 +1,8 @@
-# knes
+# ktnes
+
+A NES emulator implemented in Kotlin using multiplatform support and Kotlin/Native.
 
 Ported from the awesome Golang implementation [nes by @fogleman](https://github.com/fogleman/nes).
-
-This project is a NES emulator implemented in Kotlin using its multiplatform support and
-Kotlin/Native.
 
 ## Demo
 
@@ -13,7 +12,9 @@ https://twitter.com/felipecsl/status/1039551746006110208
 
 Still under active development.
 
-Supported mappers
+Audio not implemented yet.
+
+Supported mappers:
 
 * Mapper 4
 

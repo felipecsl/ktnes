@@ -2,9 +2,9 @@
   xmlns:app="http://schemas.android.com/apk/res-auto"
   xmlns:tools="http://schemas.android.com/tools"
   android:id="@+id/layout_content"
-  android:keepScreenOn="true"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
+  android:keepScreenOn="true"
   tools:context=".app.MainActivity">
 
   <LinearLayout
@@ -58,29 +58,103 @@
           android:layout_height="wrap_content"
           android:text="Reset" />
 
-        <LinearLayout
-          android:layout_width="match_parent"
+        <Switch
+          android:id="@+id/implementation_switch"
+          android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:orientation="vertical">
-
-          <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:orientation="horizontal">
-
-          </LinearLayout>
-
-          <Switch
-            android:id="@+id/implementation_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Use native impl" />
-
-        </LinearLayout>
+          android:text="Use native impl" />
 
       </LinearLayout>
+
+      <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp">
+
+        <FrameLayout
+          android:layout_width="110dp"
+          android:layout_height="110dp"
+          android:layout_gravity="start">
+
+          <Button
+            android:id="@+id/arrowLeft"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|center_vertical"
+            android:text="◀" />
+
+          <Button
+            android:id="@+id/arrowUp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|center_horizontal"
+            android:text="▲" />
+
+          <Button
+            android:id="@+id/arrowRight"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="end|center_vertical"
+            android:text="▶" />
+
+          <Button
+            android:id="@+id/arrowDown"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:text="▼" />
+
+        </FrameLayout>
+
+        <FrameLayout
+          android:layout_width="90dp"
+          android:layout_height="15dp"
+          android:layout_gravity="center">
+
+          <Button
+            android:id="@+id/btnSelect"
+            android:layout_width="40dp"
+            android:layout_height="15dp"
+            android:layout_gravity="start"
+            android:background="@drawable/start_select_bg"
+            android:text="" />
+
+          <Button
+            android:id="@+id/btnStart"
+            android:layout_width="40dp"
+            android:layout_height="15dp"
+            android:layout_gravity="end"
+            android:background="@drawable/start_select_bg"
+            android:text="" />
+
+        </FrameLayout>
+
+
+        <FrameLayout
+          android:layout_width="90dp"
+          android:layout_height="110dp"
+          android:layout_gravity="end">
+
+          <Button
+            android:id="@+id/btnB"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|center_vertical"
+            android:background="@drawable/circle_btn_bg"
+            android:text="B"
+            android:textColor="@android:color/white" />
+
+          <Button
+            android:id="@+id/btnA"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="end|center_vertical"
+            android:background="@drawable/circle_btn_bg"
+            android:text="A"
+            android:textColor="@android:color/white" />
+        </FrameLayout>
+
+      </FrameLayout>
 
     </LinearLayout>
 

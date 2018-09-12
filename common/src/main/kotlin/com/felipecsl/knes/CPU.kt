@@ -6,7 +6,7 @@ internal class CPU(
     private val mapper: Mapper,
     private val ppu: PPU,
     private val apu: APU,
-    private val controller1: Controller,
+    val controller1: Controller,
     private val controller2: Controller,
     private val ram: IntArray = IntArray(2048),
     private val stepCallback: CPUStepCallback? = null

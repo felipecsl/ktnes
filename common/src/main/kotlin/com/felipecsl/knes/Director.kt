@@ -33,6 +33,10 @@ class Director(
     }
   }
 
+  fun setButtons1(buttons: BooleanArray) {
+    console.setButtons(buttons)
+  }
+
   fun reset() {
     console.reset()
   }

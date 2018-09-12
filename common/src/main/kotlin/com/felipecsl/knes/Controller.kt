@@ -1,13 +1,13 @@
-package com.felipecsl.knes
+package com.felipecsl. knes
 
 internal class Controller {
-  var buttons: Array<Boolean> = Array(8) { false }
-  var index: Int = 0
-  var strobe: Int = 0
+  var buttons: BooleanArray? = null
+  var index: Int = 0  // Byte
+  var strobe: Int = 0 // Byte
 
   fun read(): Int {
     var value = 0
-    if (index < 8 && buttons[index]) {
+    if (index < 8 && buttons?.get(index) == true) {
       value = 1
     }
     index++
@@ -18,5 +18,9 @@ internal class Controller {
   }
 
   fun write(value: Int) {
+    strobe = value
+    if (strobe and 1 == 1) {
+      index = 0
+    }
   }
 }

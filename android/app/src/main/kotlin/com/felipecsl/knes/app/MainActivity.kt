@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Switch
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
@@ -15,7 +16,6 @@ import com.felipecsl.knes.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), Runnable {
   private val nesGlSurfaceView by lazy { findViewById<NesGLSurfaceView>(R.id.nes_gl_surface_view) }
@@ -23,9 +23,18 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val btnReset by lazy { findViewById<AppCompatButton>(R.id.btnReset) }
   private val toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
   private val implSwitch by lazy { findViewById<Switch>(R.id.implementation_switch) }
+  private val btnStart by lazy { findViewById<AppCompatButton>(R.id.btnStart) }
+  private val btnSelect by lazy { findViewById<AppCompatButton>(R.id.btnSelect) }
+  private val btnA by lazy { findViewById<AppCompatButton>(R.id.btnA) }
+  private val btnB by lazy { findViewById<AppCompatButton>(R.id.btnB) }
+  private val arrowUp by lazy { findViewById<AppCompatButton>(R.id.arrowUp) }
+  private val arrowDown by lazy { findViewById<AppCompatButton>(R.id.arrowDown) }
+  private val arrowLeft by lazy { findViewById<AppCompatButton>(R.id.arrowLeft) }
+  private val arrowRight by lazy { findViewById<AppCompatButton>(R.id.arrowRight) }
   private val handlerThread = HandlerThread("Console Thread")
   private var handler: Handler
   private lateinit var director: Director
+  private val buttons = BooleanArray(8)
 
   init {
     handlerThread.start()
@@ -39,7 +48,11 @@ class MainActivity : AppCompatActivity(), Runnable {
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
-    val glSprite = GLSprite()
+    val glSprite = GLSprite {
+      val state = buttons.copyOf()
+      buttons.forEachIndexed { i, _ -> buttons[i] = false }
+      state
+    }
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       if (implSwitch.isChecked) {
@@ -54,7 +67,47 @@ class MainActivity : AppCompatActivity(), Runnable {
         handler.post(this)
       }
     }
-//    btnReset.setOnClickListener { director.reset() }
+
+    btnStart.setOnClickListener(this::onStart)
+    btnSelect.setOnClickListener(this::onSelect)
+    arrowUp.setOnClickListener(this::onArrowUp)
+    arrowDown.setOnClickListener(this::onArrowDown)
+    arrowLeft.setOnClickListener(this::onArrowLeft)
+    arrowRight.setOnClickListener(this::onArrowRight)
+    btnA.setOnClickListener(this::onBtnA)
+    btnB.setOnClickListener(this::onBtnB)
+  }
+
+  private fun onBtnA(v: View) {
+    buttons[0] = true
+  }
+
+  private fun onBtnB(v: View) {
+    buttons[1] = true
+  }
+
+  private fun onSelect(v: View) {
+    buttons[2] = true
+  }
+
+  private fun onStart(v: View) {
+    buttons[3] = true
+  }
+
+  private fun onArrowUp(v: View) {
+    buttons[4] = true
+  }
+
+  private fun onArrowDown(v: View) {
+    buttons[5] = true
+  }
+
+  private fun onArrowLeft(v: View) {
+    buttons[6] = true
+  }
+
+  private fun onArrowRight(v: View) {
+    buttons[7] = true
   }
 
   override fun run() {

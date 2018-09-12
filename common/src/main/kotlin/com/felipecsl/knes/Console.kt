@@ -27,6 +27,10 @@ internal class Console(
     cpu.reset()
   }
 
+  fun setButtons(buttons: BooleanArray) {
+    cpu.controller1.buttons = buttons
+  }
+
   companion object {
     fun newConsole(
         cartridge: Cartridge,

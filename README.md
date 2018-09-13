@@ -6,7 +6,8 @@ Ported from the awesome Golang implementation [nes by @fogleman](https://github.
 
 ## Demo
 
-https://twitter.com/felipecsl/status/1039551746006110208
+![super mario bros 3](https://raw.githubusercontent.com/felipecsl/ktnes/master/smb3.gif)
+![the legend of zelda](https://raw.githubusercontent.com/felipecsl/ktnes/master/zelda.gif)
 
 ## Status
 

@@ -48,12 +48,12 @@ internal class MMC1(
       }
       else -> throw RuntimeException("unhandled mapper1 read at address: $address")
     }.also {
-      it.ensureByte()
+//      it.ensureByte()
     }
   }
 
   override fun write(address: Int, value: Int /* Byte */) {
-    value.ensureByte()
+//    value.ensureByte()
     when {
       address < 0x2000 -> {
         val bank = address / 0x1000
@@ -67,7 +67,7 @@ internal class MMC1(
           writeControl(control or 0x0C)
         } else {
           val complete = shiftRegister and 1 == 1
-          shiftRegister = shiftRegister ushr 1
+          shiftRegister = shiftRegister shr 1
           shiftRegister = shiftRegister or ((value and 1) shl 4)
           if (complete) {
             // write register
@@ -101,7 +101,7 @@ internal class MMC1(
   }
 
   private fun writeControl(value: Int) {
-    value.ensureByte()
+//    value.ensureByte()
     control = value
     chrMode = (value shr 4) and 1 and 0xFF
     prgMode = (value shr 2) and 3 and 0xFF

@@ -113,6 +113,6 @@ class MainActivity : AppCompatActivity(), Runnable {
     init {
       System.loadLibrary("knes")
     }
-    const val ROM = R.raw.tloz
+    const val ROM = R.raw.smb3
   }
 }

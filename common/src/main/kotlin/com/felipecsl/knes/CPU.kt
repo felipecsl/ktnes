@@ -15,19 +15,19 @@ internal class CPU(
   private var stepPC: Int = 0
   private var stepMode: Int = 0
   var cycles: Long = 0              // number of cycles
-  var PC: Int = 0                   // Program counter
-  var SP: Int = 0xFF                // Stack pointer
-  var A: Int = 0                    // Accumulator
-  var X: Int = 0                    // Register X
-  var Y: Int = 0                    // Register Y
-  var C: Int = 0                    // carry flag
-  var Z: Int = 0                    // zero flag
-  var I: Int = 0                    // interrupt disable flag
-  var D: Int = 0                    // decimal mode flag
-  var B: Int = 0                    // break command flag
-  var U: Int = 0                    // unused flag
-  var V: Int = 0                    // overflow flag
-  var N: Int = 0                    // negative flag
+  var PC: Int = 0                   // (Byte) Program counter
+  var SP: Int = 0xFF                // (Byte) Stack pointer
+  var A: Int = 0                    // (Byte) Accumulator
+  var X: Int = 0                    // (Byte) Register X
+  var Y: Int = 0                    // (Byte) Register Y
+  var C: Int = 0                    // (Byte) carry flag
+  var Z: Int = 0                    // (Byte) zero flag
+  var I: Int = 0                    // (Byte) interrupt disable flag
+  var D: Int = 0                    // (Byte) decimal mode flag
+  var B: Int = 0                    // (Byte) break command flag
+  var U: Int = 0                    // (Byte) unused flag
+  var V: Int = 0                    // (Byte) overflow flag
+  var N: Int = 0                    // (Byte) negative flag
   var stall: Int = 0                // number of cycles to stall
   private val addressingModes = arrayOf(
       AddressingMode.UNUSED,
@@ -60,7 +60,8 @@ internal class CPU(
     return (hi shl 8) or lo
   }
 
-  fun read(address: Int): Int /** Byte */ {
+  /** returns Byte */
+  fun read(address: Int): Int {
     return when {
       address < 0x2000 -> ram[address % 0x0800]
       address < 0x4000 -> ppu.readRegister(0x2000 + address % 8)
@@ -72,12 +73,12 @@ internal class CPU(
       address >= 0x6000 -> mapper.read(address)
       else -> throw RuntimeException("unhandled cpu memory read at address: $address")
     }.also {
-      it.ensureByte()
+      //it.ensureByte()
     }
   }
 
-  private fun write(address: Int, value: Int) {
-    value.ensureByte()
+  private fun write(address: Int, value: Int /* Byte */) {
+    //value.ensureByte()
     when {
       address < 0x2000 ->
         ram[address % 0x0800] = value
@@ -105,8 +106,7 @@ internal class CPU(
   }
 
   fun step(): Long {
-    //          println("cycles=$cycles, PC=$PC, SP=$SP, A=$A, X=$X, Y=$Y, C=$C, Z=$Z, I=$I, D=$D, " +
-//              "B=$B, U=$U, V=$V, N=$N, interrupt=$interrupt, stall=$stall")
+//    dumpState()
 //    stepCallback?.onStep(
 //        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall, null)
     if (stall > 0) {
@@ -260,7 +260,7 @@ internal class CPU(
         if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
           val c = C
           C = (A shr 7) and 1
-          A = (A shl 1) or c
+          A = (A shl 1) or c and 0xFF
           setZN(A)
         } else {
           val c = C
@@ -357,7 +357,7 @@ internal class CPU(
         if (stepMode == AddressingMode.MODE_ACCUMULATOR) {
           val c = C
           C = A and 1
-          A = (A shr 1) or (c shl 7)
+          A = (A shr 1) or (c shl 7) and 0xFF
           setZN(A)
         } else {
           val c = C
@@ -575,6 +575,11 @@ internal class CPU(
     return cycles - currCycles
   }
 
+  private fun dumpState() {
+    println("cycles=$cycles, PC=$PC, SP=$SP, A=$A, X=$X, Y=$Y, C=$C, Z=$Z, I=$I, D=$D, " +
+        "B=$B, U=$U, V=$V, N=$N, interrupt=$interrupt, stall=$stall")
+  }
+
   private inline fun pagesDiffer(a: Int, b: Int) =
       a and 0xFF00 != b and 0xFF00
 
@@ -596,13 +601,11 @@ internal class CPU(
 
   // push16 pushes two bytes onto the stack
   private fun push16(value: Int) {
-    val hi = value shr 8
-    val lo = value and 0xff
-    push(hi)
-    push(lo)
+    push(value shr 8)
+    push(value and 0xFF)
   }
 
-  // pull pops a byte from the stack
+  /** pull pops a byte from the stack. Returns Byte */
   private fun pull(): Int {
     SP = (SP + 1) and 0xFF
     return read(0x100 or SP)

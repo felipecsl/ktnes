@@ -26,9 +26,6 @@ internal class INESFileParser {
       val mapper1 = control1 shr 4
       val mapper2 = inesFileHeader.control2.toInt() shr 4
       val mapper = mapper1 or (mapper2 shl 4)
-      if (mapper != 4) {
-        throw IllegalArgumentException("Unsupported mapper_state_reference type $mapper")
-      }
       // mirroring type
       val mirror1 = control1 and 1
       val mirror2 = (control1 shr 3) and 1
@@ -41,8 +38,13 @@ internal class INESFileParser {
         throw IllegalStateException("Could not load ${prg.size} bytes from the input")
       }
       // read chr-rom bank(s)
-      val chr = ByteArray(inesFileHeader.numCHR.toInt() * 8192)
+      val numCHR = inesFileHeader.numCHR.toInt()
+      var chr = ByteArray(numCHR * 8192)
       stream.read(chr)
+      // provide chr-rom/ram if not in file
+      if (chr.isEmpty()) {
+        chr = ByteArray(8192)
+      }
       return Cartridge(
           prg.map { it.toInt() and 0xff }.toTypedArray(),
           chr.map { it.toInt() and 0xff }.toTypedArray(),

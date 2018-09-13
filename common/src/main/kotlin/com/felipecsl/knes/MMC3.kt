@@ -58,8 +58,8 @@ internal class MMC3(
         // write register
         if (address <= 0x9FFF && address % 2 == 0) {
           // write bank select
-          prgMode = (value shr 6) and 1
-          chrMode = (value shr 7) and 1
+          prgMode = (value ushr 6) and 1
+          chrMode = (value ushr 7) and 1
           register = value and 7
           updateOffsets()
         } else if (address <= 0x9FFF && address % 2 == 1) {

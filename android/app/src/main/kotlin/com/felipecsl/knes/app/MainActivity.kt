@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     setSupportActionBar(toolbar)
     val actionBar: ActionBar = supportActionBar!!
     actionBar.setDisplayHomeAsUpEnabled(true)
-    val cartridgeData = resources.openRawResource(R.raw.smb3).readBytes()
+    val cartridgeData = resources.openRawResource(ROM).readBytes()
     val glSprite = GLSprite { buttons }
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
@@ -113,5 +113,6 @@ class MainActivity : AppCompatActivity(), Runnable {
     init {
       System.loadLibrary("knes")
     }
+    const val ROM = R.raw.tloz
   }
 }

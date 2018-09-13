@@ -71,10 +71,13 @@ internal class CPU(
       //address < 0x6000 -> TODO: I/O registers
       address >= 0x6000 -> mapper.read(address)
       else -> throw RuntimeException("unhandled cpu memory read at address: $address")
+    }.also {
+      it.ensureByte()
     }
   }
 
   private fun write(address: Int, value: Int) {
+    value.ensureByte()
     when {
       address < 0x2000 ->
         ram[address % 0x0800] = value
@@ -102,6 +105,8 @@ internal class CPU(
   }
 
   fun step(): Long {
+    //          println("cycles=$cycles, PC=$PC, SP=$SP, A=$A, X=$X, Y=$Y, C=$C, Z=$Z, I=$I, D=$D, " +
+//              "B=$B, U=$U, V=$V, N=$N, interrupt=$interrupt, stall=$stall")
 //    stepCallback?.onStep(
 //        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall, null)
     if (stall > 0) {

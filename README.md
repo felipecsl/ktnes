@@ -16,6 +16,7 @@ Audio not implemented yet.
 
 Supported mappers:
 
+* Mapper 1
 * Mapper 4
 
 ## License

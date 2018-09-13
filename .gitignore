@@ -17,3 +17,4 @@ lib
 local.properties
 .gradle
 *.so
+*.nes

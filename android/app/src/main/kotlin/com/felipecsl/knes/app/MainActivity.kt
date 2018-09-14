@@ -113,6 +113,6 @@ class MainActivity : AppCompatActivity(), Runnable {
     init {
       System.loadLibrary("knes")
     }
-    const val ROM = R.raw.smb3
+    const val ROM = R.raw.super_mario_bros_3
   }
 }

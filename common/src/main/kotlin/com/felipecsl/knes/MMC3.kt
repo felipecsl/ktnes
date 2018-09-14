@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.felipecsl.knes
 
 // http://wiki.nesdev.com/w/index.php/MMC3

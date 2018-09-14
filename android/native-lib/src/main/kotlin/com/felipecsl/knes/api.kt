@@ -1,12 +1,13 @@
 package com.felipecsl.knes
 
-import konan.internal.CName
+import kotlin.native.CName
+import kotlin.native.SharedImmutable
 import kotlinx.cinterop.*
 import platform.android.*
 
-var director: Director? = null
+@SharedImmutable var directorBuffer: IntArray? = null
 
-@CName(fullName = "Java_com_felipecsl_knes_JniKt_nativeStartConsole")
+@CName(externName = "Java_com_felipecsl_knes_JniKt_nativeStartConsole")
 fun nativeStartConsole(
     env: CPointer<JNIEnvVar>,
     self: jobject,
@@ -18,12 +19,16 @@ fun nativeStartConsole(
     val buffer = ByteArray(len)
     val bufferPointer = buffer.refTo(0).getPointer(memScope)
     jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
-    director = Director(buffer)
-    director!!.run()
+    val director = Director(buffer)
+    directorBuffer = director.buffer()
+    director.run()
   }
 }
 
-@CName(fullName = "Java_com_felipecsl_knes_JniKt_nativeGetConsoleBuffer")
-fun nativeGetConsoleBuffer(): IntArray? {
-  return director?.buffer()
+@CName(externName = "Java_com_felipecsl_knes_JniKt_nativeGetConsoleBuffer")
+fun nativeGetConsoleBuffer(
+    env: CPointer<JNIEnvVar>,
+    self: jobject
+): IntArray? {
+  return directorBuffer
 }

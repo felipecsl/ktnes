@@ -32,8 +32,6 @@ open class ByteArrayInputStream {
    *
    * If no mark has been set, then the value of mark is the offset
    * passed to the constructor (or 0 if the offset was not supplied).
-   *
-   * @since   JDK1.1
    */
   private var mark = 0
 
@@ -102,9 +100,7 @@ open class ByteArrayInputStream {
    * stream has been reached.
    */
   fun read(): Int {
-    synchronized(lock) {
-      return if (pos < count) buf[pos++].toInt() and 0xff else -1
-    }
+    return if (pos < count) buf[pos++].toInt() and 0xff else -1
   }
 
   /**
@@ -192,15 +188,13 @@ open class ByteArrayInputStream {
    * @return  the actual number of bytes skipped.
    */
   fun skip(n: Long): Long {
-    synchronized(lock) {
-      var k = (count - pos).toLong()
-      if (n < k) {
-        k = if (n < 0) 0 else n
-      }
-
-      pos += k.toInt()
-      return k
+    var k = (count - pos).toLong()
+    if (n < k) {
+      k = if (n < 0) 0 else n
     }
+
+    pos += k.toInt()
+    return k
   }
 
   /**
@@ -215,17 +209,13 @@ open class ByteArrayInputStream {
    * over) from this input stream without blocking.
    */
   fun available(): Int {
-    synchronized(lock) {
-      return count - pos
-    }
+    return count - pos
   }
 
   /**
    * Tests if this `InputStream` supports mark/reset. The
    * `markSupported` method of `ByteArrayInputStream`
    * always returns `true`.
-   *
-   * @since   JDK1.1
    */
   fun markSupported(): Boolean {
     return true
@@ -245,8 +235,6 @@ open class ByteArrayInputStream {
    *
    *  Note: The `readAheadLimit` for this class
    * has no meaning.
-   *
-   * @since   JDK1.1
    */
   fun mark(readAheadLimit: Int) {
     mark = pos
@@ -258,16 +246,10 @@ open class ByteArrayInputStream {
    * in the constructor.
    */
   fun reset() {
-    synchronized(lock) {
-      pos = mark
-    }
+    pos = mark
   }
 
   fun read(b: ByteArray): Int {
     return read(b, 0, b.size)
-  }
-
-  companion object {
-    private val lock: Any = "lock"
   }
 }

@@ -48,6 +48,7 @@ internal class Console(
       ppu.cpu = cpu
       ppu.mapper = mapper
       mapper.cpu = cpu
+      apu.cpu = cpu
       return console
     }
   }

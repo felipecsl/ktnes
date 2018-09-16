@@ -116,20 +116,17 @@ internal data class Pulse(
   }
 
   fun output(): Int /* Byte */ {
-    if (!enabled
+    return if (!enabled
         || lengthValue == 0
         || DUTY_TABLE[dutyMode][dutyValue] == 0
         || timerPeriod < 8
         || timerPeriod > 0x7FF) {
-      return 0
-    }
-    // if (!sweepNegate && timerPeriod+(timerPeriod>>sweepShift) > 0x7FF) {
-    // 	return 0
-    // }
-    return if (envelopeEnabled) {
-      envelopeVolume
+      0
     } else {
-      constantVolume
+      // if (!sweepNegate && timerPeriod+(timerPeriod>>sweepShift) > 0x7FF) {
+      // 	return 0
+      // }
+      if (envelopeEnabled) envelopeVolume else constantVolume
     }
   }
 

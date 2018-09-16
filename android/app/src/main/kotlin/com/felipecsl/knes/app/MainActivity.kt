@@ -1,5 +1,9 @@
 package com.felipecsl.knes.app
 
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -13,10 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
 import com.felipecsl.android.NesGLSurfaceView
-import com.felipecsl.knes.Director
-import com.felipecsl.knes.GLSprite
-import com.felipecsl.knes.R
-import com.felipecsl.knes.nativeStartConsole
+import com.felipecsl.knes.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val handlerThread = HandlerThread("Console Thread")
   private var handler: Handler
   private lateinit var director: Director
+  private lateinit var audioSink: AudioSink
   private val buttons = BooleanArray(8)
   private val onButtonTouched = { i: Int ->
     View.OnTouchListener { _, e ->
@@ -62,6 +64,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(ROM).readBytes()
     val glSprite = GLSprite { buttons }
+    audioSink = buildAudioSink()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       if (implSwitch.isChecked) {
@@ -71,7 +74,7 @@ class MainActivity : AppCompatActivity(), Runnable {
       } else {
         Snackbar.make(implSwitch, "Using JVM implementation",
             BaseTransientBottomBar.LENGTH_SHORT).show()
-        director = Director(cartridgeData)
+        director = Director(cartridgeData, audioSink)
         glSprite.director = director
         handler.post(this)
       }
@@ -87,7 +90,34 @@ class MainActivity : AppCompatActivity(), Runnable {
     arrowRight.setOnTouchListener(onButtonTouched(7))
   }
 
+  private fun buildAudioSink(): AudioSink {
+    val sampleRate = 44100
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+      val audioAttributes = AudioAttributes.Builder()
+          .setUsage(AudioAttributes.USAGE_GAME)
+          .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
+          .build()
+      val audioFormat = AudioFormat.Builder()
+          .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+          .setSampleRate(sampleRate)
+          .build()
+      val bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+          AudioFormat.ENCODING_PCM_FLOAT)
+      val audioTrack = AudioTrack.Builder()
+          .setAudioAttributes(audioAttributes)
+          .setAudioFormat(audioFormat)
+//          .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_POWER_SAVING)
+          .setTransferMode(AudioTrack.MODE_STREAM)
+          .setBufferSizeInBytes(bufferSize)
+          .build()
+      return AudioSink(audioTrack, bufferSize)
+    } else {
+      TODO()
+    }
+  }
+
   override fun run() {
+    audioSink.play()
     director.run()
   }
 
@@ -113,6 +143,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     init {
       System.loadLibrary("knes")
     }
+
     const val ROM = R.raw.super_mario_bros_3
   }
 }

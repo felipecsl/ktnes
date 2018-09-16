@@ -8,7 +8,7 @@ internal interface Filter {
 
 // First order filters are defined by the following parameters.
 // y[n] = B0*x[n] + B1*x[n-1] - A1*y[n-1]
-internal class FirstOrderFilter(
+internal data class FirstOrderFilter(
     private val B0: Float,
     private val B1: Float,
     private val A1: Float,
@@ -23,15 +23,14 @@ internal class FirstOrderFilter(
   }
 }
 
-internal fun highPassFilter(sampleRate: Double, cutoffFreq: Float): Filter {
-  val c = (sampleRate / PI / cutoffFreq).toFloat()
+internal fun lowPassFilter(sampleRate: Float, cutoffFreq: Float): Filter {
+  val c = (sampleRate / PI.toFloat() / cutoffFreq)
   val a0i = 1 / (1 + c)
-  return FirstOrderFilter(c * a0i, -c * a0i, (1 - c) * a0i)
+  return FirstOrderFilter(a0i, a0i, (1 - c) * a0i)
 }
 
-internal fun lowPassFilter(sampleRate: Double, cutoffFreq: Float): Filter {
-  val c = (sampleRate / PI / cutoffFreq).toFloat()
+internal fun highPassFilter(sampleRate: Float, cutoffFreq: Float): Filter {
+  val c = (sampleRate / PI.toFloat() / cutoffFreq)
   val a0i = 1 / (1 + c)
-  return FirstOrderFilter(a0i, a0i, (1 - c) * a0i
-  )
+  return FirstOrderFilter(c * a0i, -c * a0i, (1 - c) * a0i)
 }

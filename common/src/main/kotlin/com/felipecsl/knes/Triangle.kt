@@ -56,16 +56,7 @@ internal data class Triangle(
   }
 
   fun output(): Int /* Byte */ {
-    if (!enabled) {
-      return 0
-    }
-    if (lengthValue == 0) {
-      return 0
-    }
-    if (counterValue == 0) {
-      return 0
-    }
-    return TRIANGLE_TABLE[dutyValue]
+    return if (!enabled || lengthValue == 0 || counterValue == 0) 0 else TRIANGLE_TABLE[dutyValue]
   }
 
   companion object {

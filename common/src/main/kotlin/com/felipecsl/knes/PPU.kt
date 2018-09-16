@@ -500,8 +500,6 @@ internal class PPU(
       }
       address < 0x4000 -> readPalette(address % 32)
       else -> throw RuntimeException("unhandled PPU memory read at address: $address")
-    }.also {
-//      it.ensureByte()
     }
   }
 
@@ -510,7 +508,6 @@ internal class PPU(
   }
 
   private fun write(addr: Int, value: Int /* Byte */) {
-//    value.ensureByte()
     val address = addr % 0x4000
     when {
       address < 0x2000 -> {

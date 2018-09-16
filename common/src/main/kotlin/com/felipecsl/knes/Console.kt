@@ -34,13 +34,14 @@ internal class Console(
   companion object {
     fun newConsole(
         cartridge: Cartridge,
+        audioSink: AudioSink,
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
         ppuCallback: PPUStepCallback? = null,
         ppu: PPU = PPU(cartridge, ppuCallback),
         controller1: Controller = Controller(),
         controller2: Controller = Controller(),
-        apu: APU = APU(),
+        apu: APU = APU(audioSink),
         mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {

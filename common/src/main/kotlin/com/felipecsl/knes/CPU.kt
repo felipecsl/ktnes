@@ -72,13 +72,10 @@ internal class CPU(
       //address < 0x6000 -> TODO: I/O registers
       address >= 0x6000 -> mapper.read(address)
       else -> throw RuntimeException("unhandled cpu memory read at address: $address")
-    }.also {
-      //it.ensureByte()
     }
   }
 
   private fun write(address: Int, value: Int /* Byte */) {
-    //value.ensureByte()
     when {
       address < 0x2000 ->
         ram[address % 0x0800] = value

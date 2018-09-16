@@ -4,12 +4,14 @@ import com.felipecsl.knes.CPU.Companion.FREQUENCY
 
 class Director(
       cartridgeData: ByteArray,
+      audioSink: AudioSink,
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null
   ) {
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
-  private val console = Console.newConsole(cartridge, mapperCallback, cpuCallback, ppuCallback)
+  private val console = Console.newConsole(
+      cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback)
 
   init {
     console.reset()

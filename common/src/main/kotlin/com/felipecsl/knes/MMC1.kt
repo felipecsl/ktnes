@@ -47,13 +47,10 @@ internal class MMC1(
         return sram[address - 0x6000]
       }
       else -> throw RuntimeException("unhandled mapper1 read at address: $address")
-    }.also {
-//      it.ensureByte()
     }
   }
 
   override fun write(address: Int, value: Int /* Byte */) {
-//    value.ensureByte()
     when {
       address < 0x2000 -> {
         val bank = address / 0x1000
@@ -101,7 +98,6 @@ internal class MMC1(
   }
 
   private fun writeControl(value: Int) {
-//    value.ensureByte()
     control = value
     chrMode = (value shr 4) and 1 and 0xFF
     prgMode = (value shr 2) and 3 and 0xFF

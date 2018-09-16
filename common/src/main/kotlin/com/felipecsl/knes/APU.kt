@@ -1,8 +1,9 @@
 package com.felipecsl.knes
 
 internal class APU(
-//    private val channel: Float,
-    private val sampleRate: Double = 0.0,
+    private val audioSink: AudioSink,
+    // Convert samples per second to cpu steps per sample
+    private val sampleRate: Double = CPU.FREQUENCY / SAMPLE_RATE.toDouble(),
     private val pulse1: Pulse = Pulse(channel = 1),
     private val pulse2: Pulse = Pulse(channel = 2),
     private val triangle: Triangle = Triangle(),
@@ -14,9 +15,9 @@ internal class APU(
     private val pulseTable: FloatArray = FloatArray(31),
     private val tndTable: FloatArray = FloatArray(203),
     private val filterChain: FilterChain = FilterChain(arrayOf(
-        highPassFilter(sampleRate, 90F),
-        highPassFilter(sampleRate, 440F),
-        lowPassFilter(sampleRate, 14000F)
+        highPassFilter(SAMPLE_RATE, 90F),
+        highPassFilter(SAMPLE_RATE, 440F),
+        lowPassFilter(SAMPLE_RATE, 14000F)
     ))
 ) {
   private lateinit var dmc: DMC
@@ -27,99 +28,46 @@ internal class APU(
     }
 
   init {
-    for (i in 0..32) {
+    for (i in 0 until 31) {
       pulseTable[i] = (95.52 / (8128.0 / i + 100)).toFloat()
     }
-    for (i in 0..203) {
+    for (i in 0 until 203) {
       tndTable[i] = (163.67 / (24329.0 / i + 100)).toFloat()
     }
   }
 
-  fun readRegister(address: Int): Int {
-    return 0
+  fun readRegister(address: Int): Int /* Byte */ {
+    return when (address) {
+      0x4015 -> readStatus()
+      else -> 0
+    }.ensureByte()
+  }
+
+  private fun readStatus(): Int /* Byte */ {
+    var result = 0
+    if (pulse1.lengthValue > 0) {
+      result = result or 1
+    }
+    if (pulse2.lengthValue > 0) {
+      result = result or 2
+    }
+    if (triangle.lengthValue > 0) {
+      result = result or 4
+    }
+    if (noise.lengthValue > 0) {
+      result = result or 8
+    }
+    if (dmc.currentLength > 0) {
+      result = result or 16
+    }
+    return result
   }
 
   fun step() {
     val cycle1 = cycle
     cycle++
     val cycle2 = cycle
-    stepTimer()
-    val f1 = (cycle1 / FRAME_COUNTER_RATE).toInt()
-    val f2 = (cycle2 / FRAME_COUNTER_RATE).toInt()
-    if (f1 != f2) {
-      stepFrameCounter()
-    }
-    val s1 = (cycle1 / sampleRate).toInt()
-    val s2 = (cycle2 / sampleRate).toInt()
-    if (s1 != s2) {
-      sendSample()
-    }
-  }
-
-  private fun sendSample() {
-//    val output = filterChain.Step(output())
-//    select {
-//      case channel <- output:
-//      default:
-//    }
-  }
-
-  private fun output(): Any {
-    val p1 = pulse1.output()
-    val p2 = pulse2.output()
-    val t = triangle.output()
-    val n = noise.output()
-    val d = dmc.output()
-    val pulseOut = pulseTable[p1 + p2]
-    val tndOut = tndTable[3 * t + 2 * n + d]
-    return pulseOut + tndOut
-  }
-
-  // mode 0:    mode 1:       function
-  // ---------  -----------  -----------------------------
-  //  - - - f    - - - - -    IRQ (if bit 6 is clear)
-  //  - l - l    l - l - -    Length counter and sweep
-  //  e e e e    e e e e -    Envelope and linear counter
-  private fun stepFrameCounter() {
-    when (framePeriod) {
-      4 -> {
-        frameValue = (frameValue + 1) % 4
-        when (frameValue) {
-          0, 2 -> stepEnvelope()
-          1 -> {
-            stepEnvelope()
-            stepSweep()
-            stepLength()
-          }
-          3 -> {
-            stepEnvelope()
-            stepSweep()
-            stepLength()
-            fireIRQ()
-          }
-        }
-      }
-      5 -> {
-        frameValue = (frameValue + 1) % 5
-        when (frameValue) {
-          1, 3 -> stepEnvelope()
-          0, 2 -> {
-            stepEnvelope()
-            stepSweep()
-            stepLength()
-          }
-        }
-      }
-    }
-  }
-
-  private fun fireIRQ() {
-    if (frameIRQ) {
-      cpu.interrupt = Interrupt.IRQ
-    }
-  }
-
-  private fun stepTimer() {
+    // step timer
     if (cycle % 2 == 0L) {
       pulse1.stepTimer()
       pulse2.stepTimer()
@@ -127,9 +75,54 @@ internal class APU(
       dmc.stepTimer()
     }
     triangle.stepTimer()
+    if ((cycle1 / FRAME_COUNTER_RATE).toInt() != (cycle2 / FRAME_COUNTER_RATE).toInt()) {
+      // step frame counter
+      when (framePeriod) {
+        4 -> {
+          frameValue = (frameValue + 1) % 4
+          when (frameValue) {
+            0, 2 -> stepEnvelope()
+            1 -> {
+              stepEnvelope()
+              stepSweep()
+              stepLength()
+            }
+            3 -> {
+              stepEnvelope()
+              stepSweep()
+              stepLength()
+              // fire irq
+              if (frameIRQ) {
+                cpu!!.interrupt = Interrupt.IRQ
+              }
+            }
+          }
+        }
+        5 -> {
+          frameValue = (frameValue + 1) % 5
+          when (frameValue) {
+            1, 3 -> stepEnvelope()
+            0, 2 -> {
+              stepEnvelope()
+              stepSweep()
+              stepLength()
+            }
+          }
+        }
+      }
+    }
+    if ((cycle1 / sampleRate).toInt() != (cycle2 / sampleRate).toInt()) {
+      audioSink.write(filterChain.step(output()))
+    }
   }
 
-  fun writeRegister(address: Int, value: Int) {
+  private fun output(): Float {
+    return pulseTable[pulse1.output() + pulse2.output()] +
+        tndTable[3 * triangle.output() + 2 * noise.output() + dmc.output()]
+  }
+
+  fun writeRegister(address: Int, value: Int /* Byte */) {
+    value.ensureByte()
     when (address) {
       0x4000 -> pulse1.writeControl(value)
       0x4001 -> pulse1.writeSweep(value)
@@ -214,6 +207,7 @@ internal class APU(
   }
 
   companion object {
+    internal const val SAMPLE_RATE = 44100F
     private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240.0
     val LENGTH_TABLE = intArrayOf( // Byte
         10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,

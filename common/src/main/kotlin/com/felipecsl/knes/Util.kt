@@ -6,3 +6,10 @@ fun Int.ensureByte(): Int {
   }
   return this
 }
+
+fun Int.ensurePositive(): Int {
+  if (this < 0) {
+    throw RuntimeException("Value is not positive: $this")
+  }
+  return this
+}

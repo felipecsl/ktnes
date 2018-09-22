@@ -9,6 +9,7 @@ class Director(
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null
   ) {
+  private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
   private val console = Console.newConsole(
       cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback)
@@ -21,7 +22,8 @@ class Director(
     var startTime = currentTimeMs()
     var totalCycles = 0L
     val step = FREQUENCY
-    while (true) {
+    isRunning = true
+    while (isRunning) {
       totalCycles += console.step()
       if (totalCycles >= step) {
         val currentTime = currentTimeMs()
@@ -40,6 +42,7 @@ class Director(
   }
 
   fun reset() {
+    isRunning = false
     console.reset()
   }
 

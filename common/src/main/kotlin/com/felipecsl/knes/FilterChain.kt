@@ -2,9 +2,10 @@ package com.felipecsl.knes
 
 internal class FilterChain(internal val filters: Array<Filter>) {
   fun step(x: Float): Float {
+    var v = x
     filters.forEach {
-      it.step(x)
+      v = it.step(v)
     }
-    return x
+    return v
   }
 }

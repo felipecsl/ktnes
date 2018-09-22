@@ -16,6 +16,7 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import com.felipecsl.android.NesGLSurfaceView
 import com.felipecsl.knes.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val arrowRight by lazy { findViewById<AppCompatButton>(R.id.arrowRight) }
   private val handlerThread = HandlerThread("Console Thread")
   private var handler: Handler
+  private var isRunning = false
   private lateinit var director: Director
   private lateinit var audioSink: AudioSink
   private val buttons = BooleanArray(8)
@@ -67,17 +69,14 @@ class MainActivity : AppCompatActivity(), Runnable {
     audioSink = buildAudioSink()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
-      if (implSwitch.isChecked) {
-        Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
-            BaseTransientBottomBar.LENGTH_SHORT).show()
-        nativeStartConsole(cartridgeData)
+      val icon = if (!isRunning) R.drawable.ic_stat_name else R.drawable.ic_play_arrow_white_48dp
+      fabRun.setImageDrawable(ContextCompat.getDrawable(this, icon))
+      if (!isRunning) {
+        startConsole(cartridgeData, glSprite)
       } else {
-        Snackbar.make(implSwitch, "Using JVM implementation",
-            BaseTransientBottomBar.LENGTH_SHORT).show()
-        director = Director(cartridgeData, audioSink)
-        glSprite.director = director
-        handler.post(this)
+        director.reset()
       }
+      isRunning = !isRunning
     }
 
     btnA.setOnTouchListener(onButtonTouched(0))
@@ -90,8 +89,22 @@ class MainActivity : AppCompatActivity(), Runnable {
     arrowRight.setOnTouchListener(onButtonTouched(7))
   }
 
+  fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
+    if (implSwitch.isChecked) {
+      Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
+          BaseTransientBottomBar.LENGTH_SHORT).show()
+      nativeStartConsole(cartridgeData)
+    } else {
+      Snackbar.make(implSwitch, "Using JVM implementation",
+          BaseTransientBottomBar.LENGTH_SHORT).show()
+      director = Director(cartridgeData, audioSink)
+      glSprite.director = director
+      handler.post(this)
+    }
+  }
+
   private fun buildAudioSink(): AudioSink {
-    val sampleRate = 44100
+    val sampleRate = 22050
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
       val audioAttributes = AudioAttributes.Builder()
           .setUsage(AudioAttributes.USAGE_GAME)
@@ -106,7 +119,6 @@ class MainActivity : AppCompatActivity(), Runnable {
       val audioTrack = AudioTrack.Builder()
           .setAudioAttributes(audioAttributes)
           .setAudioFormat(audioFormat)
-//          .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_POWER_SAVING)
           .setTransferMode(AudioTrack.MODE_STREAM)
           .setBufferSizeInBytes(bufferSize)
           .build()
@@ -144,6 +156,6 @@ class MainActivity : AppCompatActivity(), Runnable {
       System.loadLibrary("knes")
     }
 
-    const val ROM = R.raw.super_mario_bros_3
+    const val ROM = R.raw.legend_of_zelda
   }
 }

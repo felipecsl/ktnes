@@ -101,10 +101,10 @@ internal class APU(
 
   init {
     for (i in 0 until 31) {
-      pulseTable[i] = (95.52 / (8128.0 / i + 100)).toFloat()
+      pulseTable[i] = (95.52 / (8128F / i.toFloat() + 100)).toFloat()
     }
     for (i in 0 until 203) {
-      tndTable[i] = (163.67 / (24329.0 / i + 100)).toFloat()
+      tndTable[i] = (163.67 / (24329F / i.toFloat() + 100)).toFloat()
     }
   }
 
@@ -164,8 +164,8 @@ internal class APU(
         noiseTimerValue = noiseTimerPeriod
         val shift = if (noiseMode) 6 else 1
         val b1 = noiseShiftRegister and 1
-        val b2 = (noiseShiftRegister shr shift) and 1
-        noiseShiftRegister = noiseShiftRegister shr 1
+        val b2 = (noiseShiftRegister ushr shift) and 1
+        noiseShiftRegister = noiseShiftRegister ushr 1
         noiseShiftRegister = noiseShiftRegister or ((b1 xor b2) shl 14)
       } else {
         noiseTimerValue--
@@ -192,20 +192,20 @@ internal class APU(
           if (dmcBitCount != 0) {
             if (dmcShiftRegister and 1 == 1) {
               if (dmcValue <= 125) {
-                dmcValue += 2
+                dmcValue += 2 and 0xFF
                 dmcValue
               }
             } else {
               if (dmcValue >= 2) {
-                dmcValue -= 2
+                dmcValue -= 2 and 0xFF
                 dmcValue
               }
             }
-            dmcShiftRegister = (dmcShiftRegister shr 1)
-            dmcBitCount--
+            dmcShiftRegister = (dmcShiftRegister ushr 1) and 0xFF
+            dmcBitCount -= 1 and 0xFF
           }
         } else {
-          dmcTickValue--
+          dmcTickValue -= 1 and 0xFF
         }
       }
     }
@@ -218,7 +218,7 @@ internal class APU(
     } else {
       triangleTimerValue--
     }
-    if ((cycle1 / FRAME_COUNTER_RATE).toInt() != (cycle2 / FRAME_COUNTER_RATE).toInt()) {
+    if ((cycle1.toFloat() / FRAME_COUNTER_RATE).toInt() != (cycle2.toFloat() / FRAME_COUNTER_RATE).toInt()) {
       // step frame counter
       when (framePeriod) {
         4 -> {
@@ -254,7 +254,7 @@ internal class APU(
         }
       }
     }
-    if ((cycle1 / sampleRate).toInt() != (cycle2 / sampleRate).toInt()) {
+    if ((cycle1.toFloat() / sampleRate).toInt() != (cycle2.toFloat() / sampleRate).toInt()) {
       val output = pulseTable[pulse1Output() + pulse2Output()] +
           tndTable[3 * triangleOutput() + 2 * noiseOutput() + dmcValue]
       audioSink.write(filterChain.step(output))
@@ -302,59 +302,59 @@ internal class APU(
     when (address) {
       0x4000 -> {
         // pulse 1 write control
-        pulse1DutyMode = ((value shr 6) and 3)
-        pulse1LengthEnabled = (value shr 5) and 1 == 0
-        pulse1EnvelopeLoop = (value shr 5) and 1 == 1
-        pulse1EnvelopeEnabled = (value shr 4) and 1 == 0
+        pulse1DutyMode = ((value ushr 6) and 3)
+        pulse1LengthEnabled = (value ushr 5) and 1 == 0
+        pulse1EnvelopeLoop = (value ushr 5) and 1 == 1
+        pulse1EnvelopeEnabled = (value ushr 4) and 1 == 0
         pulse1EnvelopePeriod = (value and 15)
         pulse1ConstantVolume = (value and 15)
         pulse1EnvelopeStart = true
       }
       0x4001 -> {
         // pulse 1 write sweep
-        pulse1SweepEnabled = (value shr 7) and 1 == 1
-        pulse1SweepPeriod = ((value shr 4) and 7 + 1)
-        pulse1SweepNegate = (value shr 3) and 1 == 1
+        pulse1SweepEnabled = (value ushr 7) and 1 == 1
+        pulse1SweepPeriod = ((value ushr 4) and 7 + 1) and 0xFF
+        pulse1SweepNegate = (value ushr 3) and 1 == 1
         pulse1SweepShift = value and 7
         pulse1SweepReload = true
       }
       0x4002 -> pulse1TimerPeriod = (pulse1TimerPeriod and 0xFF00) or value
       0x4003 -> {
         // pulse 1 write timer high
-        pulse1LengthValue = LENGTH_TABLE[value shr 3]
+        pulse1LengthValue = LENGTH_TABLE[value ushr 3] and 0xFF
         pulse1TimerPeriod = (pulse1TimerPeriod and 0x00FF) or ((value and 7) shl 8)
         pulse1EnvelopeStart = true
         pulse1DutyValue = 0
       }
       0x4004 -> {
         // pulse 2 write control
-        pulse2DutyMode = ((value shr 6) and 3)
-        pulse2LengthEnabled = (value shr 5) and 1 == 0
-        pulse2EnvelopeLoop = (value shr 5) and 1 == 1
-        pulse2EnvelopeEnabled = (value shr 4) and 1 == 0
+        pulse2DutyMode = ((value ushr 6) and 3)
+        pulse2LengthEnabled = (value ushr 5) and 1 == 0
+        pulse2EnvelopeLoop = (value ushr 5) and 1 == 1
+        pulse2EnvelopeEnabled = (value ushr 4) and 1 == 0
         pulse2EnvelopePeriod = (value and 15)
         pulse2ConstantVolume = (value and 15)
         pulse2EnvelopeStart = true
       }
       0x4005 -> {
         // pulse 2 write sweep
-        pulse2SweepEnabled = (value shr 7) and 1 == 1
-        pulse2SweepPeriod = ((value shr 4) and 7 + 1)
-        pulse2SweepNegate = (value shr 3) and 1 == 1
+        pulse2SweepEnabled = (value ushr 7) and 1 == 1
+        pulse2SweepPeriod = ((value ushr 4) and 7 + 1) and 0xFF
+        pulse2SweepNegate = (value ushr 3) and 1 == 1
         pulse2SweepShift = value and 7
         pulse2SweepReload = true
       }
       0x4006 -> pulse2TimerPeriod = (pulse2TimerPeriod and 0xFF00) or value
       0x4007 -> {
         // pulse 2 write timer high
-        pulse2LengthValue = LENGTH_TABLE[value shr 3]
+        pulse2LengthValue = LENGTH_TABLE[value ushr 3]
         pulse2TimerPeriod = (pulse2TimerPeriod and 0x00FF) or ((value and 7) shl 8)
         pulse2EnvelopeStart = true
         pulse2DutyValue = 0
       }
       0x4008 -> {
         // triangle write control
-        triangleLengthEnabled = (value shr 7) and 1 == 0
+        triangleLengthEnabled = (value ushr 7) and 1 == 0
         triangleCounterPeriod = (value and 0x7F)
       }
       0x4009, 0x4010 -> {
@@ -381,16 +381,16 @@ internal class APU(
       }
       0x400B -> {
         // triangle write timer high
-        triangleLengthValue = (LENGTH_TABLE[value shr 3])
+        triangleLengthValue = (LENGTH_TABLE[value ushr 3]) and 0xFF
         triangleTimerPeriod = (triangleTimerPeriod and 0x00FF) or ((value and 7) shl 8)
         triangleTimerValue = triangleTimerPeriod
         triangleCounterReload = true
       }
       0x400C -> {
         // noise write control
-        noiseLengthEnabled = (value shr 5) and 1 == 0
-        noiseEnvelopeLoop = (value shr 5) and 1 == 1
-        noiseEnvelopeEnabled = (value shr 4) and 1 == 0
+        noiseLengthEnabled = (value ushr 5) and 1 == 0
+        noiseEnvelopeLoop = (value ushr 5) and 1 == 1
+        noiseEnvelopeEnabled = (value ushr 4) and 1 == 0
         noiseEnvelopePeriod = (value and 15)
         noiseConstantVolume = (value and 15)
         noiseEnvelopeStart = true
@@ -402,7 +402,7 @@ internal class APU(
       }
       0x400F -> {
         // noise write length
-        noiseLengthValue = LENGTH_TABLE[value shr 3]
+        noiseLengthValue = LENGTH_TABLE[value ushr 3]
         noiseEnvelopeStart = true
       }
       0x4015 -> {
@@ -434,40 +434,38 @@ internal class APU(
       }
       0x4017 -> {
         // write frame counter
-        framePeriod = 4 + (value shr 7) and 1
-        frameIRQ = (value shr 6) and 1 == 0
+        framePeriod = 4 + (value ushr 7) and 1
+        frameIRQ = (value ushr 6) and 1 == 0
         if (framePeriod == 5) {
           stepEnvelope()
           stepSweep()
           stepLength()
         }
       }
-      // default:
-      // 	log.Fatalf("unhandled apu register write at address: 0x%04X", address)
     }
   }
 
   private inline fun stepLength() {
     // pulse 1
     if (pulse1LengthEnabled && pulse1LengthValue > 0) {
-      pulse1LengthValue--
+      pulse1LengthValue -= 1 and 0xFF
     }
     // pulse 2
     if (pulse2LengthEnabled && pulse2LengthValue > 0) {
-      pulse2LengthValue--
+      pulse2LengthValue -= 1 and 0xFF
     }
     // triangle
     if (triangleLengthEnabled && triangleLengthValue > 0) {
-      triangleLengthValue--
+      triangleLengthValue -= 1 and 0xFF
     }
     // noise
     if (noiseLengthEnabled && noiseLengthValue > 0) {
-      noiseLengthValue--
+      noiseLengthValue -= 1 and 0xFF
     }
   }
 
   private fun pulse1Sweep() {
-    val delta = pulse1TimerPeriod shr pulse1SweepShift
+    val delta = pulse1TimerPeriod ushr pulse1SweepShift
     if (pulse1SweepNegate) {
       pulse1TimerPeriod -= delta
       if (pulse1Channel == 1) {
@@ -479,7 +477,7 @@ internal class APU(
   }
 
   private fun pulse2Sweep() {
-    val delta = pulse2TimerPeriod shr pulse2SweepShift
+    val delta = pulse2TimerPeriod ushr pulse2SweepShift
     if (pulse2SweepNegate) {
       pulse2TimerPeriod -= delta
       if (pulse2Channel == 1) {
@@ -490,7 +488,7 @@ internal class APU(
     }
   }
 
-  private inline fun stepSweep() {
+  private fun stepSweep() {
     // pulse 1 step sweep
     when {
       pulse1SweepReload -> {
@@ -500,7 +498,7 @@ internal class APU(
         pulse1SweepValue = pulse1SweepPeriod
         pulse1SweepReload = false
       }
-      pulse1SweepValue > 0 -> pulse1SweepValue--
+      pulse1SweepValue > 0 -> pulse1SweepValue -= 1 and 0xFF
       else -> {
         if (pulse1SweepEnabled) {
           pulse1Sweep()
@@ -517,7 +515,7 @@ internal class APU(
         pulse2SweepValue = pulse2SweepPeriod
         pulse2SweepReload = false
       }
-      pulse2SweepValue > 0 -> pulse2SweepValue--
+      pulse2SweepValue > 0 -> pulse2SweepValue -= 1 and 0xFF
       else -> {
         if (pulse2SweepEnabled) {
           pulse2Sweep()
@@ -527,7 +525,7 @@ internal class APU(
     }
   }
 
-  private inline fun stepEnvelope() {
+  private fun stepEnvelope() {
     // pulse 1 step envelope
     when {
       pulse1EnvelopeStart -> {
@@ -535,10 +533,10 @@ internal class APU(
         pulse1EnvelopeValue = pulse1EnvelopePeriod
         pulse1EnvelopeStart = false
       }
-      pulse1EnvelopeValue > 0 -> pulse1EnvelopeValue--
+      pulse1EnvelopeValue > 0 -> pulse1EnvelopeValue -= 1 and 0xFF
       else -> {
         if (pulse1EnvelopeVolume > 0) {
-          pulse1EnvelopeVolume--
+          pulse1EnvelopeVolume -= 1 and 0xFF
         } else if (pulse1EnvelopeLoop) {
           pulse1EnvelopeVolume = 15
         }
@@ -555,7 +553,7 @@ internal class APU(
       pulse2EnvelopeValue > 0 -> pulse2EnvelopeValue--
       else -> {
         if (pulse2EnvelopeVolume > 0) {
-          pulse2EnvelopeVolume--
+          pulse2EnvelopeVolume -= 1 and 0xFF
         } else if (pulse2EnvelopeLoop) {
           pulse2EnvelopeVolume = 15
         }
@@ -566,7 +564,7 @@ internal class APU(
     if (triangleCounterReload) {
       triangleCounterValue = triangleCounterPeriod
     } else if (triangleCounterValue > 0) {
-      triangleCounterValue--
+      triangleCounterValue -= 1 and 0xFF
     }
     if (triangleLengthEnabled) {
       triangleCounterReload = false
@@ -578,10 +576,10 @@ internal class APU(
         noiseEnvelopeValue = noiseEnvelopePeriod
         noiseEnvelopeStart = false
       }
-      noiseEnvelopeValue > 0 -> noiseEnvelopeValue--
+      noiseEnvelopeValue > 0 -> noiseEnvelopeValue -=1 and 0xFF
       else -> {
         if (noiseEnvelopeVolume > 0) {
-          noiseEnvelopeVolume--
+          noiseEnvelopeVolume -= 1 and 0xFF
         } else if (noiseEnvelopeLoop) {
           noiseEnvelopeVolume = 15
         }
@@ -593,18 +591,18 @@ internal class APU(
   companion object {
     internal const val SAMPLE_RATE = 44100F
     private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240.0
-    val TRIANGLE_TABLE = intArrayOf( // Byte
+    private val TRIANGLE_TABLE = intArrayOf( // Byte
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
     )
-    val NOISE_TABLE = intArrayOf(
+    private val NOISE_TABLE = intArrayOf(
         4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
     )
-    val LENGTH_TABLE = intArrayOf( // Byte
+    private val LENGTH_TABLE = intArrayOf( // Byte
         10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
         12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
     )
-    val DMC_TABLE = intArrayOf( // Byte
+    private val DMC_TABLE = intArrayOf( // Byte
         214, 190, 170, 160, 143, 127, 113, 107, 95, 80, 71, 64, 53, 42, 36, 27
     )
     private val DUTY_TABLE = arrayOf( // Byte

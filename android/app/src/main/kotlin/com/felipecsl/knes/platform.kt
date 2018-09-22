@@ -8,7 +8,10 @@ actual fun currentTimeMs(): Long {
   return System.currentTimeMillis()
 }
 
-actual class AudioSink(private val audioTrack: AudioTrack, private val bufferSize: Int) {
+actual class AudioSink(
+    private val audioTrack: AudioTrack,
+    private val bufferSize: Int
+) {
   private val buffer = FloatArray(bufferSize)
   private var position = 0
 

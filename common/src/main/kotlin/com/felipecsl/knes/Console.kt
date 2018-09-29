@@ -42,10 +42,11 @@ internal class Console(
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
         ppuCallback: PPUStepCallback? = null,
+        apuCallback: APUStepCallback? = null,
         ppu: PPU = PPU(cartridge, ppuCallback),
         controller1: Controller = Controller(),
         controller2: Controller = Controller(),
-        apu: APU = APU(audioSink),
+        apu: APU = APU(audioSink, apuCallback),
         mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {

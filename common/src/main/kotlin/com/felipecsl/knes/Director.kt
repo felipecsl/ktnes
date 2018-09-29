@@ -7,12 +7,13 @@ class Director(
       audioSink: AudioSink,
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
-      ppuCallback: PPUStepCallback? = null
+      ppuCallback: PPUStepCallback? = null,
+      apuCallback: APUStepCallback? = null
   ) {
   private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
   internal val console = Console.newConsole(
-      cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback)
+      cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback, apuCallback)
 
   init {
     console.reset()

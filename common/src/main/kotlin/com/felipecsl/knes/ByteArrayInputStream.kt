@@ -176,28 +176,6 @@ open class ByteArrayInputStream {
   }
 
   /**
-   * Skips `n` bytes of input from this input stream. Fewer
-   * bytes might be skipped if the end of the input stream is reached.
-   * The actual number `k`
-   * of bytes to be skipped is equal to the smaller
-   * of `n` and  `count-pos`.
-   * The value `k` is added into `pos`
-   * and `k` is returned.
-   *
-   * @param   n   the number of bytes to be skipped.
-   * @return  the actual number of bytes skipped.
-   */
-  fun skip(n: Long): Long {
-    var k = (count - pos).toLong()
-    if (n < k) {
-      k = if (n < 0) 0 else n
-    }
-
-    pos += k.toInt()
-    return k
-  }
-
-  /**
    * Returns the number of remaining bytes that can be read (or skipped over)
    * from this input stream.
    *
@@ -210,34 +188,6 @@ open class ByteArrayInputStream {
    */
   fun available(): Int {
     return count - pos
-  }
-
-  /**
-   * Tests if this `InputStream` supports mark/reset. The
-   * `markSupported` method of `ByteArrayInputStream`
-   * always returns `true`.
-   */
-  fun markSupported(): Boolean {
-    return true
-  }
-
-  /**
-   * Set the current marked position in the stream.
-   * ByteArrayInputStream objects are marked at position zero by
-   * default when constructed.  They may be marked at another
-   * position within the buffer by this method.
-   *
-   *
-   * If no mark has been set, then the value of the mark is the
-   * offset passed to the constructor (or 0 if the offset was not
-   * supplied).
-   *
-   *
-   *  Note: The `readAheadLimit` for this class
-   * has no meaning.
-   */
-  fun mark(readAheadLimit: Int) {
-    mark = pos
   }
 
   /**

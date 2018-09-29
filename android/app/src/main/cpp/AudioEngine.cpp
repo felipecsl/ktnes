@@ -17,7 +17,6 @@ void AudioEngine::start(
   builder.setCallback(this);
   builder.setPerformanceMode(PerformanceMode::LowLatency);
   builder.setFormat(AudioFormat::Float);
-  builder.setSampleRate(44100);
   builder.setChannelCount(1);
   builder.setSharingMode(SharingMode::Exclusive);
   Result result = builder.openStream(&mStream);

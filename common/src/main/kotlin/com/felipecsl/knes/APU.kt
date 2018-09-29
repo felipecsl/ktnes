@@ -2,6 +2,7 @@ package com.felipecsl.knes
 
 internal class APU(
     internal val audioSink: AudioSink,
+    private val stepCallback: APUStepCallback? = null,
     // Convert samples per second to cpu steps per sample
     private val sampleRate: Double = CPU.FREQUENCY / SAMPLE_RATE,
     private var cycle: Long = 0,
@@ -271,25 +272,44 @@ internal class APU(
           tndTable[3 * triangleOutput + 2 * noiseOutput + dmcValue]
       audioSink.write(filterChain.step(output))
     }
+//    stepCallback?.onStep(cycle,
+//        framePeriod, frameValue, frameIRQ, pulse1Enabled, pulse1Channel, pulse1LengthEnabled,
+//        pulse1LengthValue, pulse1TimerPeriod, pulse1TimerValue, pulse1DutyMode, pulse1DutyValue,
+//        pulse1SweepReload, pulse1SweepEnabled, pulse1SweepNegate, pulse1SweepShift,
+//        pulse1SweepPeriod, pulse1SweepValue, pulse1EnvelopeEnabled, pulse1EnvelopeLoop,
+//        pulse1EnvelopeStart, pulse1EnvelopePeriod, pulse1EnvelopeValue, pulse1EnvelopeVolume,
+//        pulse1ConstantVolume, pulse2Enabled, pulse2Channel, pulse2LengthEnabled, pulse2LengthValue,
+//        pulse2TimerPeriod, pulse2TimerValue, pulse2DutyMode, pulse2DutyValue, pulse2SweepReload,
+//        pulse2SweepEnabled, pulse2SweepNegate, pulse2SweepShift, pulse2SweepPeriod,
+//        pulse2SweepValue, pulse2EnvelopeEnabled, pulse2EnvelopeLoop, pulse2EnvelopeStart,
+//        pulse2EnvelopePeriod, pulse2EnvelopeValue, pulse2EnvelopeVolume, pulse2ConstantVolume,
+//        triangleEnabled, triangleLengthEnabled, triangleLengthValue, triangleTimerPeriod,
+//        triangleTimerValue, triangleDutyValue, triangleCounterPeriod, triangleCounterValue,
+//        triangleCounterReload, noiseEnabled, noiseMode, noiseShiftRegister, noiseLengthEnabled,
+//        noiseLengthValue, noiseTimerPeriod, noiseTimerValue, noiseEnvelopeEnabled,
+//        noiseEnvelopeLoop, noiseEnvelopeStart, noiseEnvelopePeriod, noiseEnvelopeValue,
+//        noiseEnvelopeVolume, noiseConstantVolume, dmcEnabled, dmcValue, dmcSampleAddress,
+//        dmcSampleLength, dmcCurrentAddress, dmcCurrentLength, dmcShiftRegister, dmcBitCount,
+//        dmcTickPeriod, dmcTickValue, dmcLoop, dmcIrq)
   }
 
   fun writeRegister(address: Int, value: Int /* Byte */) {
     when (address) {
       0x4000 -> {
         // pulse 1 write control
-        pulse1DutyMode = ((value shr 6) and 3)
-        pulse1LengthEnabled = (value shr 5) and 1 == 0
-        pulse1EnvelopeLoop = (value shr 5) and 1 == 1
-        pulse1EnvelopeEnabled = (value shr 4) and 1 == 0
-        pulse1EnvelopePeriod = (value and 15)
-        pulse1ConstantVolume = (value and 15)
+        pulse1DutyMode = (value shr 6) and 3
+        pulse1LengthEnabled = value.shr(5).and(1) == 0
+        pulse1EnvelopeLoop = value.shr(5).and(1) == 1
+        pulse1EnvelopeEnabled = value.shr(4).and(1) == 0
+        pulse1EnvelopePeriod = value and 15
+        pulse1ConstantVolume = value and 15
         pulse1EnvelopeStart = true
       }
       0x4001 -> {
         // pulse 1 write sweep
-        pulse1SweepEnabled = (value shr 7) and 1 == 1
-        pulse1SweepPeriod = ((value shr 4) and 7 + 1)
-        pulse1SweepNegate = (value shr 3) and 1 == 1
+        pulse1SweepEnabled = value.shr(7).and(1) == 1
+        pulse1SweepPeriod = value.shr(4).and(7) + 1
+        pulse1SweepNegate = value.shr(3).and(1) == 1
         pulse1SweepShift = value and 7
         pulse1SweepReload = true
       }
@@ -303,19 +323,19 @@ internal class APU(
       }
       0x4004 -> {
         // pulse 2 write control
-        pulse2DutyMode = ((value shr 6) and 3)
+        pulse2DutyMode = (value shr 6) and 3
         pulse2LengthEnabled = (value shr 5) and 1 == 0
         pulse2EnvelopeLoop = (value shr 5) and 1 == 1
         pulse2EnvelopeEnabled = (value shr 4) and 1 == 0
-        pulse2EnvelopePeriod = (value and 15)
-        pulse2ConstantVolume = (value and 15)
+        pulse2EnvelopePeriod = value and 15
+        pulse2ConstantVolume = value and 15
         pulse2EnvelopeStart = true
       }
       0x4005 -> {
         // pulse 2 write sweep
-        pulse2SweepEnabled = (value shr 7) and 1 == 1
-        pulse2SweepPeriod = ((value shr 4) and 7 + 1) and 0xFF
-        pulse2SweepNegate = (value shr 3) and 1 == 1
+        pulse2SweepEnabled = value.shr(7).and(1) == 1
+        pulse2SweepPeriod = value.shr(4).and(7) + 1
+        pulse2SweepNegate = value.shr(3).and(1) == 1
         pulse2SweepShift = value and 7
         pulse2SweepReload = true
       }
@@ -402,7 +422,7 @@ internal class APU(
       }
       0x4017 -> {
         // write frame counter
-        framePeriod = 4 + (value shr 7) and 1
+        framePeriod = 4 + value.ushr(7).and(1)
         frameIRQ = (value shr 6) and 1 == 0
         if (framePeriod == 5) {
           stepEnvelope()
@@ -540,8 +560,8 @@ internal class APU(
   }
 
   companion object {
-    internal const val SAMPLE_RATE = 44100.0
-    private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240F
+    internal const val SAMPLE_RATE = 48000.0
+    private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240.0
     private val TRIANGLE_TABLE = intArrayOf( // Byte
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15

@@ -15,7 +15,7 @@ actual class AudioSink {
 
   @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
   actual fun write(value: Float) {
-    buffer[pos++] = value
+    buffer[pos++ % bufferSize] = value
   }
 
   actual fun drain(): FloatArray {

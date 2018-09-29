@@ -9,16 +9,24 @@ Ported from the awesome Golang implementation [nes by @fogleman](https://github.
 ![super mario bros 3](https://raw.githubusercontent.com/felipecsl/ktnes/master/smb3.gif)
 ![the legend of zelda](https://raw.githubusercontent.com/felipecsl/ktnes/master/zelda.gif)
 
+## Building/Running
+
+You'll need https://github.com/google/oboe to run ktnes.
+Please clone Oboe and put it in the same directory as ktnes, eg.:
+`~/code/ktnes` and `~/code/oboe`.
+
+If you did that correctly, you should be able to build and run directly from Android Studio.
+
 ## Status
 
 Still under active development.
 
-Audio not implemented yet.
+Sound works but is still a bit garbled/distorted.
 
-Supported mappers:
+Implemented mappers:
 
 * Mapper 1
-* Mapper 4
+* Mapper 4 (MMC3)
 
 ## License
 

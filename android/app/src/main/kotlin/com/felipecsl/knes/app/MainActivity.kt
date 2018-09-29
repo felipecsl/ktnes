@@ -1,12 +1,10 @@
 package com.felipecsl.knes.app
 
-import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioTrack
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
@@ -66,7 +64,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(ROM).readBytes()
     val glSprite = GLSprite { buttons }
-    audioSink = buildAudioSink()
+    audioSink = AudioSink()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       val icon = if (!isRunning) R.drawable.ic_stat_name else R.drawable.ic_play_arrow_white_48dp
@@ -75,6 +73,7 @@ class MainActivity : AppCompatActivity(), Runnable {
         startConsole(cartridgeData, glSprite)
       } else {
         director.reset()
+        stopEngine()
       }
       isRunning = !isRunning
     }
@@ -89,7 +88,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     arrowRight.setOnTouchListener(onButtonTouched(7))
   }
 
-  fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
+  private fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
     if (implSwitch.isChecked) {
       Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
           BaseTransientBottomBar.LENGTH_SHORT).show()
@@ -103,34 +102,25 @@ class MainActivity : AppCompatActivity(), Runnable {
     }
   }
 
-  private fun buildAudioSink(): AudioSink {
-    val sampleRate = 22050
-    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
-      val audioAttributes = AudioAttributes.Builder()
-          .setUsage(AudioAttributes.USAGE_GAME)
-          .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
-          .build()
-      val audioFormat = AudioFormat.Builder()
-          .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-          .setSampleRate(sampleRate)
-          .build()
-      val bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-          AudioFormat.ENCODING_PCM_FLOAT)
-      val audioTrack = AudioTrack.Builder()
-          .setAudioAttributes(audioAttributes)
-          .setAudioFormat(audioFormat)
-          .setTransferMode(AudioTrack.MODE_STREAM)
-          .setBufferSizeInBytes(bufferSize)
-          .build()
-      return AudioSink(audioTrack, bufferSize)
-    } else {
-      TODO()
-    }
+  override fun run() {
+    staticConsole = director.console
+    startEngine(getExclusiveCores())
+    director.run()
   }
 
-  override fun run() {
-    audioSink.play()
-    director.run()
+  // Obtain CPU cores which are reserved for the foreground app. The audio thread can be
+  // bound to these cores to avoids the risk of it being migrated to slower or more contended
+  // core(s).
+  private fun getExclusiveCores(): IntArray {
+    var exclusiveCores = intArrayOf()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      Log.w("MainActivity", "getExclusiveCores() not supported. Only available on API " +
+          Build.VERSION_CODES.N + "+")
+    } else {
+      exclusiveCores = android.os.Process.getExclusiveCores()
+
+    }
+    return exclusiveCores
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -154,8 +144,14 @@ class MainActivity : AppCompatActivity(), Runnable {
   companion object {
     init {
       System.loadLibrary("knes")
+      System.loadLibrary("ktnes-audio")
     }
 
-    const val ROM = R.raw.legend_of_zelda
+    const val ROM = R.raw.super_mario_bros_3
+    internal var staticConsole: Console? = null
+
+    @JvmStatic fun audioBuffer(): FloatArray? {
+      return staticConsole?.audioBuffer() ?: FloatArray(0)
+    }
   }
 }

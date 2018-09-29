@@ -23,6 +23,10 @@ internal class Console(
     return ppu.front
   }
 
+  fun audioBuffer(): FloatArray {
+    return apu.audioSink.drain()
+  }
+
   fun reset() {
     cpu.reset()
   }

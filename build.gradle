@@ -1,7 +1,7 @@
 buildscript {
-  ext.kotlin_version = '1.2.70'
+  ext.kotlin_version = '1.2.71'
   ext.kotlin_native_version = '0.9'
-  ext.android_gradle_plugin_version = '3.3.0-alpha11'
+  ext.android_gradle_plugin_version = '3.3.0-alpha12'
 
   repositories {
     jcenter()

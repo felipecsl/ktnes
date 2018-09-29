@@ -11,7 +11,7 @@ class Director(
   ) {
   private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
-  private val console = Console.newConsole(
+  internal val console = Console.newConsole(
       cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback)
 
   init {

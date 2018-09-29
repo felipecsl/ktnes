@@ -15,6 +15,13 @@ You'll need https://github.com/google/oboe to run ktnes.
 Please clone Oboe and put it in the same directory as ktnes, eg.:
 `~/code/ktnes` and `~/code/oboe`.
 
+## Kotlin/Native implementation
+
+The emulator implementation using Kotlin/Native is not functional yet.
+To build the Android native library implementation, run:
+
+`./gradlew android:native-lib:copyLibs`
+
 If you did that correctly, you should be able to build and run directly from Android Studio.
 
 ## Status

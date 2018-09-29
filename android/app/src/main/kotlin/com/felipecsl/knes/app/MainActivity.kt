@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity(), Runnable {
   private var handler: Handler
   private var isRunning = false
   private lateinit var director: Director
-  private lateinit var audioSink: AudioSink
   private val buttons = BooleanArray(8)
   private val onButtonTouched = { i: Int ->
     View.OnTouchListener { _, e ->
@@ -64,7 +63,6 @@ class MainActivity : AppCompatActivity(), Runnable {
     actionBar.setDisplayHomeAsUpEnabled(true)
     val cartridgeData = resources.openRawResource(ROM).readBytes()
     val glSprite = GLSprite { buttons }
-    audioSink = AudioSink()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       val icon = if (!isRunning) R.drawable.ic_stat_name else R.drawable.ic_play_arrow_white_48dp
@@ -96,7 +94,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     } else {
       Snackbar.make(implSwitch, "Using JVM implementation",
           BaseTransientBottomBar.LENGTH_SHORT).show()
-      director = Director(cartridgeData, audioSink)
+      director = Director(cartridgeData, AudioSink())
       glSprite.director = director
       handler.post(this)
     }
@@ -147,9 +145,11 @@ class MainActivity : AppCompatActivity(), Runnable {
       System.loadLibrary("ktnes-audio")
     }
 
-    const val ROM = R.raw.super_mario_bros_3
+    const val ROM = R.raw.legend_of_zelda
     internal var staticConsole: Console? = null
 
+    // Called from JNI AudioEngine
+    @Suppress("unused")
     @JvmStatic fun audioBuffer(): FloatArray? {
       return staticConsole?.audioBuffer() ?: FloatArray(0)
     }

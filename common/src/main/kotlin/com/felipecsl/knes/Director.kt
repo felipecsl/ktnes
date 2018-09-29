@@ -4,7 +4,7 @@ import com.felipecsl.knes.CPU.Companion.FREQUENCY
 
 class Director(
       cartridgeData: ByteArray,
-      audioSink: AudioSink,
+      audioSink: AudioSink = AudioSink(),
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null,

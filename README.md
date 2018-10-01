@@ -18,9 +18,10 @@ Please clone Oboe and put it in the same directory as ktnes, eg.:
 ## Kotlin/Native implementation
 
 The emulator implementation using Kotlin/Native is not functional yet.
-To build the Android native library implementation, run:
+To build the Android native library implementation: 
 
-`./gradlew android:native-lib:copyLibs`
+- Set `ANDROID_HOME` to your Android SDK path (e.g. `/Users/jenny/Library/Android/sdk`). 
+- Run `./gradlew android:native-lib:copyLibs`
 
 If you did that correctly, you should be able to build and run directly from Android Studio.
 

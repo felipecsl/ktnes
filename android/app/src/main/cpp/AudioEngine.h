@@ -23,8 +23,9 @@ public:
 
     DataCallbackResult
     onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
-
-    void stop();
+    void stop() const;
+    void pause() const;
+    void resume() const;
 
 private:
 

@@ -1,16 +1,16 @@
 package com.felipecsl.knes.app
 
-import android.os.Build
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Switch
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
@@ -38,6 +38,8 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val handlerThread = HandlerThread("Console Thread")
   private var handler: Handler
   private var isRunning = false
+  private var isPaused = false
+  private val audioEngine = AudioEngineWrapper()
   private lateinit var director: Director
   private val buttons = BooleanArray(8)
   private val onButtonTouched = { i: Int ->
@@ -55,25 +57,20 @@ class MainActivity : AppCompatActivity(), Runnable {
     handler = Handler(handlerThread.looper)
   }
 
+  @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     setSupportActionBar(toolbar)
-    val actionBar: ActionBar = supportActionBar!!
-    actionBar.setDisplayHomeAsUpEnabled(true)
-    val cartridgeData = resources.openRawResource(ROM).readBytes()
+    supportActionBar!!.setDisplayHomeAsUpEnabled(true)
     val glSprite = GLSprite { buttons }
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
-      val icon = if (!isRunning) R.drawable.ic_stat_name else R.drawable.ic_play_arrow_white_48dp
-      fabRun.setImageDrawable(ContextCompat.getDrawable(this, icon))
-      if (!isRunning) {
-        startConsole(cartridgeData, glSprite)
-      } else {
-        director.reset()
-        stopEngine()
-      }
-      isRunning = !isRunning
+      onClickPlayPause(glSprite)
+    }
+    btnReset.setOnClickListener {
+      updatePlayPauseIcon()
+      resetConsole()
     }
 
     btnA.setOnTouchListener(onButtonTouched(0))
@@ -86,7 +83,44 @@ class MainActivity : AppCompatActivity(), Runnable {
     arrowRight.setOnTouchListener(onButtonTouched(7))
   }
 
+  private fun onClickPlayPause(glSprite: GLSprite) {
+    val cartridgeData = resources.openRawResource(ROM).readBytes()
+    updatePlayPauseIcon()
+    if (!isRunning) {
+      if (!isPaused) {
+        startConsole(cartridgeData, glSprite)
+      } else {
+        resumeConsole()
+      }
+    } else {
+      pauseConsole()
+    }
+    isRunning = !isRunning
+    isPaused = !isRunning
+  }
+
+  private fun pauseConsole() {
+    director.pause()
+    audioEngine.pause()
+  }
+
+  private fun resetConsole() {
+    director.reset()
+    audioEngine.stop()
+  }
+
+  private fun resumeConsole() {
+    handler.post(this)
+    audioEngine.resume()
+  }
+
+  private fun updatePlayPauseIcon() {
+    val icon = if (!isRunning) R.drawable.ic_stat_name else R.drawable.ic_play_arrow_white_48dp
+    fabRun.setImageDrawable(ContextCompat.getDrawable(this, icon))
+  }
+
   private fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
+    audioEngine.start()
     if (implSwitch.isChecked) {
       Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
           BaseTransientBottomBar.LENGTH_SHORT).show()
@@ -94,35 +128,18 @@ class MainActivity : AppCompatActivity(), Runnable {
     } else {
       Snackbar.make(implSwitch, "Using JVM implementation",
           BaseTransientBottomBar.LENGTH_SHORT).show()
-      director = Director(cartridgeData, AudioSink())
+      director = Director(cartridgeData)
       glSprite.director = director
+      staticConsole = director.console
       handler.post(this)
     }
   }
 
   override fun run() {
-    staticConsole = director.console
-    startEngine(getExclusiveCores())
     director.run()
   }
 
-  // Obtain CPU cores which are reserved for the foreground app. The audio thread can be
-  // bound to these cores to avoids the risk of it being migrated to slower or more contended
-  // core(s).
-  private fun getExclusiveCores(): IntArray {
-    var exclusiveCores = intArrayOf()
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      Log.w("MainActivity", "getExclusiveCores() not supported. Only available on API " +
-          Build.VERSION_CODES.N + "+")
-    } else {
-      exclusiveCores = android.os.Process.getExclusiveCores()
-
-    }
-    return exclusiveCores
-  }
-
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-    // Inflate the menu; this adds items to the action bar if it is present.
     menuInflater.inflate(R.menu.menu_main, menu)
     return true
   }
@@ -131,21 +148,42 @@ class MainActivity : AppCompatActivity(), Runnable {
     // Handle action bar item clicks here. The action bar will
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
-    val id = item!!.itemId
-    return if (id == R.id.action_settings) {
-      true
-    } else {
-      super.onOptionsItemSelected(item)
+    return when (item!!.itemId) {
+      R.id.action_save_state -> saveState()
+      R.id.action_restore_state -> restoreState()
+      else -> super.onOptionsItemSelected(item)
     }
+  }
+
+  private fun saveState(): Boolean {
+    val stateMap = director.dumpState()
+    val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
+    sharedPrefs.edit().also { p ->
+      stateMap.forEach { (k, v) ->
+        p.putString(k, v)
+      }
+    }.apply()
+    Snackbar.make(implSwitch, "Game state saved", BaseTransientBottomBar.LENGTH_SHORT).show()
+    return true
+  }
+
+  private fun restoreState(): Boolean {
+    val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
+    val state = sharedPrefs.all
+    if (state.isNotEmpty()) {
+      director.restoreState(state)
+      Snackbar.make(implSwitch, "Game state restored", BaseTransientBottomBar.LENGTH_SHORT).show()
+    }
+    return true
   }
 
   companion object {
     init {
       System.loadLibrary("knes")
-      System.loadLibrary("ktnes-audio")
     }
 
-    const val ROM = R.raw.legend_of_zelda
+    const val ROM = R.raw.super_mario_bros_3
+    private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticConsole: Console? = null
 
     // Called from JNI AudioEngine

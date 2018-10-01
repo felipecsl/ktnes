@@ -45,63 +45,41 @@
 
       </androidx.cardview.widget.CardView>
 
-      <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/card_margin"
-        android:visibility="gone"
-        android:orientation="horizontal">
-
-        <Button
-          android:id="@+id/btnReset"
-          style="?android:attr/buttonBarButtonStyle"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="Reset" />
-
-        <Switch
-          android:id="@+id/implementation_switch"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="Use native impl" />
-
-      </LinearLayout>
-
       <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/card_margin">
 
         <FrameLayout
-          android:layout_width="110dp"
-          android:layout_height="110dp"
+          android:layout_width="140dp"
+          android:layout_height="140dp"
           android:layout_gravity="start">
 
           <Button
             android:id="@+id/arrowLeft"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="start|center_vertical"
             android:text="◀" />
 
           <Button
             android:id="@+id/arrowUp"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="top|center_horizontal"
             android:text="▲" />
 
           <Button
             android:id="@+id/arrowRight"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="end|center_vertical"
             android:text="▶" />
 
           <Button
             android:id="@+id/arrowDown"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="bottom|center_horizontal"
             android:text="▼" />
 
@@ -110,6 +88,7 @@
         <FrameLayout
           android:layout_width="90dp"
           android:layout_height="20dp"
+          android:layout_marginLeft="10dp"
           android:layout_gravity="center">
 
           <Button
@@ -133,7 +112,7 @@
 
         <FrameLayout
           android:layout_width="110dp"
-          android:layout_height="110dp"
+          android:layout_height="140dp"
           android:layout_gravity="end">
 
           <Button
@@ -156,6 +135,27 @@
         </FrameLayout>
 
       </FrameLayout>
+
+      <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+          android:id="@+id/btnReset"
+          style="?android:attr/buttonBarButtonStyle"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Reset" />
+
+        <Switch
+          android:id="@+id/implementation_switch"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Use native impl" />
+
+      </LinearLayout>
 
     </LinearLayout>
 

@@ -133,20 +133,20 @@ class GLSprite(private val buttonsProvider: () -> BooleanArray) {
 
   companion object {
     private const val VERTEX_SHADER =
-        "attribute vec4 a_position;\n" +
-            "attribute vec2 a_texcoord;\n" +
-            "varying vec2 v_texcoord;\n" +
-            "void main() {\n" +
-            "  gl_Position = a_position;\n" +
-            "  v_texcoord = a_texcoord;\n" +
-            "}\n"
+      "attribute vec4 a_position;\n" +
+          "attribute vec2 a_texcoord;\n" +
+          "varying vec2 v_texcoord;\n" +
+          "void main() {\n" +
+          "  gl_Position = a_position;\n" +
+          "  v_texcoord = a_texcoord;\n" +
+          "}\n"
     private const val FRAGMENT_SHADER =
-        "precision mediump float;\n" +
-            "uniform sampler2D tex_sampler;\n" +
-            "varying vec2 v_texcoord;\n" +
-            "void main() {\n" +
-            "  gl_FragColor = texture2D(tex_sampler, v_texcoord);\n" +
-            "}\n"
+      "precision mediump float;\n" +
+          "uniform sampler2D tex_sampler;\n" +
+          "varying vec2 v_texcoord;\n" +
+          "void main() {\n" +
+          "  gl_FragColor = texture2D(tex_sampler, v_texcoord);\n" +
+          "}\n"
     private val TEX_VERTICES = floatArrayOf(0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f)
     private val POS_VERTICES = floatArrayOf(-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f)
   }

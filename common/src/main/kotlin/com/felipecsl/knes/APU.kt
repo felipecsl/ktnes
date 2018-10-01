@@ -1,8 +1,8 @@
 package com.felipecsl.knes
 
 internal class APU(
-    internal val audioSink: AudioSink,
     private val stepCallback: APUStepCallback? = null,
+    internal val audioBuffer: AudioBuffer = AudioBuffer(),
     // Convert samples per second to cpu steps per sample
     private val sampleRate: Double = CPU.FREQUENCY / SAMPLE_RATE,
     private var cycle: Long = 0,
@@ -12,9 +12,9 @@ internal class APU(
     private val pulseTable: FloatArray = FloatArray(31),
     private val tndTable: FloatArray = FloatArray(203),
     private val filterChain: FilterChain = FilterChain(arrayOf(
-        highPassFilter(SAMPLE_RATE, 90.0),
-        highPassFilter(SAMPLE_RATE, 440.0),
-        lowPassFilter(SAMPLE_RATE, 14000.0)
+        highPassFilter(SAMPLE_RATE.toFloat(), 90F),
+        highPassFilter(SAMPLE_RATE.toFloat(), 440F),
+        lowPassFilter(SAMPLE_RATE.toFloat(), 14000F)
     ))
 ) {
   private var pulse1Enabled: Boolean = false
@@ -102,10 +102,10 @@ internal class APU(
 
   init {
     for (i in 0 until 31) {
-      pulseTable[i] = (95.52 / (8128F / i.toFloat() + 100)).toFloat()
+      pulseTable[i] = 95.52F / (8128F / i.toFloat() + 100F)
     }
     for (i in 0 until 203) {
-      tndTable[i] = (163.67 / (24329F / i.toFloat() + 100)).toFloat()
+      tndTable[i] = 163.67F / (24329F / i.toFloat() + 100F)
     }
   }
 
@@ -240,7 +240,7 @@ internal class APU(
         }
       }
     }
-    if ((cycle1 / sampleRate).toInt() != (cycle2 / sampleRate).toInt()) {
+    val output = if ((cycle1 / sampleRate).toInt() != (cycle2 / sampleRate).toInt()) {
       // send sample
       val pulse1Output = if (!pulse1Enabled
           || pulse1LengthValue == 0
@@ -261,17 +261,18 @@ internal class APU(
         if (pulse2EnvelopeEnabled) pulse2EnvelopeVolume else pulse2ConstantVolume
       }
       val triangleOutput =
-          if (!triangleEnabled || triangleLengthValue == 0 || triangleCounterValue == 0) 0
-          else TRIANGLE_TABLE[triangleDutyValue]
+        if (!triangleEnabled || triangleLengthValue == 0 || triangleCounterValue == 0) 0
+        else TRIANGLE_TABLE[triangleDutyValue]
       val noiseOutput =
-          if (!noiseEnabled || noiseLengthValue == 0 || noiseShiftRegister and 1 == 1) 0
-          else {
-            if (noiseEnvelopeEnabled) noiseEnvelopeVolume else noiseConstantVolume
-          }
-      val output = pulseTable[pulse1Output + pulse2Output] +
-          tndTable[3 * triangleOutput + 2 * noiseOutput + dmcValue]
-      audioSink.write(filterChain.step(output))
-    }
+        if (!noiseEnabled || noiseLengthValue == 0 || noiseShiftRegister and 1 == 1) 0
+        else {
+          if (noiseEnvelopeEnabled) noiseEnvelopeVolume else noiseConstantVolume
+        }
+      val finalOutput = filterChain.step(pulseTable[pulse1Output + pulse2Output] +
+          tndTable[3 * triangleOutput + 2 * noiseOutput + dmcValue])
+      audioBuffer.write(finalOutput)
+      finalOutput
+    } else 0F
 //    stepCallback?.onStep(cycle,
 //        framePeriod, frameValue, frameIRQ, pulse1Enabled, pulse1Channel, pulse1LengthEnabled,
 //        pulse1LengthValue, pulse1TimerPeriod, pulse1TimerValue, pulse1DutyMode, pulse1DutyValue,
@@ -290,7 +291,116 @@ internal class APU(
 //        noiseEnvelopeLoop, noiseEnvelopeStart, noiseEnvelopePeriod, noiseEnvelopeValue,
 //        noiseEnvelopeVolume, noiseConstantVolume, dmcEnabled, dmcValue, dmcSampleAddress,
 //        dmcSampleLength, dmcCurrentAddress, dmcCurrentLength, dmcShiftRegister, dmcBitCount,
-//        dmcTickPeriod, dmcTickValue, dmcLoop, dmcIrq)
+//        dmcTickPeriod, dmcTickValue, dmcLoop, dmcIrq, output)
+  }
+
+  fun dumpState(): String {
+    return listOf(cycle, framePeriod, frameValue, frameIRQ, pulse1Enabled, pulse1Channel,
+        pulse1LengthEnabled, pulse1LengthValue, pulse1TimerPeriod, pulse1TimerValue,
+        pulse1DutyMode, pulse1DutyValue, pulse1SweepReload, pulse1SweepEnabled,
+        pulse1SweepNegate, pulse1SweepShift, pulse1SweepPeriod, pulse1SweepValue,
+        pulse1EnvelopeEnabled, pulse1EnvelopeLoop, pulse1EnvelopeStart,
+        pulse1EnvelopePeriod, pulse1EnvelopeValue, pulse1EnvelopeVolume,
+        pulse1ConstantVolume, pulse2Enabled, pulse2Channel, pulse2LengthEnabled,
+        pulse2LengthValue, pulse2TimerPeriod, pulse2TimerValue, pulse2DutyMode,
+        pulse2DutyValue, pulse2SweepReload, pulse2SweepEnabled, pulse2SweepNegate,
+        pulse2SweepShift, pulse2SweepPeriod, pulse2SweepValue, pulse2EnvelopeEnabled,
+        pulse2EnvelopeLoop, pulse2EnvelopeStart, pulse2EnvelopePeriod,
+        pulse2EnvelopeValue, pulse2EnvelopeVolume, pulse2ConstantVolume, triangleEnabled,
+        triangleLengthEnabled, triangleLengthValue, triangleTimerPeriod, triangleTimerValue,
+        triangleDutyValue, triangleCounterPeriod, triangleCounterValue, triangleCounterReload,
+        noiseEnabled, noiseMode, noiseShiftRegister, noiseLengthEnabled, noiseLengthValue,
+        noiseTimerPeriod, noiseTimerValue, noiseEnvelopeEnabled, noiseEnvelopeLoop,
+        noiseEnvelopeStart, noiseEnvelopePeriod, noiseEnvelopeValue, noiseEnvelopeVolume,
+        noiseConstantVolume, dmcEnabled, dmcValue, dmcSampleAddress, dmcSampleLength,
+        dmcCurrentAddress, dmcCurrentLength, dmcShiftRegister, dmcBitCount, dmcTickPeriod,
+        dmcTickValue, dmcLoop, dmcIrq).joinToString("\n")
+  }
+
+  fun restoreState(state: String) {
+    val parts = state.split("\n")
+    var i = 0
+    cycle = parts[i++].toLong()
+    framePeriod = parts[i++].toInt()
+    frameValue = parts[i++].toInt()
+    frameIRQ = parts[i++].toBoolean()
+    pulse1Enabled = parts[i++].toBoolean()
+    pulse1Channel = parts[i++].toInt()
+    pulse1LengthEnabled = parts[i++].toBoolean()
+    pulse1LengthValue = parts[i++].toInt()
+    pulse1TimerPeriod = parts[i++].toInt()
+    pulse1TimerValue = parts[i++].toInt()
+    pulse1DutyMode = parts[i++].toInt()
+    pulse1DutyValue = parts[i++].toInt()
+    pulse1SweepReload = parts[i++].toBoolean()
+    pulse1SweepEnabled = parts[i++].toBoolean()
+    pulse1SweepNegate = parts[i++].toBoolean()
+    pulse1SweepShift = parts[i++].toInt()
+    pulse1SweepPeriod = parts[i++].toInt()
+    pulse1SweepValue = parts[i++].toInt()
+    pulse1EnvelopeEnabled = parts[i++].toBoolean()
+    pulse1EnvelopeLoop = parts[i++].toBoolean()
+    pulse1EnvelopeStart = parts[i++].toBoolean()
+    pulse1EnvelopePeriod = parts[i++].toInt()
+    pulse1EnvelopeValue = parts[i++].toInt()
+    pulse1EnvelopeVolume = parts[i++].toInt()
+    pulse1ConstantVolume = parts[i++].toInt()
+    pulse2Enabled = parts[i++].toBoolean()
+    pulse2Channel = parts[i++].toInt()
+    pulse2LengthEnabled = parts[i++].toBoolean()
+    pulse2LengthValue = parts[i++].toInt()
+    pulse2TimerPeriod = parts[i++].toInt()
+    pulse2TimerValue = parts[i++].toInt()
+    pulse2DutyMode = parts[i++].toInt()
+    pulse2DutyValue = parts[i++].toInt()
+    pulse2SweepReload = parts[i++].toBoolean()
+    pulse2SweepEnabled = parts[i++].toBoolean()
+    pulse2SweepNegate = parts[i++].toBoolean()
+    pulse2SweepShift = parts[i++].toInt()
+    pulse2SweepPeriod = parts[i++].toInt()
+    pulse2SweepValue = parts[i++].toInt()
+    pulse2EnvelopeEnabled = parts[i++].toBoolean()
+    pulse2EnvelopeLoop = parts[i++].toBoolean()
+    pulse2EnvelopeStart = parts[i++].toBoolean()
+    pulse2EnvelopePeriod = parts[i++].toInt()
+    pulse2EnvelopeValue = parts[i++].toInt()
+    pulse2EnvelopeVolume = parts[i++].toInt()
+    pulse2ConstantVolume = parts[i++].toInt()
+    triangleEnabled = parts[i++].toBoolean()
+    triangleLengthEnabled = parts[i++].toBoolean()
+    triangleLengthValue = parts[i++].toInt()
+    triangleTimerPeriod = parts[i++].toInt()
+    triangleTimerValue = parts[i++].toInt()
+    triangleDutyValue = parts[i++].toInt()
+    triangleCounterPeriod = parts[i++].toInt()
+    triangleCounterValue = parts[i++].toInt()
+    triangleCounterReload = parts[i++].toBoolean()
+    noiseEnabled = parts[i++].toBoolean()
+    noiseMode = parts[i++].toBoolean()
+    noiseShiftRegister = parts[i++].toInt()
+    noiseLengthEnabled = parts[i++].toBoolean()
+    noiseLengthValue = parts[i++].toInt()
+    noiseTimerPeriod = parts[i++].toInt()
+    noiseTimerValue = parts[i++].toInt()
+    noiseEnvelopeEnabled = parts[i++].toBoolean()
+    noiseEnvelopeLoop = parts[i++].toBoolean()
+    noiseEnvelopeStart = parts[i++].toBoolean()
+    noiseEnvelopePeriod = parts[i++].toInt()
+    noiseEnvelopeValue = parts[i++].toInt()
+    noiseEnvelopeVolume = parts[i++].toInt()
+    noiseConstantVolume = parts[i++].toInt()
+    dmcEnabled = parts[i++].toBoolean()
+    dmcValue = parts[i++].toInt()
+    dmcSampleAddress = parts[i++].toInt()
+    dmcSampleLength = parts[i++].toInt()
+    dmcCurrentAddress = parts[i++].toInt()
+    dmcCurrentLength = parts[i++].toInt()
+    dmcShiftRegister = parts[i++].toInt()
+    dmcBitCount = parts[i++].toInt()
+    dmcTickPeriod = parts[i++].toInt()
+    dmcTickValue = parts[i++].toInt()
+    dmcLoop = parts[i++].toBoolean()
+    dmcIrq = parts[i].toBoolean()
   }
 
   fun writeRegister(address: Int, value: Int /* Byte */) {
@@ -560,6 +670,7 @@ internal class APU(
   }
 
   companion object {
+    // TODO: This needs to match whatever the current device's sample rate is.
     internal const val SAMPLE_RATE = 48000.0
     private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240.0
     private val TRIANGLE_TABLE = intArrayOf( // Byte

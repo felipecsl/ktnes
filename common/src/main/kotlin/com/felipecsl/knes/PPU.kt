@@ -2,72 +2,72 @@ package com.felipecsl.knes
 
 internal class PPU(
     cartridge: Cartridge,
-    val stepCallback: PPUStepCallback? = null,
-    var cycle: Int = 0,            // 0-340
-    var scanLine: Int = 0,            // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
+    private val stepCallback: PPUStepCallback? = null,
+    private var cycle: Int = 0,            // 0-340
+    private var scanLine: Int = 0,         // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
     private var frame: Int = 0,            // frame counter
 
     // storage variables
-    var paletteData: IntArray = IntArray(32),
-    var nameTableData: IntArray = IntArray(2048), // ByteArray
-    var oamData: IntArray = IntArray(256),
-    var front: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
-    var back: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
+    private var paletteData: IntArray = IntArray(32),
+    private var nameTableData: IntArray = IntArray(2048), // ByteArray
+    private var oamData: IntArray = IntArray(256),
+    internal var front: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
+    private var back: IntArray = IntArray(IMG_WIDTH * IMG_HEIGHT),
 
     // PPU registers
-    var v: Int = 0,            // current vram address (15 bit)
-    var t: Int = 0,            // temporary vram address (15 bit)
-    var x: Int = 0,           // fine x scroll (3 bit)
-    var w: Int = 0,           // write toggle (1 bit)
-    var f: Int = 0,           // even/odd frame flag (1 bit)
-    var register: Int = 0,
+    private var v: Int = 0,            // current vram address (15 bit)
+    private var t: Int = 0,            // temporary vram address (15 bit)
+    private var x: Int = 0,           // fine x scroll (3 bit)
+    private var w: Int = 0,           // write toggle (1 bit)
+    private var f: Int = 0,           // even/odd frame flag (1 bit)
+    private var register: Int = 0,
 
-    var nmiOccurred: Boolean = false,
-    var nmiOutput: Boolean = false,
-    var nmiPrevious: Boolean = false,
-    var nmiDelay: Int = 0,
+    private var nmiOccurred: Boolean = false,
+    private var nmiOutput: Boolean = false,
+    private var nmiPrevious: Boolean = false,
+    private var nmiDelay: Int = 0,
 
     // background temporary variables
-    var nameTableByte: Int = 0,       // Byte
-    var attributeTableByte: Int = 0,  // Byte
-    var lowTileByte: Int = 0,         // Byte
-    var highTileByte: Int = 0,        // Byte
-    var tileData: Long = 0,           // uint64
+    private var nameTableByte: Int = 0,       // Byte
+    private var attributeTableByte: Int = 0,  // Byte
+    private var lowTileByte: Int = 0,         // Byte
+    private var highTileByte: Int = 0,        // Byte
+    private var tileData: Long = 0,           // uint64
 
     // sprite temporary variables
     private var spriteCount: Int = 0,
-    var spritePatterns: IntArray = IntArray(8),
-    var spritePositions: IntArray = IntArray(8),  // ByteArray
-    var spritePriorities: IntArray = IntArray(8), // ByteArray
-    var spriteIndexes: IntArray = IntArray(8),    // ByteArray
+    private var spritePatterns: IntArray = IntArray(8),
+    private var spritePositions: IntArray = IntArray(8),  // ByteArray
+    private var spritePriorities: IntArray = IntArray(8), // ByteArray
+    private var spriteIndexes: IntArray = IntArray(8),    // ByteArray
 
     // $2000 PPUCTRL
-    var flagNameTable: Int = 0, // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
-    var flagIncrement: Int = 0, // 0: add 1; 1: add 32
-    var flagSpriteTable: Int = 0, // 0: $0000; 1: $1000; ignored in 8x16 mode
-    var flagBackgroundTable: Int = 0, // 0: $0000; 1: $1000
-    var flagSpriteSize: Int = 0, // 0: 8x8; 1: 8x16
-    var flagMasterSlave: Int = 0, // 0: read EXT; 1: write EXT
+    private var flagNameTable: Int = 0, // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
+    private var flagIncrement: Int = 0, // 0: add 1; 1: add 32
+    private var flagSpriteTable: Int = 0, // 0: $0000; 1: $1000; ignored in 8x16 mode
+    private var flagBackgroundTable: Int = 0, // 0: $0000; 1: $1000
+    private var flagSpriteSize: Int = 0, // 0: 8x8; 1: 8x16
+    private var flagMasterSlave: Int = 0, // 0: read EXT; 1: write EXT
 
     // $2001 PPUMASK
-    var flagGrayscale: Int = 0, // 0: color; 1: grayscale
-    var flagShowLeftBackground: Int = 0, // 0: hide; 1: show
-    var flagShowLeftSprites: Int = 0, // 0: hide; 1: show
-    var flagShowBackground: Int = 0, // 0: hide; 1: show
-    var flagShowSprites: Int = 0, // 0: hide; 1: show
-    var flagRedTint: Int = 0, // 0: normal; 1: emphasized
-    var flagGreenTint: Int = 0, // 0: normal; 1: emphasized
-    var flagBlueTint: Int = 0, // 0: normal; 1: emphasized
+    private var flagGrayscale: Int = 0, // 0: color; 1: grayscale
+    private var flagShowLeftBackground: Int = 0, // 0: hide; 1: show
+    private var flagShowLeftSprites: Int = 0, // 0: hide; 1: show
+    private var flagShowBackground: Int = 0, // 0: hide; 1: show
+    private var flagShowSprites: Int = 0, // 0: hide; 1: show
+    private var flagRedTint: Int = 0, // 0: normal; 1: emphasized
+    private var flagGreenTint: Int = 0, // 0: normal; 1: emphasized
+    private var flagBlueTint: Int = 0, // 0: normal; 1: emphasized
 
     // $2002 PPUSTATUS
-    var flagSpriteZeroHit: Int = 0,
-    var flagSpriteOverflow: Int = 0,
+    private var flagSpriteZeroHit: Int = 0,
+    private var flagSpriteOverflow: Int = 0,
 
     // $2003 OAMADDR
-    var oamAddress: Int = 0,
+    private var oamAddress: Int = 0,
 
     // $2007 PPUDATA
-    var bufferedData: Int = 0, // for buffered reads
+    private var bufferedData: Int = 0, // for buffered reads
 
     private val zeroTo255: IntRange = 0..255,
     private val zeroTo63: IntRange = 0..63,
@@ -186,6 +186,68 @@ internal class PPU(
     }
   }
 
+  fun dumpState(): String {
+    return listOf(cycle, scanLine, frame, paletteData.joinToString(), nameTableData.joinToString(),
+        oamData.joinToString(), v, t, x, w, f, register, nmiOccurred, nmiOutput, nmiPrevious,
+        nmiDelay, nameTableByte, attributeTableByte, lowTileByte, highTileByte, tileData,
+        spriteCount, spritePatterns.joinToString(), spritePositions.joinToString(),
+        spritePriorities.joinToString(), spriteIndexes.joinToString(), flagNameTable, flagIncrement,
+        flagSpriteTable, flagBackgroundTable, flagSpriteSize, flagMasterSlave, flagGrayscale,
+        flagShowLeftBackground, flagShowLeftSprites, flagShowBackground, flagShowSprites,
+        flagRedTint, flagGreenTint, flagBlueTint, flagSpriteZeroHit, flagSpriteOverflow,
+        oamAddress, bufferedData).joinToString("\n")
+  }
+
+  fun restoreState(state: String) {
+    val parts = state.split("\n")
+    val stringToIntArray = { s: String -> s.split(", ").map { it.toInt() }.toIntArray() }
+    var i = 0
+    cycle = parts[i++].toInt()
+    scanLine = parts[i++].toInt()
+    frame = parts[i++].toInt()
+    paletteData = stringToIntArray(parts[i++])
+    nameTableData = stringToIntArray(parts[i++])
+    oamData = stringToIntArray(parts[i++])
+    v = parts[i++].toInt()
+    t = parts[i++].toInt()
+    x = parts[i++].toInt()
+    w = parts[i++].toInt()
+    f = parts[i++].toInt()
+    register = parts[i++].toInt()
+    nmiOccurred = parts[i++].toBoolean()
+    nmiOutput = parts[i++].toBoolean()
+    nmiPrevious = parts[i++].toBoolean()
+    nmiDelay = parts[i++].toInt()
+    nameTableByte = parts[i++].toInt()
+    attributeTableByte = parts[i++].toInt()
+    lowTileByte = parts[i++].toInt()
+    highTileByte = parts[i++].toInt()
+    tileData = parts[i++].toLong()
+    spriteCount = parts[i++].toInt()
+    spritePatterns = stringToIntArray(parts[i++])
+    spritePositions = stringToIntArray(parts[i++])
+    spritePriorities = stringToIntArray(parts[i++])
+    spriteIndexes = stringToIntArray(parts[i++])
+    flagNameTable = parts[i++].toInt()
+    flagIncrement = parts[i++].toInt()
+    flagSpriteTable = parts[i++].toInt()
+    flagBackgroundTable = parts[i++].toInt()
+    flagSpriteSize = parts[i++].toInt()
+    flagMasterSlave = parts[i++].toInt()
+    flagGrayscale = parts[i++].toInt()
+    flagShowLeftBackground = parts[i++].toInt()
+    flagShowLeftSprites = parts[i++].toInt()
+    flagShowBackground = parts[i++].toInt()
+    flagShowSprites = parts[i++].toInt()
+    flagRedTint = parts[i++].toInt()
+    flagGreenTint = parts[i++].toInt()
+    flagBlueTint = parts[i++].toInt()
+    flagSpriteZeroHit = parts[i++].toInt()
+    flagSpriteOverflow = parts[i++].toInt()
+    oamAddress = parts[i++].toInt()
+    bufferedData = parts[i].toInt()
+  }
+
   fun step(): Boolean {
 //    stepCallback?.step(cycle, scanLine, frame, paletteData, nameTableData, oamData, v, t, x, w, f,
 //        register, nmiOccurred, nmiOutput, nmiPrevious, nmiDelay, nameTableByte, attributeTableByte,
@@ -293,7 +355,7 @@ internal class PPU(
             background
           }
         }
-        back[y * IMG_WIDTH + x1] = PALETTE[readPalette(color) % 64]
+        back[y * IMG_WIDTH + x1] = PALETTE[paletteData[if (color >= 16 && color % 4 == 0) color - 16 else color] % 64]
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4
@@ -495,16 +557,20 @@ internal class PPU(
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000
         val mirrorAddr =
-            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+          0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
         nameTableData[mirrorAddr % 2048]
       }
-      address < 0x4000 -> readPalette(address % 32)
+      address < 0x4000 -> {
+        val paletteAddress = address % 32
+        paletteData[
+            if (paletteAddress >= 16 && paletteAddress % 4 == 0)
+              paletteAddress - 16
+            else
+              paletteAddress
+        ]
+      }
       else -> throw RuntimeException("unhandled PPU memory read at address: $address")
     }
-  }
-
-  private fun readPalette(address: Int): Int {
-    return paletteData[if (address >= 16 && address % 4 == 0) address - 16 else address]
   }
 
   private fun write(addr: Int, value: Int /* Byte */) {
@@ -517,12 +583,17 @@ internal class PPU(
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000
         val mirrorAddr =
-            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+          0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
         nameTableData[mirrorAddr % 2048] = value and 0xFF
       }
       address < 0x4000 -> {
-        val address1 = address % 32
-        paletteData[if (address1 >= 16 && address1 % 4 == 0) address1 - 16 else address1] = value
+        val paletteAddress = address % 32
+        paletteData[
+            if (paletteAddress >= 16 && paletteAddress % 4 == 0)
+              paletteAddress - 16
+            else
+              paletteAddress
+        ] = value
       }
       else -> throw RuntimeException("unhandled ppu memory write at address: $address")
     }

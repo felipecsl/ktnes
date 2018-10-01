@@ -24,7 +24,7 @@ internal class Console(
   }
 
   fun audioBuffer(): FloatArray {
-    return apu.audioSink.drain()
+    return apu.audioBuffer.drain()
   }
 
   fun reset() {
@@ -35,10 +35,26 @@ internal class Console(
     cpu.controller1.buttons = buttons
   }
 
+  fun state(): Map<String, String> {
+    val cpuState = cpu.dumpState()
+    val ppuState = ppu.dumpState()
+    val apuState = apu.dumpState()
+    return mapOf(
+        "cpu" to cpuState,
+        "ppu" to ppuState,
+        "apu" to apuState
+    )
+  }
+
+  fun restoreState(state: Map<String, *>) {
+    cpu.restoreState(state["cpu"] as String)
+    ppu.restoreState(state["ppu"] as String)
+    apu.restoreState(state["apu"] as String)
+  }
+
   companion object {
     fun newConsole(
         cartridge: Cartridge,
-        audioSink: AudioSink,
         mapperCallback: MapperStepCallback? = null,
         cpuCallback: CPUStepCallback? = null,
         ppuCallback: PPUStepCallback? = null,
@@ -46,7 +62,7 @@ internal class Console(
         ppu: PPU = PPU(cartridge, ppuCallback),
         controller1: Controller = Controller(),
         controller2: Controller = Controller(),
-        apu: APU = APU(audioSink, apuCallback),
+        apu: APU = APU(apuCallback),
         mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {

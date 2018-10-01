@@ -23,13 +23,13 @@ internal data class FirstOrderFilter(
   }
 }
 
-internal fun lowPassFilter(sampleRate: Double, cutoffFreq: Double): Filter {
+internal fun lowPassFilter(sampleRate: Float, cutoffFreq: Float): Filter {
   val c = (sampleRate / PI / cutoffFreq).toFloat()
   val a0i = 1 / (1 + c)
   return FirstOrderFilter(a0i, a0i, (1 - c) * a0i)
 }
 
-internal fun highPassFilter(sampleRate: Double, cutoffFreq: Double): Filter {
+internal fun highPassFilter(sampleRate: Float, cutoffFreq: Float): Filter {
   val c = (sampleRate / PI / cutoffFreq).toFloat()
   val a0i = 1 / (1 + c)
   return FirstOrderFilter(c * a0i, -c * a0i, (1 - c) * a0i)

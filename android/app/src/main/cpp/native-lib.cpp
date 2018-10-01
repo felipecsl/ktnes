@@ -11,7 +11,7 @@ jmethodID gFindClassMethod;
 
 JNIEXPORT jint
 JNI_OnLoad(JavaVM *vm, void *reserved) {
-  gJvm = vm;  // cache the JavaVM pointer
+  gJvm = vm;
   JNIEnv* env;
   if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
     return -1;
@@ -27,7 +27,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
   return JNI_VERSION_1_6;
 }
 
-std::vector<int> convertJavaArrayToVector(JNIEnv *env, jintArray intArray) {
+std::vector<int> javaArrayToStdVector(JNIEnv *env, jintArray intArray) {
   std::vector<int> v;
   jsize length = env->GetArrayLength(intArray);
   if (length > 0) {
@@ -42,17 +42,29 @@ std::vector<int> convertJavaArrayToVector(JNIEnv *env, jintArray intArray) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_felipecsl_knes_JniKt_startEngine(
+Java_com_felipecsl_knes_JniKt_startAudioEngine(
     JNIEnv *env,
     jobject instance,
     jintArray jCpuIds
 ) {
-  std::vector<int> cpuIds = convertJavaArrayToVector(env, jCpuIds);
+  std::vector<int> cpuIds = javaArrayToStdVector(env, jCpuIds);
   engine.start(cpuIds, gJvm, gClassLoader, gFindClassMethod);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_felipecsl_knes_JniKt_stopEngine(JNIEnv *env, jobject instance) {
+Java_com_felipecsl_knes_JniKt_stopAudioEngine(JNIEnv *env, jobject instance) {
   engine.stop();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_felipecsl_knes_JniKt_pauseAudioEngine(JNIEnv *env, jobject instance) {
+  engine.pause();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_felipecsl_knes_JniKt_resumeAudioEngine(JNIEnv *env, jobject instance) {
+  engine.resume();
 }

@@ -15,23 +15,37 @@ void AudioEngine::start(
   mFindClassMethod = findClassMethod;
   AudioStreamBuilder builder;
   builder.setCallback(this);
-  builder.setPerformanceMode(PerformanceMode::LowLatency);
+  builder.setPerformanceMode(PerformanceMode::None);
+  builder.setUsage(Usage::Game);
   builder.setFormat(AudioFormat::Float);
-  builder.setChannelCount(1);
+  builder.setChannelCount(ChannelCount::Stereo);
   builder.setSharingMode(SharingMode::Exclusive);
   Result result = builder.openStream(&mStream);
   if (result != Result::OK) {
     LOGE("Failed to open stream. Error: %s", convertToText(result));
     return;
   }
-  mStream->setBufferSizeInFrames(mStream->getFramesPerBurst() * 2);
   mStream->requestStart();
 }
 
-void AudioEngine::stop() {
+void AudioEngine::stop() const {
   LOGD("AudioEngine stop()");
   if (mStream != nullptr) {
     mStream->close();
+  }
+}
+
+void AudioEngine::pause() const {
+  LOGD("AudioEngine pause()");
+  if (mStream != nullptr) {
+    mStream->pause();
+  }
+}
+
+void AudioEngine::resume() const {
+  LOGD("AudioEngine resume()");
+  if (mStream != nullptr) {
+    mStream->start();
   }
 }
 
@@ -68,13 +82,17 @@ DataCallbackResult AudioEngine::onAudioReady(
   JNIEnv *jniEnv = getEnv();
   if (!mIsThreadAffinitySet) setThreadAffinity();
   maybeInitAudioBufferMethod(jniEnv);
-  auto arr = (jfloatArray) jniEnv->CallStaticObjectMethod(mMainActivityClass, mAudioBufferMethod);
-  int length = jniEnv->GetArrayLength(arr);
   jboolean isCopy;
-  jfloat *elements = jniEnv->GetFloatArrayElements(arr, &isCopy);
+  auto arr = (jfloatArray) jniEnv->CallStaticObjectMethod(mMainActivityClass, mAudioBufferMethod);
+  auto *elements = jniEnv->GetFloatArrayElements(arr, &isCopy);
+  int length = jniEnv->GetArrayLength(arr);
   auto *floatAudioData = static_cast<float *>(audioData);
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length, i < numFrames; i++) {
     floatAudioData[i] = elements[i];
+  }
+  for (int i = numFrames - 1; i >= 0; --i) {
+    floatAudioData[i * oboe::ChannelCount::Stereo] = floatAudioData[i];
+    floatAudioData[i * oboe::ChannelCount::Stereo + 1] = floatAudioData[i];
   }
   return DataCallbackResult::Continue;
 }

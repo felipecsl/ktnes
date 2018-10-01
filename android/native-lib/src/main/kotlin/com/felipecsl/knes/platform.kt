@@ -19,19 +19,3 @@ actual fun currentTimeMs(): Long {
     return (now.tv_sec.toLong() * 1000) + (now.tv_usec.toLong() / 1000)
   }
 }
-
-actual class AudioSink {
-  private val bufferSize = 4096
-  private var buffer = FloatArray(bufferSize)
-  private var pos = 0
-
-  actual fun write(value: Float) {
-    buffer[pos++ % bufferSize] = value
-  }
-
-  actual fun drain(): FloatArray {
-    val out = buffer.copyOf(pos)
-    pos = 0
-    return out
-  }
-}

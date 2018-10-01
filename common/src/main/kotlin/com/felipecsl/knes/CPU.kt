@@ -14,21 +14,21 @@ internal class CPU(
   private var stepAddress: Int = 0
   private var stepPC: Int = 0
   private var stepMode: Int = 0
-  var cycles: Long = 0              // number of cycles
-  var PC: Int = 0                   // (Byte) Program counter
-  var SP: Int = 0xFF                // (Byte) Stack pointer
-  var A: Int = 0                    // (Byte) Accumulator
-  var X: Int = 0                    // (Byte) Register X
-  var Y: Int = 0                    // (Byte) Register Y
-  var C: Int = 0                    // (Byte) carry flag
-  var Z: Int = 0                    // (Byte) zero flag
-  var I: Int = 0                    // (Byte) interrupt disable flag
-  var D: Int = 0                    // (Byte) decimal mode flag
-  var B: Int = 0                    // (Byte) break command flag
-  var U: Int = 0                    // (Byte) unused flag
-  var V: Int = 0                    // (Byte) overflow flag
-  var N: Int = 0                    // (Byte) negative flag
-  var stall: Int = 0                // number of cycles to stall
+  internal var cycles: Long = 0              // number of cycles
+  private var PC: Int = 0                   // (Byte) Program counter
+  private var SP: Int = 0xFF                // (Byte) Stack pointer
+  private var A: Int = 0                    // (Byte) Accumulator
+  private var X: Int = 0                    // (Byte) Register X
+  private var Y: Int = 0                    // (Byte) Register Y
+  private var C: Int = 0                    // (Byte) carry flag
+  private var Z: Int = 0                    // (Byte) zero flag
+  internal var I: Int = 0                    // (Byte) interrupt disable flag
+  private var D: Int = 0                    // (Byte) decimal mode flag
+  private var B: Int = 0                    // (Byte) break command flag
+  private var U: Int = 0                    // (Byte) unused flag
+  private var V: Int = 0                    // (Byte) overflow flag
+  private var N: Int = 0                    // (Byte) negative flag
+  internal var stall: Int = 0                // number of cycles to stall
   private val addressingModes = arrayOf(
       AddressingMode.UNUSED,
       AddressingMode.MODE_ABSOLUTE,
@@ -103,7 +103,6 @@ internal class CPU(
   }
 
   fun step(): Long {
-//    dumpState()
 //    stepCallback?.onStep(
 //        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall, null)
     if (stall > 0) {
@@ -572,13 +571,34 @@ internal class CPU(
     return cycles - currCycles
   }
 
-  private fun dumpState() {
-    println("cycles=$cycles, PC=$PC, SP=$SP, A=$A, X=$X, Y=$Y, C=$C, Z=$Z, I=$I, D=$D, " +
-        "B=$B, U=$U, V=$V, N=$N, interrupt=$interrupt, stall=$stall")
+  fun dumpState(): String {
+    return listOf(cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall)
+        .joinToString()
+  }
+
+  fun restoreState(state: String) {
+    val parts = state.split(", ")
+    var i = 0
+    cycles = parts[i++].toLong()
+    PC = parts[i++].toInt()
+    SP = parts[i++].toInt()
+    A = parts[i++].toInt()
+    X = parts[i++].toInt()
+    Y = parts[i++].toInt()
+    C = parts[i++].toInt()
+    Z = parts[i++].toInt()
+    I = parts[i++].toInt()
+    D = parts[i++].toInt()
+    B = parts[i++].toInt()
+    U = parts[i++].toInt()
+    V = parts[i++].toInt()
+    N = parts[i++].toInt()
+    interrupt = parts[i++].toInt()
+    stall = parts[i].toInt()
   }
 
   private inline fun pagesDiffer(a: Int, b: Int) =
-      a and 0xFF00 != b and 0xFF00
+    a and 0xFF00 != b and 0xFF00
 
   private fun stop() {
     TODO()

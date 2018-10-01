@@ -4,7 +4,6 @@ import com.felipecsl.knes.CPU.Companion.FREQUENCY
 
 class Director(
       cartridgeData: ByteArray,
-      audioSink: AudioSink = AudioSink(),
       mapperCallback: MapperStepCallback? = null,
       cpuCallback: CPUStepCallback? = null,
       ppuCallback: PPUStepCallback? = null,
@@ -13,7 +12,7 @@ class Director(
   private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
   internal val console = Console.newConsole(
-      cartridge, audioSink, mapperCallback, cpuCallback, ppuCallback, apuCallback)
+      cartridge, mapperCallback, cpuCallback, ppuCallback, apuCallback)
 
   init {
     console.reset()
@@ -22,16 +21,15 @@ class Director(
   fun run() {
     var startTime = currentTimeMs()
     var totalCycles = 0L
-    val step = FREQUENCY
     isRunning = true
     while (isRunning) {
       totalCycles += console.step()
-      if (totalCycles >= step) {
+      if (totalCycles >= FREQUENCY) {
         val currentTime = currentTimeMs()
         val msSpent = currentTime - startTime
         val clock = (totalCycles * 1000) / msSpent
         val speed = clock / FREQUENCY.toFloat()
-        println("Clock=" + clock + "Hz (" + speed + "x)")
+        println("Clock=${clock}Hz (${speed}x)")
         totalCycles = 0
         startTime = currentTime
       }
@@ -49,5 +47,17 @@ class Director(
 
   fun buffer(): IntArray {
     return console.buffer()
+  }
+
+  fun pause() {
+    isRunning = false
+  }
+
+  fun dumpState(): Map<String, String> {
+    return console.state()
+  }
+
+  fun restoreState(state: Map<String, *>) {
+    console.restoreState(state)
   }
 }

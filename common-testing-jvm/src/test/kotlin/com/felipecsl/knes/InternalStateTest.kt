@@ -193,7 +193,7 @@ class InternalStateTest {
           dmcSampleAddress: Int, dmcSampleLength: Int, dmcCurrentAddress: Int,
           dmcCurrentLength: Int, dmcShiftRegister: Int, dmcBitCount: Int,
           dmcTickPeriod: Int, dmcTickValue: Int, dmcLoop: Boolean,
-          dmcIrq: Boolean) {
+          dmcIrq: Boolean, output: Float) {
         expectedAPUState = apuReference.readLine()?.split(", ") ?: listOf()
         if (expectedAPUState.isNotEmpty()) {
           val propsMap = mapOf(
@@ -277,7 +277,8 @@ class InternalStateTest {
               "dmcTickPeriod" to dmcTickPeriod,
               "dmcTickValue" to dmcTickValue,
               "dmcLoop" to dmcLoop,
-              "dmcIrq" to dmcIrq
+              "dmcIrq" to dmcIrq,
+              "output" to if (output == 0F) "0" else String.format("%.9f", output)
           )
           assertStateIsValid("APU", expectedAPUState, propsMap)
         } else {
@@ -291,7 +292,6 @@ class InternalStateTest {
     val cartridge = classLoader.getResourceAsStream("legend_of_zelda.nes").readBytes()
     Director(
         cartridge,
-        AudioSink(),
         mapperCallback,
         cpuCallback,
         ppuCallback,

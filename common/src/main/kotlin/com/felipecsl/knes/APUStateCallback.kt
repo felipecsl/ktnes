@@ -82,6 +82,7 @@ interface APUStepCallback {
       dmcTickPeriod: Int,
       dmcTickValue: Int,
       dmcLoop: Boolean,
-      dmcIrq: Boolean
+      dmcIrq: Boolean,
+      output: Float
   )
 }

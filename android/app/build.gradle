@@ -4,7 +4,6 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
   compileSdkVersion 28
-  buildToolsVersion '28.0.2'
 
   defaultConfig {
     applicationId "com.felipecsl.knes"
@@ -33,9 +32,9 @@ android {
 }
 
 dependencies {
-  implementation 'com.google.android.material:material:1.0.0-alpha1'
-  implementation 'androidx.appcompat:appcompat:1.0.0-alpha1'
-  implementation 'androidx.cardview:cardview:1.0.0-alpha1'
+  implementation 'com.google.android.material:material:1.0.0'
+  implementation 'androidx.appcompat:appcompat:1.0.0'
+  implementation 'androidx.cardview:cardview:1.0.0'
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
   expectedBy project(':common')

@@ -314,7 +314,9 @@ internal class APU(
         noiseEnvelopeStart, noiseEnvelopePeriod, noiseEnvelopeValue, noiseEnvelopeVolume,
         noiseConstantVolume, dmcEnabled, dmcValue, dmcSampleAddress, dmcSampleLength,
         dmcCurrentAddress, dmcCurrentLength, dmcShiftRegister, dmcBitCount, dmcTickPeriod,
-        dmcTickValue, dmcLoop, dmcIrq).joinToString("\n")
+        dmcTickValue, dmcLoop, dmcIrq).joinToString("\n").also {
+      println("APU state saved")
+    }
   }
 
   fun restoreState(state: String) {
@@ -401,6 +403,7 @@ internal class APU(
     dmcTickValue = parts[i++].toInt()
     dmcLoop = parts[i++].toBoolean()
     dmcIrq = parts[i].toBoolean()
+    println("APU state restored")
   }
 
   fun writeRegister(address: Int, value: Int /* Byte */) {

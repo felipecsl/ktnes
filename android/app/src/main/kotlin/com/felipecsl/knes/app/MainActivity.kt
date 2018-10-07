@@ -2,7 +2,6 @@ package com.felipecsl.knes.app
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -18,7 +17,6 @@ import androidx.core.content.ContextCompat
 import com.felipecsl.android.NesGLSurfaceView
 import com.felipecsl.knes.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity(), Runnable {
@@ -39,6 +37,8 @@ class MainActivity : AppCompatActivity(), Runnable {
   private var handler: Handler
   private var isRunning = false
   private var isPaused = false
+  @Volatile private var shouldSaveState = false
+  @Volatile private var shouldRestoreState = false
   private val audioEngine = AudioEngineWrapper()
   private lateinit var director: Director
   private val buttons = BooleanArray(8)
@@ -122,12 +122,10 @@ class MainActivity : AppCompatActivity(), Runnable {
   private fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
     audioEngine.start()
     if (implSwitch.isChecked) {
-      Snackbar.make(implSwitch, "Using Kotlin/Native implementation",
-          BaseTransientBottomBar.LENGTH_SHORT).show()
+      Snackbar.make(implSwitch, "Using Kotlin/Native implementation", Snackbar.LENGTH_SHORT).show()
       nativeStartConsole(cartridgeData)
     } else {
-      Snackbar.make(implSwitch, "Using JVM implementation",
-          BaseTransientBottomBar.LENGTH_SHORT).show()
+      Snackbar.make(implSwitch, "Using JVM implementation", Snackbar.LENGTH_SHORT).show()
       director = Director(cartridgeData)
       glSprite.director = director
       staticConsole = director.console
@@ -136,6 +134,8 @@ class MainActivity : AppCompatActivity(), Runnable {
   }
 
   override fun run() {
+    maybeSaveState()
+    maybeRestoreState()
     director.run()
   }
 
@@ -149,32 +149,46 @@ class MainActivity : AppCompatActivity(), Runnable {
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
     return when (item!!.itemId) {
-      R.id.action_save_state -> saveState()
-      R.id.action_restore_state -> restoreState()
+      R.id.action_save_state -> {
+        director.pause()
+        shouldSaveState = true
+        handler.post(this)
+        return true
+      }
+      R.id.action_restore_state -> {
+        director.pause()
+        shouldRestoreState = true
+        handler.post(this)
+        return true
+      }
       else -> super.onOptionsItemSelected(item)
     }
   }
 
-  private fun saveState(): Boolean {
-    val stateMap = director.dumpState()
-    val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
-    sharedPrefs.edit().also { p ->
-      stateMap.forEach { (k, v) ->
-        p.putString(k, v)
-      }
-    }.apply()
-    Snackbar.make(implSwitch, "Game state saved", BaseTransientBottomBar.LENGTH_SHORT).show()
-    return true
+  private fun maybeSaveState() {
+    if (shouldSaveState) {
+      val stateMap = director.dumpState()
+      val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
+      sharedPrefs.edit().also { p ->
+        stateMap.forEach { (k, v) ->
+          p.putString(k, v)
+        }
+      }.apply()
+      Snackbar.make(implSwitch, "Game state saved", Snackbar.LENGTH_SHORT).show()
+      shouldSaveState = false
+    }
   }
 
-  private fun restoreState(): Boolean {
-    val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
-    val state = sharedPrefs.all
-    if (state.isNotEmpty()) {
-      director.restoreState(state)
-      Snackbar.make(implSwitch, "Game state restored", BaseTransientBottomBar.LENGTH_SHORT).show()
+  private fun maybeRestoreState() {
+    if (shouldRestoreState) {
+      val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
+      val state = sharedPrefs.all
+      if (state.isNotEmpty()) {
+        director.restoreState(state)
+        Snackbar.make(implSwitch, "Game state restored", Snackbar.LENGTH_SHORT).show()
+      }
+      shouldRestoreState = false
     }
-    return true
   }
 
   companion object {

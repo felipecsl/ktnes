@@ -49,6 +49,37 @@ internal class MMC3(
     }
   }
 
+  override fun restoreState(state: String) {
+    val parts = state.split("\n")
+    var i = 0
+    register = parts[i++].toInt()
+    registers = parts[i++].toIntArray()
+    prgMode = parts[i++].toInt()
+    chrMode = parts[i++].toInt()
+    prgOffsets = parts[i++].toIntArray()
+    chrOffsets = parts[i++].toIntArray()
+    reload = parts[i++].toInt()
+    counter = parts[i++].toInt()
+    irqEnable = parts[i].toBoolean()
+    println("MMC3 state restored")
+  }
+
+  override fun dumpState(): String {
+    return listOf(
+        register,
+        registers.joinToString(),
+        prgMode,
+        chrMode,
+        prgOffsets.joinToString(),
+        chrOffsets.joinToString(),
+        reload,
+        counter,
+        irqEnable
+    ).joinToString("\n").also {
+      println("MMC3 state saved")
+    }
+  }
+
   override fun write(address: Int, value: Int) {
     when {
       address < 0x2000 -> {

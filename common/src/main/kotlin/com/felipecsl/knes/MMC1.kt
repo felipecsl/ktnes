@@ -97,6 +97,14 @@ internal class MMC1(
     }
   }
 
+  override fun restoreState(state: String) {
+    TODO("not implemented")
+  }
+
+  override fun dumpState(): String {
+    TODO("not implemented")
+  }
+
   private fun writeControl(value: Int) {
     control = value
     chrMode = (value shr 4) and 1 and 0xFF

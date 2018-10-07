@@ -8,7 +8,7 @@ internal class CPU(
     private val apu: APU,
     val controller1: Controller,
     private val controller2: Controller,
-    private val ram: IntArray = IntArray(2048),
+    private var ram: IntArray = IntArray(2048),
     private val stepCallback: CPUStepCallback? = null
 ) {
   private var stepAddress: Int = 0
@@ -572,13 +572,16 @@ internal class CPU(
   }
 
   fun dumpState(): String {
-    return listOf(cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall)
-        .joinToString()
+    return listOf(ram.joinToString(), cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt,
+        stall).joinToString("\n").also {
+      println("CPU state saved")
+    }
   }
 
   fun restoreState(state: String) {
-    val parts = state.split(", ")
+    val parts = state.split("\n")
     var i = 0
+    ram = parts[i++].toIntArray()
     cycles = parts[i++].toLong()
     PC = parts[i++].toInt()
     SP = parts[i++].toInt()
@@ -595,6 +598,7 @@ internal class CPU(
     N = parts[i++].toInt()
     interrupt = parts[i++].toInt()
     stall = parts[i].toInt()
+    println("CPU state restored")
   }
 
   private inline fun pagesDiffer(a: Int, b: Int) =

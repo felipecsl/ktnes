@@ -25,15 +25,20 @@ class Director(
     while (isRunning) {
       totalCycles += console.step()
       if (totalCycles >= FREQUENCY) {
-        val currentTime = currentTimeMs()
-        val msSpent = currentTime - startTime
-        val clock = (totalCycles * 1000) / msSpent
-        val speed = clock / FREQUENCY.toFloat()
-        println("Clock=${clock}Hz (${speed}x)")
+        val currentTime = trackConsoleSpeed(startTime, totalCycles)
         totalCycles = 0
         startTime = currentTime
       }
     }
+  }
+
+  private fun trackConsoleSpeed(startTime: Long, totalCycles: Long): Long {
+    val currentTime = currentTimeMs()
+    val msSpent = currentTime - startTime
+    val clock = (totalCycles * 1000) / msSpent
+    val speed = clock / FREQUENCY.toFloat()
+    println("Clock=${clock}Hz (${speed}x)")
+    return currentTime
   }
 
   fun setButtons1(buttons: BooleanArray) {

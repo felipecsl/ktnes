@@ -195,19 +195,20 @@ internal class PPU(
         flagSpriteTable, flagBackgroundTable, flagSpriteSize, flagMasterSlave, flagGrayscale,
         flagShowLeftBackground, flagShowLeftSprites, flagShowBackground, flagShowSprites,
         flagRedTint, flagGreenTint, flagBlueTint, flagSpriteZeroHit, flagSpriteOverflow,
-        oamAddress, bufferedData).joinToString("\n")
+        oamAddress, bufferedData).joinToString("\n").also {
+      println("PPU state saved")
+    }
   }
 
   fun restoreState(state: String) {
     val parts = state.split("\n")
-    val stringToIntArray = { s: String -> s.split(", ").map { it.toInt() }.toIntArray() }
     var i = 0
     cycle = parts[i++].toInt()
     scanLine = parts[i++].toInt()
     frame = parts[i++].toInt()
-    paletteData = stringToIntArray(parts[i++])
-    nameTableData = stringToIntArray(parts[i++])
-    oamData = stringToIntArray(parts[i++])
+    paletteData = parts[i++].toIntArray()
+    nameTableData = parts[i++].toIntArray()
+    oamData = parts[i++].toIntArray()
     v = parts[i++].toInt()
     t = parts[i++].toInt()
     x = parts[i++].toInt()
@@ -224,10 +225,10 @@ internal class PPU(
     highTileByte = parts[i++].toInt()
     tileData = parts[i++].toLong()
     spriteCount = parts[i++].toInt()
-    spritePatterns = stringToIntArray(parts[i++])
-    spritePositions = stringToIntArray(parts[i++])
-    spritePriorities = stringToIntArray(parts[i++])
-    spriteIndexes = stringToIntArray(parts[i++])
+    spritePatterns = parts[i++].toIntArray()
+    spritePositions = parts[i++].toIntArray()
+    spritePriorities = parts[i++].toIntArray()
+    spriteIndexes = parts[i++].toIntArray()
     flagNameTable = parts[i++].toInt()
     flagIncrement = parts[i++].toInt()
     flagSpriteTable = parts[i++].toInt()
@@ -246,6 +247,7 @@ internal class PPU(
     flagSpriteOverflow = parts[i++].toInt()
     oamAddress = parts[i++].toInt()
     bufferedData = parts[i].toInt()
+    println("PPU state restored")
   }
 
   fun step(): Boolean {

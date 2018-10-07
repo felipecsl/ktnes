@@ -39,10 +39,12 @@ internal class Console(
     val cpuState = cpu.dumpState()
     val ppuState = ppu.dumpState()
     val apuState = apu.dumpState()
+    val mapperState = mapper.dumpState()
     return mapOf(
         "cpu" to cpuState,
         "ppu" to ppuState,
-        "apu" to apuState
+        "apu" to apuState,
+        "mapper" to mapperState
     )
   }
 
@@ -50,6 +52,7 @@ internal class Console(
     cpu.restoreState(state["cpu"] as String)
     ppu.restoreState(state["ppu"] as String)
     apu.restoreState(state["apu"] as String)
+    mapper.restoreState(state["mapper"] as String)
   }
 
   companion object {

@@ -5,6 +5,8 @@ internal interface Mapper {
   fun read(address: Int): Int
   fun write(address: Int, value: Int)
   fun step()
+  fun restoreState(state: String)
+  fun dumpState(): String
 
   companion object {
     fun newMapper(cartridge: Cartridge, stepCallback: MapperStepCallback?): Mapper =

@@ -1,14 +1,12 @@
 package com.felipecsl.knes
 
 internal data class Cartridge(
-    // @formatter:off
-    val prg: Array<Int>,                       // PRG-ROM banks
-    val chr: Array<Int>,                       // CHR-ROM banks
-    val mapper: Int,                         // mapper_state_reference type
-    var mirror: Int,                          // mirroring mode
-    val battery: Int,                        // battery present
-    val sram: IntArray = IntArray(0x2000)   // Save RAM
-    // @formatter:on
+    internal var prg: IntArray,                       // PRG-ROM banks
+    internal var chr: IntArray,                       // CHR-ROM banks
+    internal var mapper: Int,                        // mapper type
+    internal var mirror: Int,                         // mirroring mode
+    internal var battery: Int,                        // battery present
+    internal var sram: IntArray = IntArray(0x2000)    // Save RAM
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -26,6 +24,22 @@ internal data class Cartridge(
     if (battery != other.battery) return false
 
     return true
+  }
+
+  fun dumpState(): String {
+    return StatePersistence.dumpState(
+        prg, chr, mapper, mirror, battery, sram
+    ).also { println("Cartridge state saved") }
+  }
+
+  fun restoreState(serializedState: String) {
+    val state = StatePersistence.restoreState(serializedState)
+    prg = state.next()
+    chr = state.next()
+    mapper = state.next()
+    mirror = state.next()
+    battery = state.next()
+    sram = state.next()
   }
 
   override fun hashCode(): Int {

@@ -18,9 +18,9 @@ internal class MMC3(
   private var reload: Int = 0
   private var counter: Int = 0
   private var irqEnable: Boolean = false
-  private val chr = cartridge.chr
-  private val prg = cartridge.prg
-  private val sram = cartridge.sram
+  private var chr = cartridge.chr
+  private var prg = cartridge.prg
+  private var sram = cartridge.sram
 
   init {
     prgOffsets[0] = prgBankOffset(0)
@@ -60,12 +60,16 @@ internal class MMC3(
     reload = state.next()
     counter = state.next()
     irqEnable = state.next()
+    prg = state.next()
+    chr = state.next()
+    sram = state.next()
     println("MMC3 state restored")
   }
 
   override fun dumpState(): String {
     return StatePersistence.dumpState(
-        register, registers, prgMode, chrMode, prgOffsets, chrOffsets, reload, counter, irqEnable
+        register, registers, prgMode, chrMode, prgOffsets, chrOffsets, reload, counter, irqEnable,
+        prg, chr, sram
     ).also { println("MMC3 state saved") }
   }
 

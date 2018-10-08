@@ -1,6 +1,7 @@
 package com.felipecsl.knes
 
 internal class Console(
+    private val cartridge: Cartridge,
     private val cpu: CPU,
     private val apu: APU,
     private val ppu: PPU,
@@ -36,15 +37,12 @@ internal class Console(
   }
 
   fun state(): Map<String, String> {
-    val cpuState = cpu.dumpState()
-    val ppuState = ppu.dumpState()
-    val apuState = apu.dumpState()
-    val mapperState = mapper.dumpState()
     return mapOf(
-        "cpu" to cpuState,
-        "ppu" to ppuState,
-        "apu" to apuState,
-        "mapper" to mapperState
+        "cpu" to cpu.dumpState(),
+        "ppu" to ppu.dumpState(),
+        "apu" to apu.dumpState(),
+        "mapper" to mapper.dumpState(),
+        "cartridge" to cartridge.dumpState()
     )
   }
 
@@ -53,6 +51,7 @@ internal class Console(
     ppu.restoreState(state["ppu"] as String)
     apu.restoreState(state["apu"] as String)
     mapper.restoreState(state["mapper"] as String)
+    cartridge.restoreState(state["cartridge"] as String)
   }
 
   companion object {
@@ -69,7 +68,7 @@ internal class Console(
         mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {
-      val console = Console(cpu, apu, ppu, mapper)
+      val console = Console(cartridge, cpu, apu, ppu, mapper)
       ppu.cpu = cpu
       ppu.mapper = mapper
       mapper.cpu = cpu

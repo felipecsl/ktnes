@@ -46,8 +46,8 @@ internal class INESFileParser {
         chr = ByteArray(8192)
       }
       return Cartridge(
-          prg.map { it.toInt() and 0xff }.toTypedArray(),
-          chr.map { it.toInt() and 0xff }.toTypedArray(),
+          prg.map { it.toInt() and 0xff }.toIntArray(),
+          chr.map { it.toInt() and 0xff }.toIntArray(),
           mapper,
           mirror,
           battery

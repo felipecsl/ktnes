@@ -72,7 +72,7 @@ internal class PPU(
     private val zeroTo255: IntRange = 0..255,
     private val zeroTo63: IntRange = 0..63,
     private val zeroTo7: IntRange = 0..7,
-    private val mirror: Int = cartridge.mirror
+    private var mirror: Int = cartridge.mirror
 ) {
   lateinit var cpu: CPU
   lateinit var mapper: Mapper
@@ -196,7 +196,7 @@ internal class PPU(
         flagSpriteTable, flagBackgroundTable, flagSpriteSize, flagMasterSlave, flagGrayscale,
         flagShowLeftBackground, flagShowLeftSprites, flagShowBackground, flagShowSprites,
         flagRedTint, flagGreenTint, flagBlueTint, flagSpriteZeroHit, flagSpriteOverflow,
-        oamAddress, bufferedData
+        oamAddress, bufferedData, mirror
     ).also { println("PPU state saved") }
   }
 
@@ -246,6 +246,7 @@ internal class PPU(
     flagSpriteOverflow = state.next()
     oamAddress = state.next()
     bufferedData = state.next()
+    mirror = state.next()
     println("PPU state restored")
   }
 

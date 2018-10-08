@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity(), Runnable {
       val stateMap = director.dumpState()
       val sharedPrefs = getSharedPreferences(STATE_PREFS_KEY, Context.MODE_PRIVATE)
       sharedPrefs.edit().also { p ->
-        stateMap.forEach { (k, v) ->
+        stateMap.map { (k, v) ->
           p.putString(k, v)
         }
       }.apply()

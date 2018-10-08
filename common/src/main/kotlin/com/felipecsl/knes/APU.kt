@@ -165,9 +165,7 @@ internal class APU(
           dmcShiftRegister = cpu.read(dmcCurrentAddress)
           dmcBitCount = 8
           dmcCurrentAddress++
-          if (dmcCurrentAddress == 0) {
-            dmcCurrentAddress = 0x8000
-          }
+          if (dmcCurrentAddress == 0) dmcCurrentAddress = 0x8000
           dmcCurrentLength--
           if (dmcCurrentLength == 0 && dmcLoop) {
             dmcCurrentAddress = dmcSampleAddress
@@ -179,13 +177,9 @@ internal class APU(
           // dmc step shifter
           if (dmcBitCount != 0) {
             if (dmcShiftRegister and 1 == 1) {
-              if (dmcValue <= 125) {
-                dmcValue += 2
-              }
+              if (dmcValue <= 125) dmcValue += 2
             } else {
-              if (dmcValue >= 2) {
-                dmcValue -= 2
-              }
+              if (dmcValue >= 2) dmcValue -= 2
             }
             dmcShiftRegister = (dmcShiftRegister shr 1) and 0xFF
             dmcBitCount -= 1
@@ -221,9 +215,7 @@ internal class APU(
               stepSweep()
               stepLength()
               // fire irq
-              if (frameIRQ) {
-                cpu.interrupt = Interrupt.IRQ
-              }
+              if (frameIRQ) cpu.interrupt = Interrupt.IRQ
             }
           }
         }
@@ -588,9 +580,7 @@ internal class APU(
       }
       pulse1SweepValue > 0 -> pulse1SweepValue -= 1
       else -> {
-        if (pulse1SweepEnabled) {
-          pulse1Sweep()
-        }
+        if (pulse1SweepEnabled) pulse1Sweep()
         pulse1SweepValue = pulse1SweepPeriod
       }
     }

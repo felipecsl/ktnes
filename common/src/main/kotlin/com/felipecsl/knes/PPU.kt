@@ -96,10 +96,8 @@ internal class PPU(
         w = 0
         result
       }
-      0x2004 -> {
-        // read oam data
-        oamData[oamAddress]
-      }
+      // read oam data
+      0x2004 -> oamData[oamAddress]
       0x2007 -> {
         // read data
         var value = read(v)
@@ -122,15 +120,10 @@ internal class PPU(
     when (address) {
       0x2000 -> writeControl(value)
       0x2001 -> writeMask(value)
-      0x2003 -> {
-        // write oam address
-        oamAddress = value
-      }
-      0x2004 -> {
-        // write oam data
-        oamData[oamAddress] = value
-        oamAddress++
-      }
+      // write oam address
+      0x2003 -> oamAddress = value
+      // write oam data
+      0x2004 -> oamData[oamAddress++] = value
       0x2005 -> {
         // write scroll
         if (w == 0) {
@@ -552,9 +545,7 @@ internal class PPU(
   private fun read(_address: Int): Int /* Byte */ {
     val address = _address % 0x4000
     return when {
-      address < 0x2000 -> {
-        mapper.read(address)
-      }
+      address < 0x2000 -> mapper.read(address)
       address < 0x3F00 -> {
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000
@@ -578,9 +569,7 @@ internal class PPU(
   private fun write(addr: Int, value: Int /* Byte */) {
     val address = addr % 0x4000
     when {
-      address < 0x2000 -> {
-        mapper.write(address, value)
-      }
+      address < 0x2000 -> mapper.write(address, value)
       address < 0x3F00 -> {
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000

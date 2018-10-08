@@ -49,35 +49,24 @@ internal class MMC3(
     }
   }
 
-  override fun restoreState(state: String) {
-    val parts = state.split("\n")
-    var i = 0
-    register = parts[i++].toInt()
-    registers = parts[i++].toIntArray()
-    prgMode = parts[i++].toInt()
-    chrMode = parts[i++].toInt()
-    prgOffsets = parts[i++].toIntArray()
-    chrOffsets = parts[i++].toIntArray()
-    reload = parts[i++].toInt()
-    counter = parts[i++].toInt()
-    irqEnable = parts[i].toBoolean()
+  override fun restoreState(serializedState: String) {
+    val state = StatePersistence.restoreState(serializedState)
+    register = state.next()
+    registers = state.next()
+    prgMode = state.next()
+    chrMode = state.next()
+    prgOffsets = state.next()
+    chrOffsets = state.next()
+    reload = state.next()
+    counter = state.next()
+    irqEnable = state.next()
     println("MMC3 state restored")
   }
 
   override fun dumpState(): String {
-    return listOf(
-        register,
-        registers.joinToString(),
-        prgMode,
-        chrMode,
-        prgOffsets.joinToString(),
-        chrOffsets.joinToString(),
-        reload,
-        counter,
-        irqEnable
-    ).joinToString("\n").also {
-      println("MMC3 state saved")
-    }
+    return StatePersistence.dumpState(
+        register, registers, prgMode, chrMode, prgOffsets, chrOffsets, reload, counter, irqEnable
+    ).also { println("MMC3 state saved") }
   }
 
   override fun write(address: Int, value: Int) {

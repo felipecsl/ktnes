@@ -187,66 +187,65 @@ internal class PPU(
   }
 
   fun dumpState(): String {
-    return listOf(cycle, scanLine, frame, paletteData.joinToString(), nameTableData.joinToString(),
-        oamData.joinToString(), v, t, x, w, f, register, nmiOccurred, nmiOutput, nmiPrevious,
+    return StatePersistence.dumpState(
+        cycle, scanLine, frame, paletteData, nameTableData,
+        oamData, v, t, x, w, f, register, nmiOccurred, nmiOutput, nmiPrevious,
         nmiDelay, nameTableByte, attributeTableByte, lowTileByte, highTileByte, tileData,
-        spriteCount, spritePatterns.joinToString(), spritePositions.joinToString(),
-        spritePriorities.joinToString(), spriteIndexes.joinToString(), flagNameTable, flagIncrement,
+        spriteCount, spritePatterns, spritePositions,
+        spritePriorities, spriteIndexes, flagNameTable, flagIncrement,
         flagSpriteTable, flagBackgroundTable, flagSpriteSize, flagMasterSlave, flagGrayscale,
         flagShowLeftBackground, flagShowLeftSprites, flagShowBackground, flagShowSprites,
         flagRedTint, flagGreenTint, flagBlueTint, flagSpriteZeroHit, flagSpriteOverflow,
-        oamAddress, bufferedData).joinToString("\n").also {
-      println("PPU state saved")
-    }
+        oamAddress, bufferedData
+    ).also { println("PPU state saved") }
   }
 
-  fun restoreState(state: String) {
-    val parts = state.split("\n")
-    var i = 0
-    cycle = parts[i++].toInt()
-    scanLine = parts[i++].toInt()
-    frame = parts[i++].toInt()
-    paletteData = parts[i++].toIntArray()
-    nameTableData = parts[i++].toIntArray()
-    oamData = parts[i++].toIntArray()
-    v = parts[i++].toInt()
-    t = parts[i++].toInt()
-    x = parts[i++].toInt()
-    w = parts[i++].toInt()
-    f = parts[i++].toInt()
-    register = parts[i++].toInt()
-    nmiOccurred = parts[i++].toBoolean()
-    nmiOutput = parts[i++].toBoolean()
-    nmiPrevious = parts[i++].toBoolean()
-    nmiDelay = parts[i++].toInt()
-    nameTableByte = parts[i++].toInt()
-    attributeTableByte = parts[i++].toInt()
-    lowTileByte = parts[i++].toInt()
-    highTileByte = parts[i++].toInt()
-    tileData = parts[i++].toLong()
-    spriteCount = parts[i++].toInt()
-    spritePatterns = parts[i++].toIntArray()
-    spritePositions = parts[i++].toIntArray()
-    spritePriorities = parts[i++].toIntArray()
-    spriteIndexes = parts[i++].toIntArray()
-    flagNameTable = parts[i++].toInt()
-    flagIncrement = parts[i++].toInt()
-    flagSpriteTable = parts[i++].toInt()
-    flagBackgroundTable = parts[i++].toInt()
-    flagSpriteSize = parts[i++].toInt()
-    flagMasterSlave = parts[i++].toInt()
-    flagGrayscale = parts[i++].toInt()
-    flagShowLeftBackground = parts[i++].toInt()
-    flagShowLeftSprites = parts[i++].toInt()
-    flagShowBackground = parts[i++].toInt()
-    flagShowSprites = parts[i++].toInt()
-    flagRedTint = parts[i++].toInt()
-    flagGreenTint = parts[i++].toInt()
-    flagBlueTint = parts[i++].toInt()
-    flagSpriteZeroHit = parts[i++].toInt()
-    flagSpriteOverflow = parts[i++].toInt()
-    oamAddress = parts[i++].toInt()
-    bufferedData = parts[i].toInt()
+  fun restoreState(serializedState: String) {
+    val state = StatePersistence.restoreState(serializedState)
+    cycle = state.next()
+    scanLine = state.next()
+    frame = state.next()
+    paletteData = state.next()
+    nameTableData = state.next()
+    oamData = state.next()
+    v = state.next()
+    t = state.next()
+    x = state.next()
+    w = state.next()
+    f = state.next()
+    register = state.next()
+    nmiOccurred = state.next()
+    nmiOutput = state.next()
+    nmiPrevious = state.next()
+    nmiDelay = state.next()
+    nameTableByte = state.next()
+    attributeTableByte = state.next()
+    lowTileByte = state.next()
+    highTileByte = state.next()
+    tileData = state.next()
+    spriteCount = state.next()
+    spritePatterns = state.next()
+    spritePositions = state.next()
+    spritePriorities = state.next()
+    spriteIndexes = state.next()
+    flagNameTable = state.next()
+    flagIncrement = state.next()
+    flagSpriteTable = state.next()
+    flagBackgroundTable = state.next()
+    flagSpriteSize = state.next()
+    flagMasterSlave = state.next()
+    flagGrayscale = state.next()
+    flagShowLeftBackground = state.next()
+    flagShowLeftSprites = state.next()
+    flagShowBackground = state.next()
+    flagShowSprites = state.next()
+    flagRedTint = state.next()
+    flagGreenTint = state.next()
+    flagBlueTint = state.next()
+    flagSpriteZeroHit = state.next()
+    flagSpriteOverflow = state.next()
+    oamAddress = state.next()
+    bufferedData = state.next()
     println("PPU state restored")
   }
 

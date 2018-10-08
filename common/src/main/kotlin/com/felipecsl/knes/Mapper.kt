@@ -5,7 +5,7 @@ internal interface Mapper {
   fun read(address: Int): Int
   fun write(address: Int, value: Int)
   fun step()
-  fun restoreState(state: String)
+  fun restoreState(serializedState: String)
   fun dumpState(): String
 
   companion object {

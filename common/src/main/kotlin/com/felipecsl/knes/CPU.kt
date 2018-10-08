@@ -572,32 +572,30 @@ internal class CPU(
   }
 
   fun dumpState(): String {
-    return listOf(ram.joinToString(), cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt,
-        stall).joinToString("\n").also {
-      println("CPU state saved")
-    }
+    return StatePersistence.dumpState(
+        ram, cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall
+    ).also { println("CPU state saved") }
   }
 
-  fun restoreState(state: String) {
-    val parts = state.split("\n")
-    var i = 0
-    ram = parts[i++].toIntArray()
-    cycles = parts[i++].toLong()
-    PC = parts[i++].toInt()
-    SP = parts[i++].toInt()
-    A = parts[i++].toInt()
-    X = parts[i++].toInt()
-    Y = parts[i++].toInt()
-    C = parts[i++].toInt()
-    Z = parts[i++].toInt()
-    I = parts[i++].toInt()
-    D = parts[i++].toInt()
-    B = parts[i++].toInt()
-    U = parts[i++].toInt()
-    V = parts[i++].toInt()
-    N = parts[i++].toInt()
-    interrupt = parts[i++].toInt()
-    stall = parts[i].toInt()
+  fun restoreState(serializedState: String) {
+    val state = StatePersistence.restoreState(serializedState)
+    ram = state.next()
+    cycles = state.next()
+    PC = state.next()
+    SP = state.next()
+    A = state.next()
+    X = state.next()
+    Y = state.next()
+    C = state.next()
+    Z = state.next()
+    I = state.next()
+    D = state.next()
+    B = state.next()
+    U = state.next()
+    V = state.next()
+    N = state.next()
+    interrupt = state.next()
+    stall = state.next()
     println("CPU state restored")
   }
 

@@ -97,12 +97,31 @@ internal class MMC1(
     }
   }
 
-  override fun restoreState(state: String) {
-    TODO("not implemented")
+  override fun restoreState(serializedState: String) {
+    val state = StatePersistence.restoreState(serializedState)
+    shiftRegister = state.next()
+    control = state.next()
+    prgMode = state.next()
+    chrMode = state.next()
+    prgBank = state.next()
+    chrBank0 = state.next()
+    chrBank1 = state.next()
+    prgOffsets = state.next()
+    chrOffsets = state.next()
   }
 
   override fun dumpState(): String {
-    TODO("not implemented")
+    return StatePersistence.dumpState(
+        shiftRegister,
+        control,
+        prgMode,
+        chrMode,
+        prgBank,
+        chrBank0,
+        chrBank1,
+        prgOffsets,
+        chrOffsets
+    ).also { println("MMC1 state saved") }
   }
 
   private fun writeControl(value: Int) {

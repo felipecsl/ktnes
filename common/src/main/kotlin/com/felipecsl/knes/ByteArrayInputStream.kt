@@ -1,16 +1,28 @@
 package com.felipecsl.knes
 
 /** Translated/Adapted from java.io.ByteArrayInputStream */
-open class ByteArrayInputStream {
-  /**
-   * An array of bytes that was provided
-   * by the creator of the stream. Elements `buf[0]`
-   * through `buf[count-1]` are the
-   * only bytes that can ever be read from the
-   * stream;  element `buf[pos]` is
-   * the next byte to be read.
-   */
-  private var buf: ByteArray
+open class ByteArrayInputStream
+/**
+ * Creates a `ByteArrayInputStream`
+ * so that it  uses `buf` as its
+ * buffer array.
+ * The buffer array is not copied.
+ * The initial value of `pos`
+ * is `0` and the initial value
+ * of  `count` is the length of
+ * `buf`.
+ *
+ * @param   buf   the input buffer.
+ */(
+    /**
+     * An array of bytes that was provided
+     * by the creator of the stream. Elements `buf[0]`
+     * through `buf[count-1]` are the
+     * only bytes that can ever be read from the
+     * stream;  element `buf[pos]` is
+     * the next byte to be read.
+     */
+    private var buf: ByteArray) {
 
   /**
    * The index of the next character to read from the input stream buffer.
@@ -46,43 +58,9 @@ open class ByteArrayInputStream {
    */
   private var count: Int = 0
 
-  /**
-   * Creates a `ByteArrayInputStream`
-   * so that it  uses `buf` as its
-   * buffer array.
-   * The buffer array is not copied.
-   * The initial value of `pos`
-   * is `0` and the initial value
-   * of  `count` is the length of
-   * `buf`.
-   *
-   * @param   buf   the input buffer.
-   */
-  constructor(buf: ByteArray) {
-    this.buf = buf
+  init {
     this.pos = 0
     this.count = buf.size
-  }
-
-  /**
-   * Creates `ByteArrayInputStream`
-   * that uses `buf` as its
-   * buffer array. The initial value of `pos`
-   * is `offset` and the initial value
-   * of `count` is the minimum of `offset+length`
-   * and `buf.length`.
-   * The buffer array is not copied. The buffer's mark is
-   * set to the specified offset.
-   *
-   * @param   buf      the input buffer.
-   * @param   offset   the offset in the buffer of the first byte to read.
-   * @param   length   the maximum number of bytes to read from the buffer.
-   */
-  constructor(buf: ByteArray, offset: Int, length: Int) {
-    this.buf = buf
-    this.pos = offset
-    this.count = minOf(offset + length, buf.size)
-    this.mark = offset
   }
 
   /**

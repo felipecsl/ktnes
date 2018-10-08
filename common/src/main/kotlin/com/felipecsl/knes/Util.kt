@@ -13,6 +13,3 @@ fun Int.ensurePositive(): Int {
   }
   return this
 }
-
-fun String.toIntArray() =
-  split(", ").map(String::toInt).toIntArray()

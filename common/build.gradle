@@ -1,9 +1,0 @@
-apply plugin: 'kotlin-platform-common'
-
-group = 'com.felipecsl.knes'
-version = 1.0
-
-dependencies {
-  // Set up compilation dependency on common Kotlin stdlib
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
-}

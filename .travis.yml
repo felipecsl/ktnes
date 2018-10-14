@@ -5,6 +5,7 @@ android:
     - tools
     - platform-tools
     - build-tools-28.0.2
+    - extra-google-m2repository
     - extra-android-m2repository
     - android-28
   licenses:
@@ -12,6 +13,13 @@ android:
 
 jdk:
   - oraclejdk8
+
+install:
+  - echo y | sdkmanager "ndk-bundle"
+  - echo y | sdkmanager "cmake;3.6.4111459"
+  - echo y | sdkmanager "lldb;3.1"
+before_script:
+  - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 
 branches:
   except:

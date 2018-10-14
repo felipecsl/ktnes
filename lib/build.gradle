@@ -1,0 +1,75 @@
+apply plugin: 'kotlin-multiplatform'
+apply plugin: 'com.android.library'
+
+android {
+  compileSdkVersion 28
+
+  defaultConfig {
+    minSdkVersion 16
+    targetSdkVersion 28
+  }
+}
+
+dependencies {
+  // Specify Kotlin/JVM stdlib dependency.
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
+}
+
+kotlin {
+  targets {
+    fromPreset(presets.androidNativeArm64, 'arm64') {
+      compilations.main.outputKinds 'dynamic'
+    }
+    fromPreset(presets.androidNativeArm32, 'arm32') {
+      compilations.main.outputKinds 'dynamic'
+    }
+    fromPreset(presets.android, 'android')
+  }
+
+  sourceSets {
+    armMain {
+    }
+    arm32Main {
+      dependsOn armMain
+    }
+    arm64Main {
+      dependsOn armMain
+    }
+    commonMain {
+      dependencies {
+        implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
+      }
+    }
+    jvmTest {
+      dependencies {
+        implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+        implementation 'com.google.truth:truth:0.42'
+        implementation 'org.mockito:mockito-core:1.10.19'
+        implementation "org.robolectric:robolectric:3.8"
+      }
+    }
+  }
+}
+
+def platforms = [
+    "arm32": "armeabi-v7a",
+    "arm64": "arm64-v8a"
+]
+
+afterEvaluate {
+  task copyLibs(type: Copy) {
+    def buildType = project.findProperty("kotlin.build.type") ?: "DEBUG"
+    destinationDir project(":android").file("src/main/jniLibs")
+
+    platforms.each { name, platform ->
+      into(platform) {
+        from kotlin.targets."$name".compilations.main.getBinary("dynamic", buildType)
+        rename "liblib.so", "libktnes.so"
+      }
+    }
+  }
+
+  assemble {
+    finalizedBy copyLibs
+  }
+}

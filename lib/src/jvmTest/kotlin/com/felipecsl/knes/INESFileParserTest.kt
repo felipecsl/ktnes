@@ -18,20 +18,25 @@ class INESFileParserTest {
   }
 
   @Test fun invalidHeader() {
-    assertThat(INESFileParser.parseFileHeader(tempFile.inputStream()).isValid()).isFalse()
+    val inputStream = ByteArrayInputStream(tempFile.readBytes())
+    assertThat(INESFileParser.parseFileHeader(inputStream).isValid()).isFalse()
   }
 
   @Test fun validHeader() {
-    val testRom = javaClass.classLoader!!.getResource("roms/testrom.nes").toURI()
-    val header = INESFileParser.parseFileHeader(File(testRom).inputStream())
+    val classLoader = javaClass.classLoader
+    val testRom = classLoader.getResource("testrom.nes").toURI()
+    val inputStream = ByteArrayInputStream(File(testRom).readBytes())
+    val header = INESFileParser.parseFileHeader(inputStream)
     assertThat(header).isEqualTo(INESFileHeader(
         INESFileParser.INES_FILE_MAGIC, 0x10, 0x10, 0x40, 0x0, 0x0, INESFileParser.PADDING))
     assertThat(header.isValid()).isTrue()
   }
 
   @Test fun testMapper() {
-    val testRom = javaClass.classLoader!!.getResource("roms/testrom.nes").toURI()
-    val cartridge = INESFileParser.parseCartridge(File(testRom))
+    val classLoader = javaClass.classLoader
+    val testRom = classLoader.getResource("testrom.nes").toURI()
+    val inputStream = ByteArrayInputStream(File(testRom).readBytes())
+    val cartridge = INESFileParser.parseCartridge(inputStream)
     // super mario bros 3 is Mapper 4 (MMC3)
     assertThat(cartridge.mapper).isEqualTo(4)
   }

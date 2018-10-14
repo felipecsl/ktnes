@@ -5,7 +5,7 @@ internal class INESFileParser {
     internal val INES_FILE_MAGIC = byteArrayOf(0x4e, 0x45, 0x53, 0x1a)/*0x4e45531a*/
     internal val PADDING = byteArrayOf(0, 0, 0, 0, 0, 0, 0)
 
-    private fun parseFileHeader(stream: ByteArrayInputStream): INESFileHeader {
+    internal fun parseFileHeader(stream: ByteArrayInputStream): INESFileHeader {
       return INESFileHeader(
           (0..3).map { stream.read().toByte() }.toByteArray(),
           stream.read().toByte(),

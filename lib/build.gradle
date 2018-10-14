@@ -17,6 +17,7 @@ dependencies {
 
 kotlin {
   targets {
+    fromPreset(presets.jvm, 'jvm')
     fromPreset(presets.androidNativeArm64, 'arm64') {
       compilations.main.outputKinds 'dynamic'
     }
@@ -40,8 +41,15 @@ kotlin {
         implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
       }
     }
+    jvmMain {
+      dependencies {
+        implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+      }
+    }
     jvmTest {
       dependencies {
+        implementation 'org.jetbrains.kotlin:kotlin-test'
+        implementation 'org.jetbrains.kotlin:kotlin-test-junit'
         implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         implementation 'com.google.truth:truth:0.42'
         implementation 'org.mockito:mockito-core:1.10.19'

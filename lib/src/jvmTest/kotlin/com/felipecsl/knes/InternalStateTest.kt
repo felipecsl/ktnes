@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.io.File
 import java.util.zip.GZIPInputStream
+import java.util.zip.ZipInputStream
 
 class InternalStateTest {
   @Test
@@ -25,11 +26,12 @@ class InternalStateTest {
         .bufferedReader()
     val ppuReference = GZIPInputStream(classLoader.getResourceAsStream("ppu_state_reference.gz"))
         .bufferedReader()
-    val apuReference = GZIPInputStream(classLoader.getResourceAsStream("apu_state_reference.gz"))
-        .bufferedReader()
+    val apuReference = ZipInputStream(
+        classLoader.getResourceAsStream("apu_state_reference.gz.zip")).bufferedReader()
     val cpuCallback = object : CPUStepCallback {
       override fun onStep(cycles: Long, PC: Int, SP: Int, A: Int, X: Int, Y: Int, C: Int, Z: Int,
-          I: Int, D: Int, B: Int, U: Int, V: Int, N: Int, interrupt: Int, stall: Int,
+          I: Int, D: Int, B: Int, U: Int, V: Int, N: Int, interrupt: Int,
+          stall: Int,
           lastOpcode: String?) {
         expectedCPUState = cpuReference.readLine()?.split(", ") ?: listOf()
         if (expectedCPUState.isNotEmpty()) {
@@ -99,7 +101,8 @@ class InternalStateTest {
           flagSpriteSize: Int, flagMasterSlave: Int, flagGrayscale: Int,
           flagShowLeftBackground: Int, flagShowLeftSprites: Int,
           flagShowBackground: Int, flagShowSprites: Int, flagRedTint: Int,
-          flagGreenTint: Int, flagBlueTint: Int, flagSpriteZeroHit: Int, flagSpriteOverflow: Int,
+          flagGreenTint: Int, flagBlueTint: Int, flagSpriteZeroHit: Int,
+          flagSpriteOverflow: Int,
           oamAddress: Int, bufferedData: Int
       ) {
         expectedPPUState = ppuReference.readLine()?.split(", ") ?: listOf()
@@ -318,5 +321,5 @@ class InternalStateTest {
   }
 
   private fun IntArray.joinAsGolangString() =
-    joinToString(" ", prefix = "[", postfix = "]") { it.toString() }
+      joinToString(" ", prefix = "[", postfix = "]") { it.toString() }
 }

@@ -20,12 +20,11 @@ internal data class INESFileHeader(
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
-    if (other == null) return false
-    if (other::class != this::class) return false
+    if (other == null || this::class != other::class) return false
 
     other as INESFileHeader
 
-    if (magic.contentEquals(other.magic)) return false
+    if (!magic.contentEquals(other.magic)) return false
     if (numPRG != other.numPRG) return false
     if (numCHR != other.numCHR) return false
     if (control1 != other.control1) return false
@@ -37,13 +36,13 @@ internal data class INESFileHeader(
   }
 
   override fun hashCode(): Int {
-    var result = magic.hashCode()
+    var result = magic.contentHashCode()
     result = 31 * result + numPRG
     result = 31 * result + numCHR
     result = 31 * result + control1
     result = 31 * result + control2
     result = 31 * result + numRAM
-    result = 31 * result + padding.hashCode()
+    result = 31 * result + padding.contentHashCode()
     return result
   }
 }

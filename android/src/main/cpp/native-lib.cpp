@@ -2,7 +2,7 @@
 #include <string>
 
 #include "AudioEngine.h"
-#include "../../../../../oboe/src/common/OboeDebug.h"
+#include "../../../../oboe/src/common/OboeDebug.h"
 
 AudioEngine engine;
 JavaVM *gJvm = nullptr;

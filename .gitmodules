@@ -1,0 +1,3 @@
+[submodule "oboe"]
+	path = oboe
+	url = git@github.com:google/oboe.git

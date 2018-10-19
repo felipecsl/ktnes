@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity(), Runnable {
       System.loadLibrary("ktnes")
     }
 
-    const val ROM = R.raw.super_mario_bros_3
+    const val ROM = R.raw.bingo
     private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticDirector: Director? = null
 

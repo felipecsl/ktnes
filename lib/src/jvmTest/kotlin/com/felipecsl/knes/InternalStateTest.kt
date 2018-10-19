@@ -1,6 +1,7 @@
 package com.felipecsl.knes
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import java.util.zip.GZIPInputStream
@@ -8,6 +9,7 @@ import java.util.zip.ZipInputStream
 
 class InternalStateTest {
   @Test
+  @Ignore("Failing on CI, only passes with the SMB3 ROM")
   fun `make sure state changes are accurate`() {
     var noMoreCPUData = false
     var noMorePPUData = false

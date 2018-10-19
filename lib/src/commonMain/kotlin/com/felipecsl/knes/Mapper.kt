@@ -11,6 +11,7 @@ internal interface Mapper {
   companion object {
     fun newMapper(cartridge: Cartridge, stepCallback: MapperStepCallback?): Mapper =
         when (cartridge.mapper) {
+          0 -> Mapper2(cartridge, stepCallback)
           1 -> MMC1(cartridge, stepCallback)
           4 -> MMC3(cartridge, stepCallback)
           else -> throw NotImplementedError("Mapper ${cartridge.mapper} not implemented")

@@ -69,6 +69,8 @@ internal class Console(
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {
       val console = Console(cartridge, cpu, apu, ppu, mapper)
+      ppu.isMMC3 = mapper is MMC3
+      ppu.isNoOpMapper = mapper is Mapper2 || mapper is MMC1
       ppu.cpu = cpu
       ppu.mapper = mapper
       mapper.cpu = cpu

@@ -76,6 +76,8 @@ internal class PPU(
 ) {
   lateinit var cpu: CPU
   lateinit var mapper: Mapper
+  internal var isMMC3: Boolean = false
+  internal var isNoOpMapper: Boolean = false
 
   init {
     reset()
@@ -536,8 +538,12 @@ internal class PPU(
       flagSpriteOverflow = 0
     }
     // TODO: this *should* be 260
-    // Returning false means we need to step the Mapper too (TODO move this logic to the mapper)
-    return cycle != 280
+    // Returning false means we need to step the mapper too (TODO move this logic to the mapper)
+    return if (isNoOpMapper)
+      true
+    else if (!isMMC3)
+      false
+    else cycle != 280
         || 240 <= scanLine && scanLine <= 260
         || (flagShowBackground == 0 && flagShowSprites == 0)
   }
@@ -550,7 +556,7 @@ internal class PPU(
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000
         val mirrorAddr =
-          0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
         nameTableData[mirrorAddr % 2048]
       }
       address < 0x4000 -> {
@@ -574,7 +580,7 @@ internal class PPU(
         // mirror address
         val newAddress = (address - 0x2000) % 0x1000
         val mirrorAddr =
-          0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
+            0x2000 + MIRROR_LOOKUP[mirror][newAddress / 0x0400] * 0x0400 + (newAddress % 0x0400)
         nameTableData[mirrorAddr % 2048] = value and 0xFF
       }
       address < 0x4000 -> {

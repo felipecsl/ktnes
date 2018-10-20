@@ -1,0 +1,32 @@
+apply plugin: 'kotlin-multiplatform'
+apply plugin: 'org.jetbrains.kotlin.frontend'
+
+kotlinFrontend {
+  downloadNodeJsVersion = "latest"
+
+  webpackBundle {
+    bundleName = "main"
+    contentPath = file('src/jsMain/web')
+    webpackConfigFile = "${project.projectDir.path}/webpack.config.js"
+    sourceMapEnabled = true
+    mode = "development"
+  }
+}
+
+kotlin {
+  sourceSets {
+    jsMain {
+      dependencies {
+        implementation project(':lib')
+      }
+    }
+  }
+
+  targets {
+    fromPreset(presets.js, 'js')
+  }
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+}

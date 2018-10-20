@@ -3,11 +3,11 @@ bin
 build
 gen
 out
-lib
 
 # intellij
 .idea
 *.iml
+*.def
 
 # eclipse
 .classpath

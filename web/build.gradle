@@ -13,6 +13,7 @@ kotlinFrontend {
 
   npm {
     dependency "react"
+    dependency "core-js"
     dependency "react-dom"
     dependency "react-router-dom"
     dependency "kotlin"

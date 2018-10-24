@@ -11,17 +11,18 @@ Ported from the awesome Golang implementation [nes by @fogleman](https://github.
 
 ## Building/Running
 
-You'll need https://github.com/google/oboe to run ktnes.
-Please clone Oboe and put it in the same directory as ktnes, eg.:
-`~/code/ktnes` and `~/code/oboe`.
+You'll need to pull the oboe git submodule to run ktnes:
+```
+git submodule init && git submodule update
+```
 
 ## Kotlin/Native implementation
 
 The emulator implementation using Kotlin/Native is not functional yet.
 To build the Android native library implementation: 
 
-- Set `ANDROID_HOME` to your Android SDK path (e.g. `/Users/jenny/Library/Android/sdk`). 
-- Run `./gradlew android:native-lib:copyLibs`
+- Set `ANDROID_HOME` to your Android SDK path (e.g. `/Users/<username>/Library/Android/sdk`). 
+- Run `./gradlew lib:copyLibs`
 
 If you did that correctly, you should be able to build and run directly from Android Studio.
 

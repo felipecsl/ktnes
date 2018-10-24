@@ -1,0 +1,61 @@
+apply plugin: 'kotlin-multiplatform'
+apply plugin: 'org.jetbrains.kotlin.frontend'
+
+kotlinFrontend {
+  downloadNodeJsVersion = "latest"
+
+  webpackBundle {
+    bundleName = "main"
+    contentPath = file('src/jsMain/web')
+    sourceMapEnabled = true
+    mode = "development"
+  }
+
+  npm {
+    dependency "react"
+    dependency "core-js"
+    dependency "react-dom"
+    dependency "react-router-dom"
+    dependency "kotlin"
+    // This looks like an unofficial package but I couldn't find the actual Jetbrains one,
+    // only kotlinx-html
+    dependency "kotlinx-html-js"
+    dependency "@jetbrains/kotlin-react"
+    dependency "@jetbrains/kotlin-react-dom"
+    dependency "@jetbrains/kotlin-extensions"
+    dependency "@jetbrains/kotlin-react-router-dom"
+  }
+}
+
+afterEvaluate {
+  compileKotlinJs {
+    kotlinOptions.metaInfo = true
+    kotlinOptions.outputFile = "${project.buildDir.path}/js/${project.name}.js"
+    kotlinOptions.sourceMap = true
+    kotlinOptions.moduleKind = 'commonjs'
+    kotlinOptions.main = "call"
+  }
+}
+
+kotlin {
+  sourceSets {
+    jsMain {
+      dependencies {
+        implementation project(':lib')
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+        implementation "org.jetbrains:kotlin-react:16.5.2-pre.57-kotlin-1.2.71"
+        implementation "org.jetbrains:kotlin-react-dom:16.5.2-pre.57-kotlin-1.2.71"
+        implementation 'org.jetbrains:kotlin-react-router-dom:4.3.1-pre.57-kotlin-1.2.71'
+        implementation "org.jetbrains.kotlinx:kotlinx-html-js:0.6.11"
+      }
+    }
+  }
+
+  targets {
+    fromPreset(presets.js, 'js')
+  }
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+}

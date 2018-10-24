@@ -7,9 +7,32 @@ kotlinFrontend {
   webpackBundle {
     bundleName = "main"
     contentPath = file('src/jsMain/web')
-    webpackConfigFile = "${project.projectDir.path}/webpack.config.js"
     sourceMapEnabled = true
     mode = "development"
+  }
+
+  npm {
+    dependency "react"
+    dependency "react-dom"
+    dependency "react-router-dom"
+    dependency "kotlin"
+    // This looks like an unofficial package but I couldn't find the actual Jetbrains one,
+    // only kotlinx-html
+    dependency "kotlinx-html-js"
+    dependency "@jetbrains/kotlin-react"
+    dependency "@jetbrains/kotlin-react-dom"
+    dependency "@jetbrains/kotlin-extensions"
+    dependency "@jetbrains/kotlin-react-router-dom"
+  }
+}
+
+afterEvaluate {
+  compileKotlinJs {
+    kotlinOptions.metaInfo = true
+    kotlinOptions.outputFile = "${project.buildDir.path}/js/${project.name}.js"
+    kotlinOptions.sourceMap = true
+    kotlinOptions.moduleKind = 'commonjs'
+    kotlinOptions.main = "call"
   }
 }
 

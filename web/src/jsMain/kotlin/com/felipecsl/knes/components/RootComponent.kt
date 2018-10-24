@@ -1,15 +1,20 @@
 package com.felipecsl.knes.components
 
+import com.felipecsl.knes.FrameTimer
+import kotlinx.html.js.onClickFunction
 import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
+import react.dom.button
 import react.dom.canvas
 import react.dom.h1
 
-class RootComponent : RComponent<RProps, RootComponent.State>()  {
+class RootComponent : RComponent<RProps, RootComponent.State>() {
   override fun RBuilder.render() {
     val rootComponentState = state
     h1 { +"ktnes" }
@@ -18,6 +23,35 @@ class RootComponent : RComponent<RProps, RootComponent.State>()  {
         rootComponentState.canvas = it
       }
     }
+    button {
+      +"Play"
+      attrs {
+        onClickFunction = ::playOrPause
+      }
+      ref {
+        rootComponentState.playPauseBtn = it
+      }
+    }
+  }
+
+  private fun playOrPause(event: Event) {
+    // lazily initialize FrameTimer
+    val timer = state.frameTimer ?: let {
+      FrameTimer(::onNewFrame).also { ft ->
+        state.frameTimer = ft
+      }
+    }
+    if (!timer.running()) {
+      timer.start()
+      state.playPauseBtn!!.innerHTML = "Pause"
+    } else {
+      timer.stop()
+      state.playPauseBtn!!.innerHTML = "Play"
+    }
+  }
+
+  private fun onNewFrame() {
+    println("new frame received")
   }
 
   override fun componentDidMount() {
@@ -36,6 +70,8 @@ class RootComponent : RComponent<RProps, RootComponent.State>()  {
 
   class State : RState {
     var canvas: HTMLCanvasElement? = null
+    var playPauseBtn: HTMLButtonElement? = null
+    var frameTimer: FrameTimer? = null
   }
 
   companion object {

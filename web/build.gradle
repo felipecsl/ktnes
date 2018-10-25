@@ -56,6 +56,18 @@ kotlin {
   }
 }
 
+task copyLibs(type: Copy) {
+  destinationDir buildDir
+
+  into("js") {
+    from project(':lib').file("build/js")
+  }
+}
+
+bundle {
+  dependsOn copyLibs
+}
+
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
 }

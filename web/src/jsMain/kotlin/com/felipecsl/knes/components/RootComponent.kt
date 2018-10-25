@@ -1,52 +1,86 @@
 package com.felipecsl.knes.components
 
+import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
+import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
-import org.w3c.dom.CanvasRenderingContext2D
-import org.w3c.dom.HTMLButtonElement
-import org.w3c.dom.HTMLCanvasElement
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.get
+import org.w3c.dom.*
 import org.w3c.dom.events.Event
-import react.RBuilder
-import react.RComponent
-import react.RProps
-import react.RState
-import react.dom.button
-import react.dom.canvas
-import react.dom.h1
+import org.w3c.files.FileReader
+import react.*
+import react.dom.*
+import kotlin.browser.window
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
   override fun RBuilder.render() {
-    val rootComponentState = state
+    val outerState = state
     h1 { +"ktnes" }
-    canvas("screen") {
+    input(type = InputType.file, name = "rom_file") {
       ref {
-        rootComponentState.canvas = it
+        outerState.romFileInput = it
       }
     }
+    br {}
+    canvas("screen") {
+      ref {
+        outerState.canvas = it
+      }
+    }
+    br {}
     button {
-      +"Play"
+      if (!state.isRunning) +"Play" else +"Pause"
       attrs {
         onClickFunction = ::playOrPause
       }
       ref {
-        rootComponentState.playPauseBtn = it
+        outerState.playPauseBtn = it
       }
     }
   }
 
-  private fun playOrPause(event: Event) {
+  private fun playOrPause(@Suppress("UNUSED_PARAMETER") event: Event) {
+    // load ROM file
+    val romFile = state.romFileInput!!.files?.asList()?.firstOrNull()
+    if (romFile != null) {
+      val reader = FileReader()
+      reader.onload = ::onRomFileLoaded
+      reader.readAsArrayBuffer(romFile)
+    } else {
+      console.log("No ROM file selected.")
+    }
+  }
+
+  private fun onRomFileLoaded(event: Event) {
     // lazily initialize FrameTimer
     val timer = state.frameTimer ?: let {
       FrameTimer(::onNewFrame).also { ft ->
         state.frameTimer = ft
       }
     }
+    // load ROM file contents
+    val buffer = (event.target!! as FileReader).result as ArrayBuffer
+    val cartridgeData = Uint8Array(buffer).toByteArray()
+    console.log("ROM file loaded, size=${cartridgeData.size}")
+    state.director = Director(cartridgeData)
+    state.director!!.run()
     if (!timer.running()) {
       timer.start()
-      state.playPauseBtn!!.innerHTML = "Pause"
     } else {
       timer.stop()
-      state.playPauseBtn!!.innerHTML = "Play"
+    }
+    setState {
+      isRunning = timer.running()
+    }
+  }
+
+  private fun Uint8Array.toByteArray(): ByteArray {
+    return ByteArray(length).also { byteArray ->
+      (0..length).forEach {
+        byteArray[it] = this[it]
+      }
     }
   }
 
@@ -72,6 +106,9 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     var canvas: HTMLCanvasElement? = null
     var playPauseBtn: HTMLButtonElement? = null
     var frameTimer: FrameTimer? = null
+    var isRunning = false
+    var romFileInput: HTMLInputElement? = null
+    var director: Director? = null
   }
 
   companion object {

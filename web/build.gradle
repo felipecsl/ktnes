@@ -6,7 +6,7 @@ kotlinFrontend {
 
   webpackBundle {
     bundleName = "main"
-    contentPath = file('src/jsMain/web')
+    contentPath = file 'src/jsMain/web'
     sourceMapEnabled = true
     mode = "development"
   }

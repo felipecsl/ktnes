@@ -86,16 +86,14 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   private fun requestNewFrame() {
-    val buffer = state.director.videoBuffer()
-    for (i in 0..buffer.size) {
-      val inColor = buffer[i]
-      // convert BGR to ARGB
-      val blue = (inColor shr 16) and 0xFF
-      val green = (inColor shr 8) and 0xFF
-      val red = (inColor shr 0) and 0xFF
-      val outColor = (red shl 16) or (green shl 8) or (blue shl 0)
-      state.buffer32[i] = 0xff000000.toInt() or outColor
-    }
+    // convert BGR to ARGB
+    state.director
+        .videoBuffer()
+        .forEachIndexed { i, inColor ->
+          state.buffer32[i] = ALPHA_COLOR or ((inColor and 0xFF shl 16) or
+              ((inColor ushr 8) and 0xFF shl 8) or
+              ((inColor ushr 16) and 0xFF))
+        }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
     state.director.stepSeconds(SECS_PER_FRAME)
@@ -142,6 +140,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   companion object {
+    private const val ALPHA_COLOR = 0xff000000.toInt()
     private const val SCREEN_WIDTH = 256.0
     private const val SCREEN_HEIGHT = 240.0
   }

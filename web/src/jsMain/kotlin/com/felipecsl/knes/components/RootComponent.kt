@@ -90,9 +90,10 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     state.director
         .videoBuffer()
         .forEachIndexed { i, inColor ->
-          state.buffer32[i] = ALPHA_COLOR or ((inColor and 0xFF shl 16) or
-              ((inColor ushr 8) and 0xFF shl 8) or
-              ((inColor ushr 16) and 0xFF))
+          state.buffer32[i] = ALPHA_MASK or
+              (inColor and 0xFF shl 16) or
+              (inColor and 0x00FF00) or
+              (inColor ushr 16)
         }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
@@ -123,6 +124,9 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     state.buffer = ArrayBuffer(state.imageData.data.length)
     state.buffer8 = Uint8ClampedArray(state.buffer)
     state.buffer32 = Uint32Array(state.buffer)
+    for (i in 0..state.buffer32.length) {
+      state.buffer32[i] = ALPHA_MASK
+    }
   }
 
   class State : RState {
@@ -140,7 +144,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   companion object {
-    private const val ALPHA_COLOR = 0xff000000.toInt()
+    private const val ALPHA_MASK = 0xFF000000.toInt()
     private const val SCREEN_WIDTH = 256.0
     private const val SCREEN_HEIGHT = 240.0
   }

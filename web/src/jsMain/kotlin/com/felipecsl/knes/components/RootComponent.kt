@@ -87,14 +87,9 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun requestNewFrame() {
     // convert BGR to ARGB
-    state.director
-        .videoBuffer()
-        .forEachIndexed { i, inColor ->
-          state.buffer32[i] = ALPHA_MASK or
-              (inColor and 0xFF shl 16) or
-              (inColor and 0x00FF00) or
-              (inColor ushr 16)
-        }
+    state.director.videoBuffer().forEachIndexed { i, c ->
+      state.buffer32[i] = ALPHA_MASK or (c and 0xFF shl 16) or (c and 0x00FF00) or (c ushr 16)
+    }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
     state.director.stepSeconds(SECS_PER_FRAME)

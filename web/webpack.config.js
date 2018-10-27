@@ -13,17 +13,10 @@ var config = {
     "path": path.resolve('./bundle'),
     "filename": "[name].bundle.js",
     "chunkFilename": "[id].bundle.js",
-    // https://github.com/webpack/webpack/issues/6642#issuecomment-371087342
-    "globalObject": 'this',
     "publicPath": "/"
   },
   "module": {
-    "rules": [
-      {
-        test: /web-worker\.js$/,
-        use: { loader: 'worker-loader' }
-      }
-    ]
+    "rules": []
   },
   "resolve": {
     "modules": [

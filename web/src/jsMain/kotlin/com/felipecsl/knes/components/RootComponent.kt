@@ -1,8 +1,8 @@
 package com.felipecsl.knes.components
 
+import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
 import kotlinx.html.InputType
-import kotlinx.html.header
 import kotlinx.html.js.onClickFunction
 import org.khronos.webgl.*
 import org.w3c.dom.*
@@ -10,15 +10,9 @@ import org.w3c.dom.events.Event
 import org.w3c.files.FileReader
 import react.*
 import react.dom.*
-import kotlin.js.json
 
-@JsModule("web-worker")
-external class Worker {
-  var onmessage: ((Event) -> dynamic)?
-  var onerror: ((Event) -> dynamic)?
-  fun terminate()
-  fun postMessage(message: Any?, transfer: Array<dynamic> = definedExternally)
-}
+const val FPS = 60
+const val SECS_PER_FRAME = 1F / FPS
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
   override fun RBuilder.render() {
@@ -53,7 +47,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun playOrPause(@Suppress("UNUSED_PARAMETER") event: Event) {
     // load ROM file
-    val romFile = state.romFileInput!!.files?.asList()?.firstOrNull()
+    val romFile = state.romFileInput.files?.asList()?.firstOrNull()
     if (romFile != null) {
       val reader = FileReader()
       reader.onload = ::onRomFileLoaded
@@ -85,36 +79,25 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     val buffer = (event.target!! as FileReader).result as ArrayBuffer
     val cartridgeData = Uint8Array(buffer).toByteArray()
     console.log("ROM file loaded, size=${cartridgeData.size}")
-    state.worker = Worker().also {
-      // send cartridge data to worker
-      it.onmessage = ::onWorkerMessage
-      it.postMessage(json("message" to "start", "buffer" to cartridgeData))
+    state.director = Director(cartridgeData).also {
+      it.stepSeconds(SECS_PER_FRAME)
     }
     frameTimer.start()
   }
 
-  private fun onWorkerMessage(event: Event): dynamic {
-    val messageEvent = event as MessageEvent
-    val data: dynamic = messageEvent.data
-    val message = data.message
-    when (message) {
-      "frame" -> onFrameReceived(data.buffer as IntArray)
-      else -> println("[web] Unknown message received $message")
-    }
-    return null
-  }
-
-  private fun onFrameReceived(buffer: IntArray) {
+  private fun requestNewFrame() {
+    val buffer = state.director.buffer()
     for (i in 0..buffer.size) {
       val inColor = buffer[i]
       val red = (inColor shr 16) and 0xFF
       val green = (inColor shr 8) and 0xFF
       val blue = (inColor shr 0) and 0xFF
       val outColor = (blue shl 16) or (green shl 8) or (red shl 0)
-      state.buffer32!![i] = 0xff000000.toInt() or outColor
+      state.buffer32[i] = 0xff000000.toInt() or outColor
     }
-    state.imageData!!.data.set(state.buffer8!!)
-    state.context!!.putImageData(state.imageData!!, 0.0, 0.0)
+    state.imageData.data.set(state.buffer8)
+    state.context.putImageData(state.imageData, 0.0, 0.0)
+    state.director.stepSeconds(SECS_PER_FRAME)
   }
 
   private fun Uint8Array.toByteArray(): ByteArray {
@@ -123,10 +106,6 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
         byteArray[it] = this[it]
       }
     }
-  }
-
-  private fun requestNewFrame() {
-    state.worker!!.postMessage(json("message" to "frame"))
   }
 
   override fun componentDidMount() {
@@ -138,32 +117,32 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   private fun initCanvas() {
-    state.context = state.canvas!!.getContext("2d") as CanvasRenderingContext2D
-    state.context!!.fillStyle = "black"
-    state.context!!.fillRect(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
-    state.imageData = state.context!!.getImageData(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
-    state.buffer = ArrayBuffer(state.imageData!!.data.length)
-    state.buffer8 = Uint8ClampedArray(state.buffer!!)
-    state.buffer32 = Uint32Array(state.buffer!!)
+    state.context = state.canvas.getContext("2d") as CanvasRenderingContext2D
+    state.context.fillStyle = "black"
+    state.context.fillRect(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    state.imageData = state.context.getImageData(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    state.buffer = ArrayBuffer(state.imageData.data.length)
+    state.buffer8 = Uint8ClampedArray(state.buffer)
+    state.buffer32 = Uint32Array(state.buffer)
 
     // set alpha
-    for (i in 0..state.buffer32!!.length) {
-      state.buffer32!![i] = 0xff000000.toInt()
+    for (i in 0..state.buffer32.length) {
+      state.buffer32[i] = 0xff000000.toInt()
     }
   }
 
   class State : RState {
-    var context: CanvasRenderingContext2D? = null
-    var canvas: HTMLCanvasElement? = null
-    var playPauseBtn: HTMLButtonElement? = null
+    lateinit var context: CanvasRenderingContext2D
+    lateinit var director: Director
+    lateinit var canvas: HTMLCanvasElement
+    lateinit var playPauseBtn: HTMLButtonElement
+    lateinit var romFileInput: HTMLInputElement
+    lateinit var imageData: ImageData
+    lateinit var buffer: ArrayBuffer
+    lateinit var buffer8: Uint8ClampedArray
+    lateinit var buffer32: Uint32Array
     var frameTimer: FrameTimer? = null
-    var worker: Worker? = null
     var isRunning = false
-    var romFileInput: HTMLInputElement? = null
-    var imageData: ImageData? = null
-    var buffer: ArrayBuffer? = null
-    var buffer8: Uint8ClampedArray? = null
-    var buffer32: Uint32Array? = null
   }
 
   companion object {

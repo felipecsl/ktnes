@@ -1,6 +1,5 @@
 include ':android'
 include ':web'
-include ':web-worker'
 include ':lib'
 
 enableFeaturePreview('GRADLE_METADATA')

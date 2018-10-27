@@ -36,9 +36,11 @@ class Director(
     isRunning = true
     val cyclesToRun = seconds * CPU.FREQUENCY
     var totalCycles = 0L
+    val startTime = currentTimeMs()
     while (isRunning && totalCycles < cyclesToRun) {
       totalCycles += console.step()
     }
+    trackConsoleSpeed(startTime, totalCycles)
   }
 
   private fun trackConsoleSpeed(startTime: Long, totalCycles: Long): Long {

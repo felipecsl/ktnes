@@ -42,7 +42,6 @@ kotlin {
   sourceSets {
     jsMain {
       dependencies {
-        implementation project(':lib')
         implementation project(':web-worker')
         implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
         implementation "org.jetbrains:kotlin-react:16.5.2-pre.57-kotlin-1.2.71"

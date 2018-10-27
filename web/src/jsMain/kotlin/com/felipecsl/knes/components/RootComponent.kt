@@ -1,6 +1,5 @@
 package com.felipecsl.knes.components
 
-import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
@@ -12,7 +11,15 @@ import org.w3c.dom.events.Event
 import org.w3c.files.FileReader
 import react.*
 import react.dom.*
-import kotlin.browser.window
+import kotlin.js.json
+
+@JsModule("web-worker")
+external class Worker {
+  var onmessage: ((Event) -> dynamic)?
+  var onerror: ((Event) -> dynamic)?
+  fun terminate()
+  fun postMessage(message: Any?, transfer: Array<dynamic> = definedExternally)
+}
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
   override fun RBuilder.render() {
@@ -55,25 +62,39 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun onRomFileLoaded(event: Event) {
     // lazily initialize FrameTimer
-    val timer = state.frameTimer ?: let {
+    val frameTimer = state.frameTimer ?: let {
       FrameTimer(::onNewFrame).also { ft ->
         state.frameTimer = ft
       }
     }
+    if (!frameTimer.running()) {
+      startConsole(event, frameTimer)
+    } else {
+      frameTimer.stop()
+    }
+    setState {
+      isRunning = frameTimer.running()
+    }
+  }
+
+  private fun startConsole(event: Event, frameTimer: FrameTimer) {
     // load ROM file contents
     val buffer = (event.target!! as FileReader).result as ArrayBuffer
     val cartridgeData = Uint8Array(buffer).toByteArray()
     console.log("ROM file loaded, size=${cartridgeData.size}")
-    state.director = Director(cartridgeData)
-    state.director!!.run()
-    if (!timer.running()) {
-      timer.start()
-    } else {
-      timer.stop()
+    state.worker = Worker().also {
+      // send cartridge data to worker
+      it.onmessage = ::onWorkerMessage
+      it.postMessage(json("message" to "start", "buffer" to cartridgeData))
     }
-    setState {
-      isRunning = timer.running()
-    }
+    frameTimer.start()
+  }
+
+  private fun onWorkerMessage(event: Event): dynamic {
+    val messageEvent = event as MessageEvent
+    val data: dynamic = messageEvent.data
+    println("[web] worker#onmessage: $data")
+    return null
   }
 
   private fun Uint8Array.toByteArray(): ByteArray {
@@ -85,7 +106,8 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   private fun onNewFrame() {
-    println("new frame received")
+    println("[web] requesting new frame")
+    state.worker!!.postMessage(json("message" to "frame"))
   }
 
   override fun componentDidMount() {
@@ -106,9 +128,9 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     var canvas: HTMLCanvasElement? = null
     var playPauseBtn: HTMLButtonElement? = null
     var frameTimer: FrameTimer? = null
+    var worker: Worker? = null
     var isRunning = false
     var romFileInput: HTMLInputElement? = null
-    var director: Director? = null
   }
 
   companion object {

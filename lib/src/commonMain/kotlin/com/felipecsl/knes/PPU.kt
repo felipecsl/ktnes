@@ -352,7 +352,8 @@ internal class PPU(
             background
           }
         }
-        back[y * IMG_WIDTH + x1] = PALETTE[paletteData[if (color >= 16 && color % 4 == 0) color - 16 else color] % 64]
+        back[y * IMG_WIDTH + x1] =
+            PALETTE[paletteData[if (color >= 16 && color % 4 == 0) color - 16 else color] % 64]
       }
       if (renderLine && fetchCycle) {
         tileData = tileData shl 4

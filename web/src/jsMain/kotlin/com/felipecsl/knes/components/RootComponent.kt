@@ -86,13 +86,14 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   private fun requestNewFrame() {
-    val buffer = state.director.buffer()
+    val buffer = state.director.videoBuffer()
     for (i in 0..buffer.size) {
       val inColor = buffer[i]
-      val red = (inColor shr 16) and 0xFF
+      // convert BGR to ARGB
+      val blue = (inColor shr 16) and 0xFF
       val green = (inColor shr 8) and 0xFF
-      val blue = (inColor shr 0) and 0xFF
-      val outColor = (blue shl 16) or (green shl 8) or (red shl 0)
+      val red = (inColor shr 0) and 0xFF
+      val outColor = (red shl 16) or (green shl 8) or (blue shl 0)
       state.buffer32[i] = 0xff000000.toInt() or outColor
     }
     state.imageData.data.set(state.buffer8)
@@ -124,11 +125,6 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     state.buffer = ArrayBuffer(state.imageData.data.length)
     state.buffer8 = Uint8ClampedArray(state.buffer)
     state.buffer32 = Uint32Array(state.buffer)
-
-    // set alpha
-    for (i in 0..state.buffer32.length) {
-      state.buffer32[i] = 0xff000000.toInt()
-    }
   }
 
   class State : RState {

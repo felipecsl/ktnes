@@ -6,8 +6,7 @@ var config = {
   "mode": "development",
   "context": path.resolve('js'),
   "entry": {
-    "main": "./web",
-    "web-worker": "./web-worker"
+    "main": "./web"
   },
   "output": {
     "path": path.resolve('./bundle'),

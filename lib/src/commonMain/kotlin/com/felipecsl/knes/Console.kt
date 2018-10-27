@@ -20,7 +20,7 @@ internal class Console(
     return cpuCycles
   }
 
-  fun buffer(): IntArray {
+  fun videoBuffer(): IntArray {
     return ppu.front
   }
 

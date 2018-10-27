@@ -27,7 +27,7 @@ class GLSprite(private val buttonsProvider: () -> BooleanArray) {
 
   fun draw() {
     val image = if (director != null) {
-      director!!.buffer()
+      director!!.videoBuffer()
     } else {
       nativeGetConsoleBuffer()
     }

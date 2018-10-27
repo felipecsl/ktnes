@@ -32,7 +32,7 @@ class Director(
     }
   }
 
-  fun stepSeconds(seconds: Float) {
+  fun stepSeconds(seconds: Float, logSpeed: Boolean = false) {
     isRunning = true
     val cyclesToRun = seconds * CPU.FREQUENCY
     var totalCycles = 0L
@@ -40,7 +40,9 @@ class Director(
     while (isRunning && totalCycles < cyclesToRun) {
       totalCycles += console.step()
     }
-    trackConsoleSpeed(startTime, totalCycles)
+    if (logSpeed) {
+      trackConsoleSpeed(startTime, totalCycles)
+    }
   }
 
   private fun trackConsoleSpeed(startTime: Long, totalCycles: Long): Long {
@@ -63,8 +65,8 @@ class Director(
     console.reset()
   }
 
-  fun buffer(): IntArray {
-    return console.buffer()
+  fun videoBuffer(): IntArray {
+    return console.videoBuffer()
   }
 
   fun pause() {

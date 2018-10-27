@@ -32,6 +32,15 @@ class Director(
     }
   }
 
+  fun stepSeconds(seconds: Float) {
+    isRunning = true
+    val cyclesToRun = seconds * CPU.FREQUENCY
+    var totalCycles = 0L
+    while (isRunning && totalCycles < cyclesToRun) {
+      totalCycles += console.step()
+    }
+  }
+
   private fun trackConsoleSpeed(startTime: Long, totalCycles: Long): Long {
     val currentTime = currentTimeMs()
     val msSpent = currentTime - startTime

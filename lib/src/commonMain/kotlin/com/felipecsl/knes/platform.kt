@@ -1,3 +1,3 @@
 package com.felipecsl.knes
 
-expect fun currentTimeMs(): Long
+expect fun currentTimeMs(): Double

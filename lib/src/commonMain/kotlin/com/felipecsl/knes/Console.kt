@@ -7,14 +7,16 @@ internal class Console(
     private val ppu: PPU,
     private val mapper: Mapper
 ) {
-  fun step(): Long {
+  fun step(): Double {
     val cpuCycles = cpu.step()
-    for (it in 0 until cpuCycles * 3) {
+    var i = 0
+    while (i++ < cpuCycles * 3) {
       if (!ppu.step()) {
         mapper.step()
       }
     }
-    for (it in 0 until cpuCycles) {
+    i = 0
+    while (i++ < cpuCycles) {
       apu.step()
     }
     return cpuCycles

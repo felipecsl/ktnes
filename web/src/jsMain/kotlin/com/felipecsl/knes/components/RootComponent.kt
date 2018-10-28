@@ -154,9 +154,9 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun initKeyboard() {
     state.keyboardController = KeyboardController().apply {
-      window.document.addEventListener("keydown", ::handleKeyDown)
-      window.document.addEventListener("keyup", ::handleKeyUp)
-      window.document.addEventListener("keypress", ::handleKeyPress)
+      document.addEventListener("keydown", ::handleKeyDown)
+      document.addEventListener("keyup", ::handleKeyUp)
+      document.addEventListener("keypress", ::handleKeyPress)
     }
   }
 

@@ -1,4 +1,4 @@
-package com.felipecsl. knes
+package com.felipecsl.knes
 
 internal class Controller {
   var buttons: BooleanArray? = null

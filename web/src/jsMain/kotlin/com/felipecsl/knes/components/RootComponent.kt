@@ -2,6 +2,7 @@ package com.felipecsl.knes.components
 
 import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
+import com.felipecsl.knes.KeyboardController
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.khronos.webgl.*
@@ -10,6 +11,7 @@ import org.w3c.dom.events.Event
 import org.w3c.files.FileReader
 import react.*
 import react.dom.*
+import kotlin.browser.document
 
 const val FPS = 60
 const val SECS_PER_FRAME = 1F / FPS
@@ -127,6 +129,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
+    state.director.setButtons1(state.keyboardController.buttons)
     state.director.stepSeconds(SECS_PER_FRAME)
   }
 
@@ -140,10 +143,20 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   override fun componentDidMount() {
     initCanvas()
+    initKeyboard()
   }
 
   override fun componentDidUpdate(prevProps: RProps, prevState: State, snapshot: Any) {
     initCanvas()
+    initKeyboard()
+  }
+
+  private fun initKeyboard() {
+    state.keyboardController = KeyboardController().apply {
+      document.addEventListener("keydown", ::handleKeyDown)
+      document.addEventListener("keyup", ::handleKeyUp)
+      document.addEventListener("keypress", ::handleKeyPress)
+    }
   }
 
   private fun initCanvas() {
@@ -167,6 +180,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     lateinit var romFileInput: HTMLInputElement
     lateinit var imageData: ImageData
     lateinit var buffer: ArrayBuffer
+    lateinit var keyboardController: KeyboardController
     lateinit var buffer8: Uint8ClampedArray
     lateinit var buffer32: Uint32Array
     var frameTimer: FrameTimer? = null

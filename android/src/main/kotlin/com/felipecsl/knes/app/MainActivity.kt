@@ -42,11 +42,11 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val audioEngine = AudioEngineWrapper()
   private lateinit var director: Director
   private val buttons = BooleanArray(8)
-  private val onButtonTouched = { i: Int ->
+  private val onButtonTouched = { b: Buttons ->
     View.OnTouchListener { _, e ->
       when (e.action) {
-        MotionEvent.ACTION_DOWN -> buttons[i] = true
-        MotionEvent.ACTION_UP -> buttons[i] = false
+        MotionEvent.ACTION_DOWN -> buttons[b.ordinal] = true
+        MotionEvent.ACTION_UP -> buttons[b.ordinal] = false
       }
       true
     }
@@ -73,14 +73,14 @@ class MainActivity : AppCompatActivity(), Runnable {
       resetConsole()
     }
 
-    btnA.setOnTouchListener(onButtonTouched(0))
-    btnB.setOnTouchListener(onButtonTouched(1))
-    btnSelect.setOnTouchListener(onButtonTouched(2))
-    btnStart.setOnTouchListener(onButtonTouched(3))
-    arrowUp.setOnTouchListener(onButtonTouched(4))
-    arrowDown.setOnTouchListener(onButtonTouched(5))
-    arrowLeft.setOnTouchListener(onButtonTouched(6))
-    arrowRight.setOnTouchListener(onButtonTouched(7))
+    btnA.setOnTouchListener(onButtonTouched(Buttons.BUTTON_A))
+    btnB.setOnTouchListener(onButtonTouched(Buttons.BUTTON_B))
+    btnSelect.setOnTouchListener(onButtonTouched(Buttons.BUTTON_SELECT))
+    btnStart.setOnTouchListener(onButtonTouched(Buttons.BUTTON_START))
+    arrowUp.setOnTouchListener(onButtonTouched(Buttons.ARROW_UP))
+    arrowDown.setOnTouchListener(onButtonTouched(Buttons.ARROW_DOWN))
+    arrowLeft.setOnTouchListener(onButtonTouched(Buttons.ARROW_LEFT))
+    arrowRight.setOnTouchListener(onButtonTouched(Buttons.ARROW_RIGHT))
   }
 
   private fun onClickPlayPause(glSprite: GLSprite) {

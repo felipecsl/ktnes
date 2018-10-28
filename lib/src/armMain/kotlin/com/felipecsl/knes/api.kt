@@ -20,7 +20,7 @@ fun nativeStartConsole(
     val bufferPointer = buffer.refTo(0).getPointer(memScope)
     jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
     val director = Director(buffer)
-    directorBuffer = director.buffer()
+    directorBuffer = director.videoBuffer()
     director.run()
   }
 }

@@ -4,15 +4,15 @@ import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
-import org.khronos.webgl.ArrayBuffer
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.get
+import org.khronos.webgl.*
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.files.FileReader
 import react.*
 import react.dom.*
-import kotlin.browser.window
+
+const val FPS = 60
+const val SECS_PER_FRAME = 1F / FPS
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
   override fun RBuilder.render() {
@@ -25,6 +25,10 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     }
     br {}
     canvas("screen") {
+      attrs {
+        width = SCREEN_WIDTH.toString()
+        height = SCREEN_HEIGHT.toString()
+      }
       ref {
         outerState.canvas = it
       }
@@ -43,7 +47,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun playOrPause(@Suppress("UNUSED_PARAMETER") event: Event) {
     // load ROM file
-    val romFile = state.romFileInput!!.files?.asList()?.firstOrNull()
+    val romFile = state.romFileInput.files?.asList()?.firstOrNull()
     if (romFile != null) {
       val reader = FileReader()
       reader.onload = ::onRomFileLoaded
@@ -55,25 +59,40 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   private fun onRomFileLoaded(event: Event) {
     // lazily initialize FrameTimer
-    val timer = state.frameTimer ?: let {
-      FrameTimer(::onNewFrame).also { ft ->
+    val frameTimer = state.frameTimer ?: let {
+      FrameTimer(::requestNewFrame).also { ft ->
         state.frameTimer = ft
       }
     }
+    if (!frameTimer.running()) {
+      startConsole(event, frameTimer)
+    } else {
+      frameTimer.stop()
+    }
+    setState {
+      isRunning = frameTimer.running()
+    }
+  }
+
+  private fun startConsole(event: Event, frameTimer: FrameTimer) {
     // load ROM file contents
     val buffer = (event.target!! as FileReader).result as ArrayBuffer
     val cartridgeData = Uint8Array(buffer).toByteArray()
     console.log("ROM file loaded, size=${cartridgeData.size}")
-    state.director = Director(cartridgeData)
-    state.director!!.run()
-    if (!timer.running()) {
-      timer.start()
-    } else {
-      timer.stop()
+    state.director = Director(cartridgeData).also {
+      it.stepSeconds(SECS_PER_FRAME)
     }
-    setState {
-      isRunning = timer.running()
+    frameTimer.start()
+  }
+
+  private fun requestNewFrame() {
+    // convert BGR to ARGB
+    state.director.videoBuffer().forEachIndexed { i, c ->
+      state.buffer32[i] = ALPHA_MASK or (c and 0xFF shl 16) or (c and 0x00FF00) or (c ushr 16)
     }
+    state.imageData.data.set(state.buffer8)
+    state.context.putImageData(state.imageData, 0.0, 0.0)
+    state.director.stepSeconds(SECS_PER_FRAME)
   }
 
   private fun Uint8Array.toByteArray(): ByteArray {
@@ -82,10 +101,6 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
         byteArray[it] = this[it]
       }
     }
-  }
-
-  private fun onNewFrame() {
-    println("new frame received")
   }
 
   override fun componentDidMount() {
@@ -97,22 +112,35 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   }
 
   private fun initCanvas() {
-    val context = state.canvas!!.getContext("2d") as CanvasRenderingContext2D
-    context.fillStyle = "black"
-    context.fillRect(0.0, 0.0, SCREEN_WIDTH.toDouble(), SCREEN_HEIGHT.toDouble())
+    state.context = state.canvas.getContext("2d") as CanvasRenderingContext2D
+    state.context.fillStyle = "black"
+    state.context.fillRect(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    state.imageData = state.context.getImageData(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    state.buffer = ArrayBuffer(state.imageData.data.length)
+    state.buffer8 = Uint8ClampedArray(state.buffer)
+    state.buffer32 = Uint32Array(state.buffer)
+    for (i in 0..state.buffer32.length) {
+      state.buffer32[i] = ALPHA_MASK
+    }
   }
 
   class State : RState {
-    var canvas: HTMLCanvasElement? = null
-    var playPauseBtn: HTMLButtonElement? = null
+    lateinit var context: CanvasRenderingContext2D
+    lateinit var director: Director
+    lateinit var canvas: HTMLCanvasElement
+    lateinit var playPauseBtn: HTMLButtonElement
+    lateinit var romFileInput: HTMLInputElement
+    lateinit var imageData: ImageData
+    lateinit var buffer: ArrayBuffer
+    lateinit var buffer8: Uint8ClampedArray
+    lateinit var buffer32: Uint32Array
     var frameTimer: FrameTimer? = null
     var isRunning = false
-    var romFileInput: HTMLInputElement? = null
-    var director: Director? = null
   }
 
   companion object {
-    private const val SCREEN_WIDTH = 256
-    private const val SCREEN_HEIGHT = 240
+    private const val ALPHA_MASK = 0xFF000000.toInt()
+    private const val SCREEN_WIDTH = 256.0
+    private const val SCREEN_HEIGHT = 240.0
   }
 }

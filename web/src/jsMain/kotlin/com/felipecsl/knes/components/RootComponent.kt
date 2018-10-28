@@ -12,7 +12,6 @@ import org.w3c.files.FileReader
 import react.*
 import react.dom.*
 import kotlin.browser.document
-import kotlin.browser.window
 
 const val FPS = 60
 const val SECS_PER_FRAME = 1F / FPS

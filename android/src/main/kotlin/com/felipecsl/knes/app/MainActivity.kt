@@ -10,7 +10,6 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Switch
-import android.widget.Toolbar
 import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton

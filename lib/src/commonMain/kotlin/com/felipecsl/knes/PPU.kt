@@ -32,7 +32,7 @@ internal class PPU(
     private var attributeTableByte: Int = 0,  // Byte
     private var lowTileByte: Int = 0,         // Byte
     private var highTileByte: Int = 0,        // Byte
-    private var tileData: Long = 0,           // uint64
+    private var tileData: Long = 0L,          // uint64
 
     // sprite temporary variables
     private var spriteCount: Int = 0,
@@ -174,7 +174,7 @@ internal class PPU(
           address1++
         }
         cpu.stall += 513
-        if (cpu.cycles % 2 == 1L) {
+        if (cpu.cycles % 2.0 == 1.0) {
           cpu.stall++
         }
       }
@@ -299,7 +299,7 @@ internal class PPU(
         var background /* Byte */ = if (flagShowBackground == 0) {
           0
         } else {
-          tileData.ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
+          tileData.toLong().ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
         }
         var spritePixelI = 0
         var spritePixelSprite = 0

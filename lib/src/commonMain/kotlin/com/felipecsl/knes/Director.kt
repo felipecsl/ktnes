@@ -20,13 +20,13 @@ class Director(
 
   fun run() {
     var startTime = currentTimeMs()
-    var totalCycles = 0L
+    var totalCycles = 0.0
     isRunning = true
     while (isRunning) {
       totalCycles += console.step()
       if (totalCycles >= FREQUENCY) {
         val currentTime = trackConsoleSpeed(startTime, totalCycles)
-        totalCycles = 0
+        totalCycles = 0.0
         startTime = currentTime
       }
     }
@@ -35,7 +35,7 @@ class Director(
   fun stepSeconds(seconds: Float, logSpeed: Boolean = false) {
     isRunning = true
     val cyclesToRun = seconds * CPU.FREQUENCY
-    var totalCycles = 0L
+    var totalCycles = 0.0
     val startTime = currentTimeMs()
     while (isRunning && totalCycles < cyclesToRun) {
       totalCycles += console.step()
@@ -45,7 +45,7 @@ class Director(
     }
   }
 
-  private fun trackConsoleSpeed(startTime: Long, totalCycles: Long): Long {
+  private fun trackConsoleSpeed(startTime: Double, totalCycles: Double): Double {
     val currentTime = currentTimeMs()
     val msSpent = currentTime - startTime
     val clock = (totalCycles * 1000) / msSpent

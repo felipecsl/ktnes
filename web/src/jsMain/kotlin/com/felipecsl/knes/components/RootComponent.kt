@@ -13,34 +13,56 @@ import react.dom.*
 
 const val FPS = 60
 const val SECS_PER_FRAME = 1F / FPS
+const val CANVAS_SIZE_SCALE = 2
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
+  private val canvasWidth = SCREEN_WIDTH * CANVAS_SIZE_SCALE
+  private val canvasHeight = SCREEN_HEIGHT * CANVAS_SIZE_SCALE
+
   override fun RBuilder.render() {
     val outerState = state
-    h1 { +"ktnes" }
-    input(type = InputType.file, name = "rom_file") {
-      ref {
-        outerState.romFileInput = it
-      }
-    }
-    br {}
-    canvas("screen") {
-      attrs {
-        width = SCREEN_WIDTH.toString()
-        height = SCREEN_HEIGHT.toString()
-      }
-      ref {
-        outerState.canvas = it
-      }
-    }
-    br {}
-    button {
-      if (!state.isRunning) +"Play" else +"Pause"
-      attrs {
-        onClickFunction = ::playOrPause
-      }
-      ref {
-        outerState.playPauseBtn = it
+    div("container") {
+      div("row") {
+        div("col s12 m6 offset-m3") {
+          h1("header") { +"ktnes" }
+          div("card") {
+            div("card-content") {
+              div("row") {
+                div("input-field col s12") {
+                  input(type = InputType.file, name = "rom_file") {
+                    ref {
+                      outerState.romFileInput = it
+                    }
+                  }
+                }
+              }
+              div("row") {
+                div("col s12") {
+                  canvas {
+                    attrs {
+                      width = canvasWidth.toString()
+                      height = canvasHeight.toString()
+                    }
+                    ref {
+                      outerState.canvas = it
+                    }
+                  }
+                }
+              }
+            }
+            div("card-action") {
+              button(classes = "btn waves-effect waves-light") {
+                if (!state.isRunning) +"Play" else +"Pause"
+                attrs {
+                  onClickFunction = ::playOrPause
+                }
+                ref {
+                  outerState.playPauseBtn = it
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -60,7 +82,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   private fun onRomFileLoaded(event: Event) {
     // lazily initialize FrameTimer
     val frameTimer = state.frameTimer ?: let {
-      FrameTimer(::requestNewFrame).also { ft ->
+      FrameTimer(::onVideoFrame).also { ft ->
         state.frameTimer = ft
       }
     }
@@ -85,10 +107,23 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     frameTimer.start()
   }
 
-  private fun requestNewFrame() {
-    // convert BGR to ARGB
+  private fun onVideoFrame() {
+    val doubleScale = CANVAS_SIZE_SCALE * CANVAS_SIZE_SCALE
+    val width = canvasWidth.toInt()
     state.director.videoBuffer().forEachIndexed { i, c ->
-      state.buffer32[i] = ALPHA_MASK or (c and 0xFF shl 16) or (c and 0x00FF00) or (c ushr 16)
+      // final the (x, y) pair for the `i` pixel in the original video buffer and scale it to the
+      // new canvas size
+      val x = (i % SCREEN_WIDTH.toInt()) * CANVAS_SIZE_SCALE
+      val y = (i / SCREEN_WIDTH.toInt()) * CANVAS_SIZE_SCALE
+      // swap blue and red colors
+      val color = ALPHA_MASK or (c and 0xFF shl 16) or (c and 0x00FF00) or (c ushr 16)
+      // map pixel from original buffer into new buffer
+      for (j in 0..doubleScale) {
+        val (x1, y1) = x to y + j
+        val (x2, y2) = x + 1 to y + j
+        state.buffer32[y1 * width + x1] = color
+        state.buffer32[y2 * width + x2] = color
+      }
     }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
@@ -114,8 +149,8 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
   private fun initCanvas() {
     state.context = state.canvas.getContext("2d") as CanvasRenderingContext2D
     state.context.fillStyle = "black"
-    state.context.fillRect(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
-    state.imageData = state.context.getImageData(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    state.context.fillRect(0.0, 0.0, canvasWidth, canvasHeight)
+    state.imageData = state.context.getImageData(0.0, 0.0, canvasWidth, canvasHeight)
     state.buffer = ArrayBuffer(state.imageData.data.length)
     state.buffer8 = Uint8ClampedArray(state.buffer)
     state.buffer32 = Uint32Array(state.buffer)

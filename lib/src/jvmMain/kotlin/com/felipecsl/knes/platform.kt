@@ -1,5 +1,5 @@
 package com.felipecsl.knes
 
-actual fun currentTimeMs(): Long {
-  return System.currentTimeMillis()
+actual fun currentTimeMs(): Double {
+  return System.currentTimeMillis().toDouble()
 }

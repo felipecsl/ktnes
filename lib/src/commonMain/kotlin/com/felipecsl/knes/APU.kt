@@ -5,7 +5,7 @@ internal class APU(
     internal val audioBuffer: AudioBuffer = AudioBuffer(),
     // Convert samples per second to cpu steps per sample
     private val sampleRate: Double = CPU.FREQUENCY / SAMPLE_RATE,
-    private var cycle: Long = 0,
+    private var cycle: Double = 0.0,
     private var framePeriod: Int = 0, // Byte
     private var frameValue: Int = 0, // Byte
     private var frameIRQ: Boolean = false,
@@ -130,7 +130,8 @@ internal class APU(
     cycle++
     val cycle2 = cycle
     // step timer
-    if (cycle % 2L == 0L) {
+    // JS workaround: Use Double modulo for a faster implementation
+    if (cycle % 2.0 == 0.0) {
       // pulse 1 step timer
       if (pulse1TimerValue == 0) {
         pulse1TimerValue = pulse1TimerPeriod

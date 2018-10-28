@@ -10,9 +10,9 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Switch
+import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import com.felipecsl.android.NesGLSurfaceView
 import com.felipecsl.knes.*
@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity(), Runnable {
       System.loadLibrary("ktnes")
     }
 
-    const val ROM = R.raw.bingo
+    const val ROM = R.raw.super_mario_bros_3
     private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticDirector: Director? = null
 

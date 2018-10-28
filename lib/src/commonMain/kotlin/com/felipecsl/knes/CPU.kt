@@ -14,7 +14,7 @@ internal class CPU(
   private var stepAddress: Int = 0
   private var stepPC: Int = 0
   private var stepMode: Int = 0
-  internal var cycles: Long = 0              // number of cycles
+  internal var cycles: Double = 0.0         // number of cycles
   private var PC: Int = 0                   // (Byte) Program counter
   private var SP: Int = 0xFF                // (Byte) Stack pointer
   private var A: Int = 0                    // (Byte) Accumulator
@@ -102,12 +102,12 @@ internal class CPU(
     }
   }
 
-  fun step(): Long {
+  fun step(): Double {
 //    stepCallback?.onStep(
 //        cycles, PC, SP, A, X, Y, C, Z, I, D, B, U, V, N, interrupt, stall, null)
     if (stall > 0) {
       stall--
-      return 1
+      return 1.0
     }
     val currCycles = cycles
     // execute interrupt

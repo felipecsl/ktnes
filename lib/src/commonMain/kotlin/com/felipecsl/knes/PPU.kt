@@ -299,7 +299,7 @@ internal class PPU(
         var background /* Byte */ = if (flagShowBackground == 0) {
           0
         } else {
-          tileData.toLong().ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
+          tileData.ushr(32).toInt().ushr((7 - this.x) * 4).and(0x0F)
         }
         var spritePixelI = 0
         var spritePixelSprite = 0

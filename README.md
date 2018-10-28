@@ -34,6 +34,7 @@ Sound works but is still a bit garbled/distorted.
 
 Implemented mappers:
 
+* Mapper 0
 * Mapper 1
 * Mapper 4 (MMC3)
 

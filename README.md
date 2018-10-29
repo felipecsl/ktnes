@@ -19,7 +19,8 @@ git submodule init && git submodule update
 ## Android implementation
 
 You should be able to build and run directly from Android Studio.
-From the command line:
+
+If you'd rather use Gradle, run:
 ```
 ./gradlew android:installDebug
 ```
@@ -27,6 +28,7 @@ From the command line:
 ## Javascript implementation
 
 To build/run the Javascript version of the emulator, run `./gradlew web:run`
+
 Then, open `http://localhost:8088` on your browser.
 
 ## Status

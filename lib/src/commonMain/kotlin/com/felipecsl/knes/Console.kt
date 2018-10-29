@@ -5,7 +5,9 @@ internal class Console(
     private val cpu: CPU,
     private val apu: APU,
     private val ppu: PPU,
-    private val mapper: Mapper
+    private val mapper: Mapper,
+    val controller1: Controller,
+    val controller2: Controller
 ) {
   fun step(): Double {
     val cpuCycles = cpu.step()
@@ -32,10 +34,6 @@ internal class Console(
 
   fun reset() {
     cpu.reset()
-  }
-
-  fun setButtons(buttons: BooleanArray) {
-    cpu.controller1.buttons = buttons
   }
 
   fun state(): Map<String, String> {
@@ -70,7 +68,7 @@ internal class Console(
         mapper: Mapper = Mapper.newMapper(cartridge, mapperCallback),
         cpu: CPU = CPU(mapper, ppu, apu, controller1, controller2, IntArray(2048), cpuCallback)
     ): Console {
-      val console = Console(cartridge, cpu, apu, ppu, mapper)
+      val console = Console(cartridge, cpu, apu, ppu, mapper, controller1, controller2)
       ppu.isMMC3 = mapper is MMC3
       ppu.isNoOpMapper = mapper is Mapper2 || mapper is MMC1
       ppu.cpu = cpu

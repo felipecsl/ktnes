@@ -1,0 +1,65 @@
+.header {
+  font-size: 1.6em;
+  font-family: 'Open Sans';
+}
+
+.header.logo {
+  margin: 20px 0 0 0;
+  background-image: url('/img/kotlin-logo.jpeg');
+  background-position: left;
+  background-repeat: no-repeat;
+  background-size: contain;
+  text-indent: 30px;
+}
+
+canvas {
+  width: 100%;
+}
+
+.card .card-content {
+  padding: 0;
+}
+
+.nomargin {
+  margin: 0 !important;
+}
+
+.nopadding {
+  padding: 0 !important;
+}
+
+.inputfile {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+/** http://tholman.com/github-corners/ */
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out
+}
+
+@keyframes octocat-wave {
+  0%, 100% {
+    transform: rotate(0)
+  }
+  20%, 60% {
+    transform: rotate(-25deg)
+  }
+  40%, 80% {
+    transform: rotate(10deg)
+  }
+}
+
+@media (max-width: 500px) {
+  .github-corner:hover .octo-arm {
+    animation: none
+  }
+
+  .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out
+  }
+}

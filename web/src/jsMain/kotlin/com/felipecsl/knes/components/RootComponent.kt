@@ -29,11 +29,11 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     div("container") {
       div("row") {
         div("col s12 m6") {
-          h1("header") { +"Ktnes" }
+          h1("header logo") { +"Ktnes" }
         }
       }
       div("row") {
-        div("col s12 m6 offset-m3") {
+        div("col s12 m6") {
           input(type = InputType.file, name = "rom_file", classes = "inputfile") {
             ref {
               @Suppress("UnsafeCastFromDynamic")
@@ -57,7 +57,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
         }
       }
       div("row") {
-        div("col s12 m6 offset-m3") {
+        div("col s12 m12 l6") {
           div("card") {
             div("card-content") {
               div("row nomargin") {
@@ -92,9 +92,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
             }
           }
         }
-      }
-      div("row") {
-        div("col s12 m6 offset-m3") {
+        div("col s12 m12 l6") {
           h2("header") { +"What's this?" }
           p {
             +"Ktnes is a cross platform NES emulator written in Kotlin."
@@ -107,9 +105,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
             a("#") { +"here." }
           }
         }
-      }
-      div("row") {
-        div("col s12 m6 offset-m3") {
+        div("col s12 m12 l6") {
           h2("header") { +"How it works?" }
           p {
             +"TODO"

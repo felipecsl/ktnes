@@ -1,6 +1,9 @@
 .header {
   font-size: 1.6em;
   font-family: 'Open Sans';
+}
+
+.header.logo {
   margin: 20px 0 0 0;
   background-image: url('/img/kotlin-logo.jpeg');
   background-position: left;

@@ -1,13 +1,21 @@
 package com.felipecsl.knes
 
-internal class Controller {
-  var buttons: BooleanArray? = null
-  var index: Int = 0  // Byte
-  var strobe: Int = 0 // Byte
+class Controller {
+  private val buttons = BooleanArray(8)
+  internal var index: Int = 0  // Byte
+  private var strobe: Int = 0 // Byte
 
-  fun read(): Int {
+  fun onButtonUp(button: Buttons) {
+    buttons[button.ordinal] = false
+  }
+
+  fun onButtonDown(button: Buttons) {
+    buttons[button.ordinal] = true
+  }
+
+  internal fun read(): Int {
     var value = 0
-    if (index < 8 && buttons?.get(index) == true) {
+    if (index < 8 && buttons[index]) {
       value = 1
     }
     index = (index + 1) and 0xFF
@@ -17,7 +25,7 @@ internal class Controller {
     return value
   }
 
-  fun write(value: Int /* Byte */) {
+  internal fun write(value: Int /* Byte */) {
     strobe = value
     if (strobe and 1 == 1) {
       index = 0

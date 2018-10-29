@@ -1,0 +1,35 @@
+.header {
+  font-size: 1.6em;
+  font-family: 'Open Sans';
+  margin: 20px 0 0 0;
+  background-image: url('/img/kotlin-logo.jpeg');
+  background-position: left;
+  background-repeat: no-repeat;
+  background-size: contain;
+  text-indent: 30px;
+}
+
+canvas {
+  width: 100%;
+}
+
+.card .card-content {
+  padding: 0;
+}
+
+.nomargin {
+  margin: 0 !important;
+}
+
+.nopadding {
+  padding: 0 !important;
+}
+
+.inputfile {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}

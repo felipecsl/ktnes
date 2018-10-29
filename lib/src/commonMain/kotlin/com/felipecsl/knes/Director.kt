@@ -3,16 +3,18 @@ package com.felipecsl.knes
 import com.felipecsl.knes.CPU.Companion.FREQUENCY
 
 class Director(
-      cartridgeData: ByteArray,
-      mapperCallback: MapperStepCallback? = null,
-      cpuCallback: CPUStepCallback? = null,
-      ppuCallback: PPUStepCallback? = null,
-      apuCallback: APUStepCallback? = null
-  ) {
+    cartridgeData: ByteArray,
+    mapperCallback: MapperStepCallback? = null,
+    cpuCallback: CPUStepCallback? = null,
+    ppuCallback: PPUStepCallback? = null,
+    apuCallback: APUStepCallback? = null
+) {
   private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
   internal val console = Console.newConsole(
       cartridge, mapperCallback, cpuCallback, ppuCallback, apuCallback)
+  val controller1 = console.controller1
+  val controller2 = console.controller2
 
   init {
     console.reset()
@@ -52,10 +54,6 @@ class Director(
     val speed = clock / FREQUENCY.toFloat()
     println("Clock=${clock}Hz (${speed}x)")
     return currentTime
-  }
-
-  fun setButtons1(buttons: BooleanArray) {
-    console.setButtons(buttons)
   }
 
   fun audioBuffer() = console.audioBuffer()

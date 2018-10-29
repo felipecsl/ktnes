@@ -1,9 +1,11 @@
 package com.felipecsl.knes.components
 
+import com.felipecsl.knes.Controller
 import com.felipecsl.knes.Director
 import com.felipecsl.knes.FrameTimer
 import com.felipecsl.knes.KeyboardController
-import kotlinx.html.InputType
+import kotlinx.html.*
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.khronos.webgl.*
 import org.w3c.dom.*
@@ -12,6 +14,7 @@ import org.w3c.files.FileReader
 import react.*
 import react.dom.*
 import kotlin.browser.document
+import kotlin.browser.window
 
 const val FPS = 60
 const val SECS_PER_FRAME = 1F / FPS
@@ -25,27 +28,47 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     val outerState = state
     div("container") {
       div("row") {
+        div("col s12 m6") {
+          h1("header") { +"Ktnes" }
+        }
+      }
+      div("row") {
         div("col s12 m6 offset-m3") {
-          h1("header") { +"ktnes" }
+          input(type = InputType.file, name = "rom_file", classes = "inputfile") {
+            ref {
+              @Suppress("UnsafeCastFromDynamic")
+              outerState.romFileInput = it
+            }
+            attrs {
+              onChangeFunction = ::onFileInputChange
+              id = "rom_file"
+            }
+          }
+          label("rom_file", classes = "btn") {
+            ref {
+              @Suppress("UnsafeCastFromDynamic")
+              outerState.romFileLabel = it
+            }
+            i("material-icons left") {
+              +"attachment"
+            }
+            +"Choose a ROM file..."
+          }
+        }
+      }
+      div("row") {
+        div("col s12 m6 offset-m3") {
           div("card") {
             div("card-content") {
-              div("row") {
-                div("input-field col s12") {
-                  input(type = InputType.file, name = "rom_file") {
-                    ref {
-                      outerState.romFileInput = it
-                    }
-                  }
-                }
-              }
-              div("row") {
-                div("col s12") {
+              div("row nomargin") {
+                div("col s12 nopadding") {
                   canvas {
                     attrs {
                       width = canvasWidth.toString()
                       height = canvasHeight.toString()
                     }
                     ref {
+                      @Suppress("UnsafeCastFromDynamic")
                       outerState.canvas = it
                     }
                   }
@@ -54,11 +77,15 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
             }
             div("card-action") {
               button(classes = "btn waves-effect waves-light") {
+                i("material-icons left") {
+                  +"play_arrow"
+                }
                 if (!state.isRunning) +"Play" else +"Pause"
                 attrs {
                   onClickFunction = ::playOrPause
                 }
                 ref {
+                  @Suppress("UnsafeCastFromDynamic")
                   outerState.playPauseBtn = it
                 }
               }
@@ -66,18 +93,50 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
           }
         }
       }
+      div("row") {
+        div("col s12 m6 offset-m3") {
+          h2("header") { +"What's this?" }
+          p {
+            +"Ktnes is a cross platform NES emulator written in Kotlin."
+          }
+          p {
+            +"Its main goal is to showcase Kotlin's multiplatform features while being a fun and challenging side project."
+          }
+          p {
+            +"It's currently under active development. You can check out the Android app by getting the APK "
+            a("#") { +"here." }
+          }
+        }
+      }
+      div("row") {
+        div("col s12 m6 offset-m3") {
+          h2("header") { +"How it works?" }
+          p {
+            +"TODO"
+          }
+        }
+      }
+    }
+  }
+
+  private fun romFile() = state.romFileInput.files?.asList()?.firstOrNull()
+
+  private fun onFileInputChange(@Suppress("UNUSED_PARAMETER") e: Event) {
+    val romFile = romFile()
+    if (romFile != null) {
+      state.romFileLabel.innerText = romFile.name
     }
   }
 
   private fun playOrPause(@Suppress("UNUSED_PARAMETER") event: Event) {
     // load ROM file
-    val romFile = state.romFileInput.files?.asList()?.firstOrNull()
+    val romFile = romFile()
     if (romFile != null) {
       val reader = FileReader()
       reader.onload = ::onRomFileLoaded
       reader.readAsArrayBuffer(romFile)
     } else {
-      console.log("No ROM file selected.")
+      window.alert("No ROM file selected.")
     }
   }
 
@@ -104,6 +163,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     val cartridgeData = Uint8Array(buffer).toByteArray()
     console.log("ROM file loaded, size=${cartridgeData.size}")
     state.director = Director(cartridgeData).also {
+      initKeyboard(it.controller1)
       it.stepSeconds(SECS_PER_FRAME)
     }
     frameTimer.start()
@@ -129,7 +189,6 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     }
     state.imageData.data.set(state.buffer8)
     state.context.putImageData(state.imageData, 0.0, 0.0)
-    state.director.setButtons1(state.keyboardController.buttons)
     state.director.stepSeconds(SECS_PER_FRAME)
   }
 
@@ -143,16 +202,14 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
 
   override fun componentDidMount() {
     initCanvas()
-    initKeyboard()
   }
 
   override fun componentDidUpdate(prevProps: RProps, prevState: State, snapshot: Any) {
     initCanvas()
-    initKeyboard()
   }
 
-  private fun initKeyboard() {
-    state.keyboardController = KeyboardController().apply {
+  private fun initKeyboard(controller: Controller) {
+    state.keyboardController = KeyboardController(controller).apply {
       document.addEventListener("keydown", ::handleKeyDown)
       document.addEventListener("keyup", ::handleKeyUp)
       document.addEventListener("keypress", ::handleKeyPress)
@@ -183,6 +240,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     lateinit var keyboardController: KeyboardController
     lateinit var buffer8: Uint8ClampedArray
     lateinit var buffer32: Uint32Array
+    lateinit var romFileLabel: HTMLLabelElement
     var frameTimer: FrameTimer? = null
     var isRunning = false
   }
@@ -193,3 +251,10 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     private const val SCREEN_HEIGHT = 240.0
   }
 }
+
+inline fun RBuilder.label(
+    htmlFor: String? = null,
+    classes: String? = null,
+    block: RDOMBuilder<LABEL>.() -> Unit
+): ReactElement =
+    tag(block) { LABEL(attributesMapOf("htmlFor", htmlFor, "class", classes), it) }

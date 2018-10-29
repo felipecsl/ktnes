@@ -3,13 +3,11 @@ package com.felipecsl.knes
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 
-class KeyboardController {
-  val buttons = BooleanArray(8)
-
+class KeyboardController(private val controller: Controller) {
   fun handleKeyUp(e: Event) {
     e as KeyboardEvent
     KEYS[e.keyCode]?.also { (_, button) ->
-      buttons[button.ordinal] = false
+      controller.onButtonUp(button)
       e.preventDefault()
     }
   }
@@ -17,7 +15,7 @@ class KeyboardController {
   fun handleKeyDown(e: Event) {
     e as KeyboardEvent
     KEYS[e.keyCode]?.also { (_, button) ->
-      buttons[button.ordinal] = true
+      controller.onButtonDown(button)
       e.preventDefault()
     }
   }

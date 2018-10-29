@@ -9,7 +9,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Switch
 import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
@@ -24,7 +23,6 @@ class MainActivity : AppCompatActivity(), Runnable {
   private val fabRun by lazy { findViewById<FloatingActionButton>(R.id.fabRun) }
   private val btnReset by lazy { findViewById<AppCompatButton>(R.id.btnReset) }
   private val toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
-  private val implSwitch by lazy { findViewById<Switch>(R.id.implementation_switch) }
   private val btnStart by lazy { findViewById<AppCompatButton>(R.id.btnStart) }
   private val btnSelect by lazy { findViewById<AppCompatButton>(R.id.btnSelect) }
   private val btnA by lazy { findViewById<AppCompatButton>(R.id.btnA) }
@@ -41,12 +39,11 @@ class MainActivity : AppCompatActivity(), Runnable {
   @Volatile private var shouldRestoreState = false
   private val audioEngine = AudioEngineWrapper()
   private lateinit var director: Director
-  private val buttons = BooleanArray(8)
   private val onButtonTouched = { b: Buttons ->
     View.OnTouchListener { _, e ->
       when (e.action) {
-        MotionEvent.ACTION_DOWN -> buttons[b.ordinal] = true
-        MotionEvent.ACTION_UP -> buttons[b.ordinal] = false
+        MotionEvent.ACTION_DOWN -> director.controller1.onButtonDown(b)
+        MotionEvent.ACTION_UP -> director.controller1.onButtonUp(b)
       }
       true
     }
@@ -63,7 +60,7 @@ class MainActivity : AppCompatActivity(), Runnable {
     setContentView(R.layout.activity_main)
     setSupportActionBar(toolbar)
     supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-    val glSprite = GLSprite { buttons }
+    val glSprite = GLSprite()
     nesGlSurfaceView.setSprite(glSprite)
     fabRun.setOnClickListener {
       onClickPlayPause(glSprite)
@@ -121,16 +118,10 @@ class MainActivity : AppCompatActivity(), Runnable {
 
   private fun startConsole(cartridgeData: ByteArray, glSprite: GLSprite) {
     audioEngine.start()
-    if (implSwitch.isChecked) {
-      Snackbar.make(implSwitch, "Using Kotlin/Native implementation", Snackbar.LENGTH_SHORT).show()
-      nativeStartConsole(cartridgeData)
-    } else {
-      Snackbar.make(implSwitch, "Using JVM implementation", Snackbar.LENGTH_SHORT).show()
-      director = Director(cartridgeData)
-      glSprite.director = director
-      staticDirector = director
-      handler.post(this)
-    }
+    director = Director(cartridgeData)
+    glSprite.director = director
+    staticDirector = director
+    handler.post(this)
   }
 
   override fun run() {
@@ -174,7 +165,7 @@ class MainActivity : AppCompatActivity(), Runnable {
           p.putString(k, v)
         }
       }.apply()
-      Snackbar.make(implSwitch, "Game state saved", Snackbar.LENGTH_SHORT).show()
+      Snackbar.make(toolbar, "Game state saved", Snackbar.LENGTH_SHORT).show()
       shouldSaveState = false
     }
   }
@@ -185,17 +176,13 @@ class MainActivity : AppCompatActivity(), Runnable {
       val state = sharedPrefs.all
       if (state.isNotEmpty()) {
         director.restoreState(state)
-        Snackbar.make(implSwitch, "Game state restored", Snackbar.LENGTH_SHORT).show()
+        Snackbar.make(toolbar, "Game state restored", Snackbar.LENGTH_SHORT).show()
       }
       shouldRestoreState = false
     }
   }
 
   companion object {
-    init {
-      System.loadLibrary("ktnes")
-    }
-
     const val ROM = R.raw.bingo
     private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticDirector: Director? = null

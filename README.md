@@ -16,15 +16,18 @@ You'll need to pull the oboe git submodule to run ktnes:
 git submodule init && git submodule update
 ```
 
-## Kotlin/Native implementation
+## Android implementation
 
-The emulator implementation using Kotlin/Native is not functional yet.
-To build the Android native library implementation: 
+You should be able to build and run directly from Android Studio.
+From the command line:
+```
+./gradlew android:installDebug
+```
 
-- Set `ANDROID_HOME` to your Android SDK path (e.g. `/Users/<username>/Library/Android/sdk`). 
-- Run `./gradlew lib:copyLibs`
+## Javascript implementation
 
-If you did that correctly, you should be able to build and run directly from Android Studio.
+To build/run the Javascript version of the emulator, run `./gradlew web:run`
+Then, open `http://localhost:8088` on your browser.
 
 ## Status
 
@@ -32,7 +35,7 @@ Still under active development.
 
 Sound works but is still a bit garbled/distorted.
 
-Implemented mappers:
+### Implemented mappers:
 
 * Mapper 0
 * Mapper 1

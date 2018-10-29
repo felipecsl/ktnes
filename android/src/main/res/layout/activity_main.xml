@@ -149,12 +149,6 @@
           android:layout_height="wrap_content"
           android:text="Reset" />
 
-        <Switch
-          android:id="@+id/implementation_switch"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="Use native impl" />
-
       </LinearLayout>
 
     </LinearLayout>

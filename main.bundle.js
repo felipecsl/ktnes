@@ -1,0 +1,1 @@
+web/build/bundle/main.bundle.js

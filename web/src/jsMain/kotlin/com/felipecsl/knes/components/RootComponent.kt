@@ -102,7 +102,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
           }
           p {
             +"It's currently under active development. You can check out the Android app by getting the APK "
-            a("#") { +"here." }
+            a("android-debug.apk") { +"here." }
           }
         }
         div("col s12 m12 l6") {

@@ -27,16 +27,6 @@ kotlinFrontend {
   }
 }
 
-afterEvaluate {
-  compileKotlinJs {
-    kotlinOptions.metaInfo = true
-    kotlinOptions.outputFile = file("build/js/${project.name}.js")
-    kotlinOptions.sourceMap = true
-    kotlinOptions.moduleKind = 'commonjs'
-    kotlinOptions.main = "call"
-  }
-}
-
 kotlin {
   sourceSets {
     jsMain {
@@ -52,7 +42,22 @@ kotlin {
   }
 
   targets {
-    fromPreset(presets.js, 'js')
+    fromPreset(presets.js, 'js') {
+      configure([compilations.main, compilations.test]) {
+        tasks.getByName(compileKotlinTaskName).kotlinOptions {
+          metaInfo = true
+          outputFile = file("build/js/${project.name}.js")
+          sourceMap = true
+          moduleKind = 'commonjs'
+        }
+      }
+
+      configure(compilations.main) {
+        tasks.getByName(compileKotlinTaskName).kotlinOptions {
+          main = "call"
+        }
+      }
+    }
   }
 }
 

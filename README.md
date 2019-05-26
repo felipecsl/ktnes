@@ -2,7 +2,10 @@
 
 A NES emulator implemented in Kotlin using multiplatform support and Kotlin/Native.
 
-Ported from the awesome Golang implementation [nes by @fogleman](https://github.com/fogleman/nes).
+Inspired on the following prior work:
+
+* Go emulator [nes by @fogleman](https://github.com/fogleman/nes)
+* JS emulator [jsnes by @bfirsh](https://github.com/bfirsh/jsnes)
 
 ## Demo
 

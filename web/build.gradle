@@ -65,6 +65,12 @@ kotlin {
   }
 }
 
+afterEvaluate {
+  tasks.getByName('karma-run-single') {
+    enabled false
+  }
+}
+
 task copyLibs(type: Copy) {
   destinationDir buildDir
 

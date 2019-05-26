@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity(), Runnable {
   }
 
   companion object {
-    const val ROM = R.raw.bingo
+    const val ROM = R.raw.super_mario_bros_3
     private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticDirector: Director? = null
 

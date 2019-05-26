@@ -1,9 +1,6 @@
 package com.felipecsl.knes.components
 
-import com.felipecsl.knes.Controller
-import com.felipecsl.knes.Director
-import com.felipecsl.knes.FrameTimer
-import com.felipecsl.knes.KeyboardController
+import com.felipecsl.knes.*
 import kotlinx.html.*
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
@@ -19,6 +16,8 @@ import kotlin.browser.window
 const val FPS = 60
 const val SECS_PER_FRAME = 1F / FPS
 const val CANVAS_SIZE_SCALE = 2
+const val AUDIO_BUFFER_SIZE = 512
+const val NUM_AUDIO_CHANNELS = 2
 
 class RootComponent : RComponent<RProps, RootComponent.State>() {
   private val canvasWidth = SCREEN_WIDTH * CANVAS_SIZE_SCALE
@@ -143,6 +142,7 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
         state.frameTimer = ft
       }
     }
+    initAudioContext()
     if (!frameTimer.running()) {
       startConsole(event, frameTimer)
     } else {
@@ -151,6 +151,13 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
     setState {
       isRunning = frameTimer.running()
     }
+  }
+
+  private fun initAudioContext() {
+    val audioContext = AudioContext()
+    val scriptProcessor = audioContext.createScriptProcessor(AUDIO_BUFFER_SIZE, 0, 2)
+    scriptProcessor.onaudioprocess = this::audioCallback
+    scriptProcessor.connect(audioContext.destination)
   }
 
   private fun startConsole(event: Event, frameTimer: FrameTimer) {
@@ -209,6 +216,18 @@ class RootComponent : RComponent<RProps, RootComponent.State>() {
       document.addEventListener("keydown", ::handleKeyDown)
       document.addEventListener("keyup", ::handleKeyUp)
       document.addEventListener("keypress", ::handleKeyPress)
+    }
+  }
+
+  private fun audioCallback(event: AudioProcessingEvent) {
+    val outputBuffer = event.outputBuffer
+    val len = outputBuffer.length
+    val outputLeft = outputBuffer.getChannelData(0)
+    val outputRight = outputBuffer.getChannelData(1)
+    val audioBuffer = state.director.audioBuffer()
+    for (i in 0..(len / NUM_AUDIO_CHANNELS)) {
+      outputLeft[i] = audioBuffer[i * NUM_AUDIO_CHANNELS]
+      outputRight[i] = audioBuffer[i * NUM_AUDIO_CHANNELS + 1]
     }
   }
 

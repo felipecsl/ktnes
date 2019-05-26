@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.felipecsl.knes
 
 import org.khronos.webgl.Float32Array

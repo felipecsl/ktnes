@@ -10,6 +10,7 @@ import java.nio.IntBuffer
 class GLSprite {
   private var context: RenderContext? = null
   private var texture: Int? = null
+
   var director: Director? = null
 
   data class RenderContext(
@@ -66,17 +67,16 @@ class GLSprite {
           shaderProgram = program
       )
     }
-  }
 
-  private fun createTexture(image: IntArray): IntBuffer {
-    val buffer = IntBuffer.wrap(image)
     glBindTexture(GL_TEXTURE_2D, texture!!)
     glTexImage2D(GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, IMG_WIDTH, IMG_HEIGHT, 0,
-        GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, buffer)
+              GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, null)
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+
     // Use our shader program
     val context = context!!
     glUseProgram(context.shaderProgram)
@@ -87,14 +87,11 @@ class GLSprite {
     glEnableVertexAttribArray(context.texCoordHandle)
     glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
     glEnableVertexAttribArray(context.posCoordHandle)
-    return buffer
   }
 
   private fun updateTexture(image: IntArray) {
-    val buffer = createTexture(image)
-    glBindTexture(GL_TEXTURE_2D, texture!!)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, IMG_WIDTH, IMG_HEIGHT,
-        GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, buffer)
+            GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, IntBuffer.wrap(image))
     // Draw!
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
   }

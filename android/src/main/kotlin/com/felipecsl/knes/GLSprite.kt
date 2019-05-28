@@ -67,6 +67,7 @@ class GLSprite {
           shaderProgram = program
       )
 
+      val context = context!!
       glBindTexture(GL_TEXTURE_2D, texture!!)
       glTexImage2D(GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, IMG_WIDTH, IMG_HEIGHT, 0,
                 GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, null)

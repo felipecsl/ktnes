@@ -66,27 +66,25 @@ class GLSprite {
           posVertices = createVerticesBuffer(POS_VERTICES),
           shaderProgram = program
       )
+
+      glBindTexture(GL_TEXTURE_2D, texture!!)
+      glTexImage2D(GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, IMG_WIDTH, IMG_HEIGHT, 0,
+                GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, null)
+
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+
+      glUseProgram(context.shaderProgram)
+      // Disable blending
+      glDisable(GL_BLEND)
+      // Set the vertex attributes
+      glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
+      glEnableVertexAttribArray(context.texCoordHandle)
+      glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
+      glEnableVertexAttribArray(context.posCoordHandle)
     }
-
-    glBindTexture(GL_TEXTURE_2D, texture!!)
-    glTexImage2D(GL_TEXTURE_2D, 0, GLES11Ext.GL_BGRA, IMG_WIDTH, IMG_HEIGHT, 0,
-              GLES11Ext.GL_BGRA, GL_UNSIGNED_BYTE, null)
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-
-    // Use our shader program
-    val context = context!!
-    glUseProgram(context.shaderProgram)
-    // Disable blending
-    glDisable(GL_BLEND)
-    // Set the vertex attributes
-    glVertexAttribPointer(context.texCoordHandle, 2, GL_FLOAT, false, 0, context.texVertices)
-    glEnableVertexAttribArray(context.texCoordHandle)
-    glVertexAttribPointer(context.posCoordHandle, 2, GL_FLOAT, false, 0, context.posVertices)
-    glEnableVertexAttribArray(context.posCoordHandle)
   }
 
   private fun updateTexture(image: IntArray) {

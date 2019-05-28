@@ -76,6 +76,7 @@ class GLSprite {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
+      // Use our shader program
       glUseProgram(context.shaderProgram)
       // Disable blending
       glDisable(GL_BLEND)

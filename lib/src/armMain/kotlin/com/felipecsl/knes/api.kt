@@ -21,7 +21,8 @@ fun nativeStartConsole(
     jni.GetByteArrayRegion!!.invoke(env, cartridgeData, 0, len, bufferPointer)
     val director = Director(buffer)
     directorBuffer = director.videoBuffer()
-    director.run()
+    // TODO(felipecsl) Fix or remove this
+    // director.run()
   }
 }
 

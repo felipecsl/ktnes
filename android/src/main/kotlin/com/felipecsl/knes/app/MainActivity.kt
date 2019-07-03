@@ -73,7 +73,6 @@ class MainActivity : AppCompatActivity(), Runnable {
       updatePlayPauseIcon()
       resetConsole()
     }
-
     btnA.setOnTouchListener(onButtonTouched(Buttons.BUTTON_A))
     btnB.setOnTouchListener(onButtonTouched(Buttons.BUTTON_B))
     btnSelect.setOnTouchListener(onButtonTouched(Buttons.BUTTON_SELECT))
@@ -111,7 +110,8 @@ class MainActivity : AppCompatActivity(), Runnable {
   }
 
   private fun resumeConsole() {
-    handler.post(this)
+    // Delay resuming the console so we have time to update the isRunning flag first
+    handler.postDelayed(this, 100)
     audioEngine.resume()
   }
 
@@ -131,7 +131,16 @@ class MainActivity : AppCompatActivity(), Runnable {
   override fun run() {
     maybeSaveState()
     maybeRestoreState()
-    director.run()
+    while (isRunning) {
+      val msSpent = director.stepSeconds(SECS_PER_FRAME)
+      val msLeft = MS_PER_FRAME - msSpent
+      if (msLeft > 0) {
+        // If the console is running too fast (good hardware) then we'll render a frame faster
+        // than we should. In that case, wait for the remainder of the frame time so we throttle
+        // the console speed to make sure it runs in the actual NES speed.
+        Thread.sleep(msLeft)
+      }
+    }
   }
 
   override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -187,7 +196,7 @@ class MainActivity : AppCompatActivity(), Runnable {
   }
 
   companion object {
-    const val ROM = R.raw.bingo
+    const val ROM = R.raw.super_mario_bros_3
     private const val STATE_PREFS_KEY = "KTNES_STATE"
     internal var staticDirector: Director? = null
 

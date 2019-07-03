@@ -697,7 +697,7 @@ internal class CPU(
   }
 
   companion object {
-    const val FREQUENCY = 1789773
+    const val FREQUENCY_HZ = 1789773 // 1.789773 MHz
     val instructionModes = arrayOf(
         6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
         10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,

@@ -41,11 +41,15 @@ class MainActivity : AppCompatActivity(), Runnable {
   private lateinit var director: Director
   private val onButtonTouched = { b: Buttons ->
     View.OnTouchListener { _, e ->
-      when (e.action) {
-        MotionEvent.ACTION_DOWN -> director.controller1.onButtonDown(b)
-        MotionEvent.ACTION_UP -> director.controller1.onButtonUp(b)
+      if (!isRunning) {
+        false
+      } else {
+        when (e.action) {
+          MotionEvent.ACTION_DOWN -> director.controller1.onButtonDown(b)
+          MotionEvent.ACTION_UP -> director.controller1.onButtonUp(b)
+        }
+        true
       }
-      true
     }
   }
 

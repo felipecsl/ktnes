@@ -3,7 +3,7 @@ package com.felipecsl.knes
 import com.felipecsl.knes.CPU.Companion.FREQUENCY_HZ
 
 const val FPS = 60
-const val SECS_PER_FRAME = 1F / FPS
+const val SECS_PER_FRAME = 1.0 / FPS
 const val MS_PER_FRAME = (SECS_PER_FRAME * 1000).toLong()
 
 class Director(
@@ -24,7 +24,7 @@ class Director(
     console.reset()
   }
 
-  fun stepSeconds(seconds: Float, logSpeed: Boolean = false): Long {
+  fun stepSeconds(seconds: Double, logSpeed: Boolean = false): Long {
     isRunning = true
     val cyclesToRun = seconds * FREQUENCY_HZ
     var totalCycles = 0.0

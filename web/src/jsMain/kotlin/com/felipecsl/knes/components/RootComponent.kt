@@ -13,8 +13,6 @@ import react.dom.*
 import kotlin.browser.document
 import kotlin.browser.window
 
-const val FPS = 60
-const val SECS_PER_FRAME = 1F / FPS
 const val CANVAS_SIZE_SCALE = 2
 const val AUDIO_BUFFER_SIZE = 512
 const val NUM_AUDIO_CHANNELS = 2

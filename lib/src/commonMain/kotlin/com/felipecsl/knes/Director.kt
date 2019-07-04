@@ -1,6 +1,10 @@
 package com.felipecsl.knes
 
-import com.felipecsl.knes.CPU.Companion.FREQUENCY
+import com.felipecsl.knes.CPU.Companion.FREQUENCY_HZ
+
+const val FPS = 60
+const val SECS_PER_FRAME = 1.0 / FPS
+const val MS_PER_FRAME = (SECS_PER_FRAME * 1000).toLong()
 
 class Director(
     cartridgeData: ByteArray,
@@ -11,7 +15,7 @@ class Director(
 ) {
   private var isRunning = false
   private val cartridge = INESFileParser.parseCartridge(ByteArrayInputStream(cartridgeData))
-  internal val console = Console.newConsole(
+  private val console = Console.newConsole(
       cartridge, mapperCallback, cpuCallback, ppuCallback, apuCallback)
   val controller1 = console.controller1
   val controller2 = console.controller2
@@ -20,23 +24,9 @@ class Director(
     console.reset()
   }
 
-  fun run() {
-    var startTime = currentTimeMs()
-    var totalCycles = 0.0
+  fun stepSeconds(seconds: Double, logSpeed: Boolean = false): Long {
     isRunning = true
-    while (isRunning) {
-      totalCycles += console.step()
-      if (totalCycles >= FREQUENCY) {
-        val currentTime = trackConsoleSpeed(startTime, totalCycles)
-        totalCycles = 0.0
-        startTime = currentTime
-      }
-    }
-  }
-
-  fun stepSeconds(seconds: Float, logSpeed: Boolean = false) {
-    isRunning = true
-    val cyclesToRun = seconds * CPU.FREQUENCY
+    val cyclesToRun = seconds * FREQUENCY_HZ
     var totalCycles = 0.0
     val startTime = currentTimeMs()
     while (isRunning && totalCycles < cyclesToRun) {
@@ -45,14 +35,16 @@ class Director(
     if (logSpeed) {
       trackConsoleSpeed(startTime, totalCycles)
     }
+    return (currentTimeMs() - startTime).toLong()
   }
 
   private fun trackConsoleSpeed(startTime: Double, totalCycles: Double): Double {
     val currentTime = currentTimeMs()
-    val msSpent = currentTime - startTime
-    val clock = (totalCycles * 1000) / msSpent
-    val speed = clock / FREQUENCY.toFloat()
-    println("Clock=${clock}Hz (${speed}x)")
+    val secondsSpent = (currentTime - startTime) / 1000
+    val expectedClock = FREQUENCY_HZ.toFloat()
+    val actualClock = totalCycles / secondsSpent
+    val relativeSpeed = actualClock / expectedClock
+    println("Clock=${actualClock}Hz (${relativeSpeed}x)")
     return currentTime
   }
 

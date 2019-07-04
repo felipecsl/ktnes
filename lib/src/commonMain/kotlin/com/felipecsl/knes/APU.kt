@@ -4,7 +4,7 @@ internal class APU(
     private val stepCallback: APUStepCallback? = null,
     internal val audioBuffer: AudioBuffer = AudioBuffer(),
     // Convert samples per second to cpu steps per sample
-    private val sampleRate: Double = CPU.FREQUENCY / SAMPLE_RATE,
+    private val sampleRate: Double = CPU.FREQUENCY_HZ / SAMPLE_RATE,
     private var cycle: Double = 0.0,
     private var framePeriod: Int = 0, // Byte
     private var frameValue: Int = 0, // Byte
@@ -665,7 +665,7 @@ internal class APU(
   companion object {
     // TODO: This needs to match whatever the current device's sample rate is.
     internal const val SAMPLE_RATE = 48000.0
-    private const val FRAME_COUNTER_RATE = CPU.FREQUENCY / 240.0
+    private const val FRAME_COUNTER_RATE = CPU.FREQUENCY_HZ / 240.0
     private val TRIANGLE_TABLE = intArrayOf( // Byte
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15

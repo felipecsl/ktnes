@@ -21,7 +21,7 @@ class InternalStateTest {
     lateinit var expectedAPUState: List<String>
     val classLoader = javaClass.classLoader
     val cpuReference = GZIPInputStream(
-        File(classLoader.getResource("cpu_state_reference.gz").toURI()).inputStream())
+        File(classLoader.getResource("cpu_state_reference.gz")!!.toURI()).inputStream())
         .bufferedReader()
     val mapperReference = GZIPInputStream(
         classLoader.getResourceAsStream("mapper_state_reference.gz"))
@@ -294,14 +294,14 @@ class InternalStateTest {
         }
       }
     }
-    val cartridge = classLoader.getResourceAsStream("legend_of_zelda.nes").readBytes()
+    val cartridge = classLoader.getResourceAsStream("legend_of_zelda.nes")!!.readBytes()
     Director(
         cartridge,
         mapperCallback,
         cpuCallback,
         ppuCallback,
         apuCallback
-    ).run()
+    ).stepSeconds(Double.MAX_VALUE)
   }
 
   private fun assertStateIsValid(

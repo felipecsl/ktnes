@@ -34,11 +34,11 @@ kotlin {
         implementation project(':lib')
         implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
         // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react
-        implementation "org.jetbrains:kotlin-react:16.6.0-pre.77-kotlin-$kotlin_version"
+        implementation "org.jetbrains:kotlin-react:16.9.0-pre.83-kotlin-$kotlin_version"
         // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-dom
-        implementation "org.jetbrains:kotlin-react-dom:16.6.0-pre.77-kotlin-$kotlin_version"
+        implementation "org.jetbrains:kotlin-react-dom:16.9.0-pre.83-kotlin-$kotlin_version"
         // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-router-dom
-        implementation "org.jetbrains:kotlin-react-router-dom:4.3.1-pre.77-kotlin-$kotlin_version"
+        implementation "org.jetbrains:kotlin-react-router-dom:4.3.1-pre.83-kotlin-$kotlin_version"
         // https://github.com/Kotlin/kotlinx.html/releases
         implementation "org.jetbrains.kotlinx:kotlinx-html-js:0.6.12"
       }

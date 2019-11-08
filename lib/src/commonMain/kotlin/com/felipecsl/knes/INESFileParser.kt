@@ -18,9 +18,7 @@ internal class INESFileParser {
 
     fun parseCartridge(stream: ByteArrayInputStream): Cartridge {
       val inesFileHeader = parseFileHeader(stream)
-      if (!inesFileHeader.isValid()) {
-        throw IllegalArgumentException("Invalid INES file header")
-      }
+      require(inesFileHeader.isValid()) { "Invalid INES file header" }
       // mapper_state_reference type
       val control1 = inesFileHeader.control1.toInt()
       val mapper1 = control1 shr 4

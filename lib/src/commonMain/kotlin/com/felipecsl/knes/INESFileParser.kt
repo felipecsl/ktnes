@@ -32,9 +32,7 @@ internal class INESFileParser {
       val battery = (control1 shr 1).and(1)
       // read prg-rom bank(s)
       val prg = ByteArray(inesFileHeader.numPRG.toInt() * 16384)
-      if (stream.read(prg) != prg.size) {
-        throw IllegalStateException("Could not load ${prg.size} bytes from the input")
-      }
+      check(stream.read(prg) == prg.size) { "Could not load ${prg.size} bytes from the input" }
       // read chr-rom bank(s)
       val numCHR = inesFileHeader.numCHR.toInt()
       var chr = ByteArray(numCHR * 8192)

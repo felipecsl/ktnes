@@ -8,7 +8,7 @@ import react.router.dom.switch
 import kotlin.browser.document
 import kotlin.browser.window
 
-fun main(args: Array<String>) {
+fun main(@Suppress("UnusedMainParameter") args: Array<String>) {
   window.onload = {
     render(document.getElementById("root")!!) {
       hashRouter {

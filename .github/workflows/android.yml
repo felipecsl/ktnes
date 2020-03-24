@@ -18,7 +18,6 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      working-directory: android
       run: ./gradlew check
     - name: Cache dependencies
       uses: actions/cache@v1

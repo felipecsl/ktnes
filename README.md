@@ -35,7 +35,7 @@ To build/run the Javascript version of the emulator, run:
 ./gradlew web:run
 ```
 
-Then, open `http://localhost:8088` on your browser.
+Then, open `http://localhost:8080` on your browser.
 
 ## Status
 

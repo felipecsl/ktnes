@@ -1,88 +1,34 @@
-apply plugin: 'kotlin-multiplatform'
-apply plugin: 'org.jetbrains.kotlin.frontend'
-
-kotlinFrontend {
-  downloadNodeJsVersion = "latest"
-
-  webpackBundle {
-    bundleName = "main"
-    contentPath = file('src/jsMain/web')
-    webpackConfigFile = file('webpack.config.js').absolutePath
-    sourceMapEnabled = true
-    mode = "development"
-  }
-
-  npm {
-    dependency "react"
-    dependency "core-js"
-    dependency "react-dom"
-    dependency "react-router-dom"
-    dependency "kotlin"
-    // This looks like an unofficial package but I couldn't find the actual Jetbrains one, only kotlinx-html
-    dependency "kotlinx-html-js"
-    dependency "@jetbrains/kotlin-react"
-    dependency "@jetbrains/kotlin-react-dom"
-    dependency "@jetbrains/kotlin-extensions"
-    dependency "@jetbrains/kotlin-react-router-dom"
-  }
+plugins {
+  id 'org.jetbrains.kotlin.js' version '1.3.71'
 }
 
 kotlin {
-  sourceSets {
-    jsMain {
-      dependencies {
-        implementation project(':lib')
-        implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
-        // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react
-        implementation "org.jetbrains:kotlin-react:16.9.0-pre.83-kotlin-$kotlin_version"
-        // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-dom
-        implementation "org.jetbrains:kotlin-react-dom:16.9.0-pre.83-kotlin-$kotlin_version"
-        // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-router-dom
-        implementation "org.jetbrains:kotlin-react-router-dom:4.3.1-pre.83-kotlin-$kotlin_version"
-        // https://github.com/Kotlin/kotlinx.html/releases
-        implementation "org.jetbrains.kotlinx:kotlinx-html-js:0.6.12"
-      }
+  target {
+    browser {
     }
   }
+  sourceSets["main"].dependencies {
+    implementation npm("react", "16.13.1")
+    implementation npm("core-js", "3.6.4")
+    implementation npm("react-dom", "16.13.1")
+    implementation npm("react-router-dom", "5.1.2")
+    // This looks like an unofficial package but I couldn't find the actual Jetbrains one, only kotlinx-html
+    implementation npm("kotlinx-html-js", "0.6.4")
+    implementation npm("@jetbrains/kotlin-react", "16.9.0-pre.91")
+    implementation npm("@jetbrains/kotlin-react-dom", "16.9.0-pre.91")
+    implementation npm("@jetbrains/kotlin-extensions", "1.0.1-pre.91")
+    implementation npm("@jetbrains/kotlin-react-router-dom", "4.3.1-pre.91")
 
-  targets {
-    fromPreset(presets.js, 'js') {
-      configure([compilations.main, compilations.test]) {
-        tasks.getByName(compileKotlinTaskName).kotlinOptions {
-          metaInfo = true
-          outputFile = file("build/js/${project.name}.js")
-          sourceMap = true
-          moduleKind = 'commonjs'
-        }
-      }
+    implementation project(':lib')
 
-      configure(compilations.main) {
-        tasks.getByName(compileKotlinTaskName).kotlinOptions {
-          main = "call"
-        }
-      }
-    }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+    // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react
+    implementation "org.jetbrains:kotlin-react:16.13.0-pre.94-kotlin-1.3.70"
+    // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-dom
+    implementation "org.jetbrains:kotlin-react-dom:16.13.0-pre.94-kotlin-1.3.70"
+    // https://bintray.com/kotlin/kotlin-js-wrappers/kotlin-react-router-dom
+    implementation "org.jetbrains:kotlin-react-router-dom:4.3.1-pre.94-kotlin-1.3.70"
+    // https://github.com/Kotlin/kotlinx.html/releases
+    implementation "org.jetbrains.kotlinx:kotlinx-html-js:0.7.1"
   }
-}
-
-afterEvaluate {
-  tasks.getByName('karma-run-single') {
-    enabled false
-  }
-}
-
-task copyLibs(type: Copy) {
-  destinationDir buildDir
-
-  into("js") {
-    from project(':lib').file("build/js")
-  }
-}
-
-bundle {
-  dependsOn copyLibs
-}
-
-dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
 }

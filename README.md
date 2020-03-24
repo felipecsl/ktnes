@@ -32,7 +32,7 @@ If you'd rather use Gradle, run:
 
 To build/run the Javascript version of the emulator, run:
 ```
-./gradlew web:bundle web:run
+./gradlew web:run
 ```
 
 Then, open `http://localhost:8088` on your browser.
@@ -52,7 +52,7 @@ Sound works but is still a bit garbled/distorted.
 ## License
 
 ```
-Copyright 2018 Felipe Lima
+Copyright 2020 Felipe Lima
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -12,13 +12,6 @@ Inspired on the following prior work:
 ![super mario bros 3](https://raw.githubusercontent.com/felipecsl/ktnes/master/smb3.gif)
 ![the legend of zelda](https://raw.githubusercontent.com/felipecsl/ktnes/master/zelda.gif)
 
-## Building/Running
-
-You'll need to pull the oboe git submodule to run ktnes:
-```
-git submodule init && git submodule update
-```
-
 ## Android implementation
 
 You should be able to build and run directly from Android Studio.
